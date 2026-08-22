@@ -41,6 +41,23 @@ const MIGRATIONS: Array<{ version: number; sql: string }> = [
         key   TEXT PRIMARY KEY,
         value TEXT NOT NULL
       );`
+  },
+  {
+    version: 3,
+    sql: `
+      CREATE TABLE IF NOT EXISTS chapters (
+        id          TEXT PRIMARY KEY,
+        book_id     TEXT NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+        title       TEXT NOT NULL,
+        summary     TEXT NOT NULL DEFAULT '',
+        sort_order  INTEGER NOT NULL DEFAULT 0,
+        content     TEXT NOT NULL DEFAULT '',
+        word_count  INTEGER NOT NULL DEFAULT 0,
+        status      TEXT NOT NULL DEFAULT 'draft',
+        created_at  TEXT NOT NULL,
+        updated_at  TEXT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_chapters_book ON chapters(book_id, sort_order);`
   }
 ]
 
@@ -54,6 +71,7 @@ export function getDb(): Database.Database {
   const dbPath = join(app.getPath('userData'), 'inkspire.sqlite')
   db = new Database(dbPath)
   db.pragma('journal_mode = WAL') // 提高写入可靠性，断电不易损坏
+  db.pragma('foreign_keys = ON') // 启用外键级联（删书连带删章节）
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS schema_migrations (

@@ -24,6 +24,9 @@
     "typescript": "^7.0.2"
   },
   "dependencies": {
+    "@tiptap/pm": "^3.30.2",
+    "@tiptap/starter-kit": "^3.30.2",
+    "@tiptap/vue-3": "^3.30.2",
     "better-sqlite3": "^13.0.3",
     "pinia": "^4.0.3",
     "vue": "^3.5.41",

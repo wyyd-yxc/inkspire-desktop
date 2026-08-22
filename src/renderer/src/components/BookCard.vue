@@ -4,11 +4,13 @@
  * hover 显示操作按钮（删除）；点击卡片进入创作（M3 接路由）。
  */
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 import type { Book } from '../../../shared/book.types'
 import { BOOK_GENRES } from '../../../shared/book.types'
 
 const props = defineProps<{ book: Book }>()
 const emit = defineEmits<{ delete: [book: Book] }>()
+const router = useRouter()
 
 /** 封面渐变按书名 hash 稳定取色，避免每次渲染闪变 */
 const coverStyle = computed(() => {
@@ -40,11 +42,17 @@ function formatDate(iso: string): string {
     d.getDate()
   ).padStart(2, '0')}`
 }
+
+/** 点击卡片进入正文工作台 */
+function openBook(): void {
+  void router.push(`/book/${props.book.id}/write`)
+}
 </script>
 
 <template>
   <div
     class="group relative flex cursor-pointer flex-col overflow-hidden rounded-card bg-surface shadow-card transition-all hover:-translate-y-0.5 hover:shadow-lg"
+    @click="openBook"
   >
     <!-- 封面区 -->
     <div class="relative flex h-40 items-center justify-center text-white" :style="coverStyle">

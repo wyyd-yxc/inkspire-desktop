@@ -17,6 +17,11 @@ const router = createRouter({
       path: '/settings',
       name: 'settings',
       component: () => import('@/views/SettingsView.vue')
+    },
+    {
+      path: '/book/:bookId/write',
+      name: 'workspace',
+      component: () => import('@/views/WorkspaceView.vue')
     }
   ]
 })

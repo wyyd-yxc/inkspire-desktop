@@ -154,3 +154,26 @@
   3. 新增 `scripts/accept-via-llm.mjs`：材料+diff 发给 ox-alpha 静态审查，报告存 docs/acceptance/llm-review-*.md；key 从环境变量或 ZCode 配置读取，绝不入日志。
   4. acceptance-workflow.md 第 3 节更新为双轨验收：LLM 静态审查（ox-alpha）+ 本地子代理黑盒验收，两份报告都入库，任一不通过即不通过。
 - **下一步**：M3 正文工作台（chapters 表、章节树、TipTap 编辑器、自动保存、字数统计）。
+
+---
+
+## [2026-08-22 19:30] 会话 7：M3 正文工作台
+
+- **使用的模型**：GLM-5.3（zai-start-plan）
+- **完成内容**：
+  1. migration v3：chapters 表（FK 级联删书→删章、book_id+sort_order 索引）；database.ts 开启 foreign_keys。
+  2. chapters DAO：CRUD + 上移/下移（事务交换序号）+ 删除后序号压缩；IPC 五通道全走 wrap。
+  3. 正文工作台 UI（/book/:id/write）：ChapterSidebar（章节列表/自动命名「第 N 章」/行内重命名/上下移/删除/全书字数）+ ChapterEditor（TipTap 3 + StarterKit；标题行内编辑；网文排版：首行缩进 2em、段距；状态栏字数+保存态）。
+  4. 自动保存：输入 1.5s 防抖落盘；Ctrl+S 立即保存；切换章节前 flush；组件卸载 flush。字数=纯文本去空白字符数。
+  5. 书斋卡片点击进入工作台。
+- **依赖登记**：@tiptap/vue-3、@tiptap/starter-kit、@tiptap/pm（3.30）——用途：沉浸式正文编辑器；备选 Lexical/CodeMirror（文档模型与划词扩展生态更契合 TipTap，选它）。
+- **自测结果**（CDP 驱动真实 Electron）：
+  - IPC 全链路：万字正文保存字数精确（12960）、自动命名、自定义标题、排序 ✓
+  - UI：万字 9 段渲染、连续输入 5 次仅 10ms（无卡顿）、自动保存增量落库（13005 字）✓
+  - 完全重启后：章节/正文/自动保存内容全部保留、编辑器重新加载 ✓
+  - 外键级联：删书后章节数归零 ✓
+  - typecheck 双 0 ✓
+- **修改的文件**：src/shared/chapter.types.ts（新）、src/main/db/{database,chapters}.ts、src/main/ipc/chapters.ts（新）、src/main/index.ts、src/preload/index.ts、src/renderer/src/{views/WorkspaceView.vue,components/{ChapterSidebar,ChapterEditor}.vue}（新）、BookCard.vue、router、package.json。
+- **遇到的问题与解决**：无阻断；updateChapter 初版有冗余分支（wordCount 双写）已精简。
+- **遗留问题**：右栏（章节信息/后续作品记忆）未做，规划 M8；章节拖拽排序未做（上下移替代），挂技术债。
+- **下一步**：M3 双轨验收（ox-alpha 静态审查 + 子代理黑盒）→ 用户确认 → tag；M4 AI 写作。

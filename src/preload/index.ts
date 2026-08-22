@@ -14,6 +14,11 @@ import type {
   CreateApiProfileInput,
   UpdateApiProfileInput
 } from '../shared/ai.types'
+import type {
+  Chapter,
+  CreateChapterInput,
+  UpdateChapterInput
+} from '../shared/chapter.types'
 
 const api = {
   /** IPC 通路自检：正常返回 { ok: true, data: 'pong' } */
@@ -28,6 +33,20 @@ const api = {
       ipcRenderer.invoke('books:update', id, input),
     remove: (id: string): Promise<IpcResult<boolean>> =>
       ipcRenderer.invoke('books:delete', id)
+  },
+
+  /** 章节管理（正文工作台） */
+  chapters: {
+    list: (bookId: string): Promise<IpcResult<Chapter[]>> =>
+      ipcRenderer.invoke('chapters:list', bookId),
+    create: (input: CreateChapterInput): Promise<IpcResult<Chapter>> =>
+      ipcRenderer.invoke('chapters:create', input),
+    update: (id: string, input: UpdateChapterInput): Promise<IpcResult<Chapter>> =>
+      ipcRenderer.invoke('chapters:update', id, input),
+    remove: (id: string): Promise<IpcResult<boolean>> =>
+      ipcRenderer.invoke('chapters:delete', id),
+    move: (id: string, dir: -1 | 1): Promise<IpcResult<boolean>> =>
+      ipcRenderer.invoke('chapters:move', id, dir)
   },
 
   /** AI 接口档案（设置中心） */

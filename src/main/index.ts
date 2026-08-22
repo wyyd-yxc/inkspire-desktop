@@ -9,6 +9,7 @@ import { wrap } from './ipc/wrap'
 import { registerBookIpc } from './ipc/books'
 import { registerSettingsIpc } from './ipc/settings'
 import { registerAiIpc } from './ipc/ai'
+import { registerChapterIpc } from './ipc/chapters'
 
 /** 创建应用主窗口（1280x800，中文标题「墨灵」）。 */
 function createWindow(): void {
@@ -75,10 +76,11 @@ function createWindow(): void {
 // IPC 通道：app:ping —— 通路自检
 ipcMain.handle('app:ping', () => wrap(() => 'pong'))
 
-// 各业务域 IPC 注册（books / settings / ai / ... 随里程碑增加）
+// 各业务域 IPC 注册（books / settings / ai / chapters / ... 随里程碑增加）
 registerBookIpc()
 registerSettingsIpc()
 registerAiIpc()
+registerChapterIpc()
 
 app.whenReady().then(() => {
   createWindow()
