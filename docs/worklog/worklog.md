@@ -91,3 +91,27 @@
 - 验收员复验结论**通过**：真实 Electron 内实测「新建书籍（UI 全流程）→ 完全重启 → 仍在」与「编辑→保存→重启保留」两条用户路径，typecheck 双 0，测试数据与进程已清理。报告已追加「复验记录」一节。
 - M1 状态转「待用户确认」；用户确认后打 tag `v0.1.0-m0-scaffold` 与 `v0.2.0-m1-bookshelf`。
 - 验收遗留的轻微项（删除按钮仅 hover 可达、mock 显式开关）已登记至 roadmap 技术债区，计划 M2 顺带处理。
+
+---
+
+## [2026-08-22 15:20] 会话 5：M2 设置中心（AI Provider + 档案管理 + 连通测试）
+
+- **使用的模型**：GLM-5.3（zai-start-plan）
+- **完成内容**：
+  1. 用户确认 M0/M1，已打 tag `v0.1.0-m0-scaffold`、`v0.2.0-m1-bookshelf`；并授权使用 ZCode 中配置的模型与 Key。
+  2. 从 ZCode 配置（~/.zcode/v2/config.json + 环境变量）定位到「基元律动 TokenRhythm」（OpenAI 兼容端点 https://tokenrhythm.studio/v1，deepseek-v4 系列模型），实测 OpenAI 协议可用（ZCode 本身用的是其 Anthropic 协议端点）。
+  3. 数据层：migration v2（api_profiles + settings 表）、apiProfiles DAO（baseUrl 归一化/必填校验）、settings DAO（KV，键白名单在 IPC 层强制）。
+  4. AI Provider 抽象（src/main/ai/）：provider.ts 接口+注册表；openaiCompatible.ts 实现（fetch+SSE 逐行解析、reasoning_content 透传、错误脱敏、AbortSignal 中止）。新增协议只需新实现+注册，上层零改动。
+  5. IPC：api-profiles CRUD、settings:get/set（白名单 ai.default_profile_id）、ai:chat-stream（requestId + webContents 事件回推 start/chunk/reasoning/done/error）+ ai:abort + 5 分钟硬超时。
+  6. UI：设置中心（/settings）：档案卡片列表（默认标记/行内测试/编辑/删除）、ApiProfileDialog（名称/协议/地址/Key密码框/模型/高级参数折叠 + 保存前「测试连接」流式输出区）、书斋顶栏齿轮入口。
+  7. 渲染层 services/ai.ts：流订阅/自动解绑/abort 封装。
+- **自测结果**（CDP 驱动真实 Electron，scripts/cdp-m2-test.mjs）：
+  - 全链路：创建档案→真实流式对话（返回「连接测试成功」，reasoning 透传）→设默认→列表确认，全部通过
+  - 中断：收 3 个 chunk 后 abort，收到「已中止」事件 ✓
+  - 设置中心 DOM 结构断言（标题/返回/新建/卡片/默认标记/测试按钮）✓
+  - typecheck 双 0
+- **数据说明**：应用数据库中已预置档案「基元律动（ZCode 同款）」（deepseek-v4-flash，默认档案）。Key 来自本机环境变量 TOKENRHYTHM_API_KEY，只存于本机 SQLite，未写入任何 git 文件/日志/文档。
+- **修改的文件**：src/shared/ai.types.ts（新）、src/main/db/{database,apiProfiles,settings}.ts、src/main/ai/{provider,openaiCompatible}.ts（新）、src/main/ipc/{ai,settings}.ts（新）、src/main/index.ts、src/preload/index.ts、src/renderer/src/{services/ai.ts,views/SettingsView.vue,components/ApiProfileDialog.vue}（新）、BookshelfView.vue（齿轮入口）、router、scripts/cdp-m2-test.mjs（新，开发期工具）。
+- **遇到的问题与解决**：Provider 内部 setTimeout+throwIfAborted 的硬超时实现无效（无法中止外部 signal）→ 移至 IPC 层由 AbortController 统一控制。
+- **遗留问题**：无阻断项。技术债 M1 的两项（hover 删除可达性、mock 显式开关）未在 M2 处理，顺延 M3（见 roadmap）。
+- **下一步**：M2 子代理二次验收 → 用户确认 → tag v0.3.0-m2-settings；M3 正文工作台。

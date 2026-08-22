@@ -57,15 +57,27 @@ onMounted(refresh)
         <h1 class="text-xl font-bold tracking-widest text-ink-primary">墨灵</h1>
         <span class="text-sm text-ink-text-muted">书斋</span>
       </div>
-      <button
-        class="flex items-center gap-1.5 rounded-full bg-ink-primary px-4 py-2 text-sm text-white shadow-card transition-colors hover:bg-ink-primary-hover"
-        @click="showCreate = true"
-      >
-        <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 5v14M5 12h14" />
-        </svg>
-        新建书籍
-      </button>
+      <div class="flex items-center gap-3">
+        <router-link
+          to="/settings"
+          class="flex h-9 w-9 items-center justify-center rounded-full border border-ink-border text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
+          title="设置中心"
+        >
+          <svg viewBox="0 0 24 24" class="h-4.5 w-4.5" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          </svg>
+        </router-link>
+        <button
+          class="flex items-center gap-1.5 rounded-full bg-ink-primary px-4 py-2 text-sm text-white shadow-card transition-colors hover:bg-ink-primary-hover"
+          @click="showCreate = true"
+        >
+          <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+          新建书籍
+        </button>
+      </div>
     </header>
 
     <!-- 内容区 -->

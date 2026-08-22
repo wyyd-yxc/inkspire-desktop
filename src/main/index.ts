@@ -7,6 +7,8 @@ import { app, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'node:path'
 import { wrap } from './ipc/wrap'
 import { registerBookIpc } from './ipc/books'
+import { registerSettingsIpc } from './ipc/settings'
+import { registerAiIpc } from './ipc/ai'
 
 /** 创建应用主窗口（1280x800，中文标题「墨灵」）。 */
 function createWindow(): void {
@@ -75,6 +77,8 @@ ipcMain.handle('app:ping', () => wrap(() => 'pong'))
 
 // 各业务域 IPC 注册（books / settings / ai / ... 随里程碑增加）
 registerBookIpc()
+registerSettingsIpc()
+registerAiIpc()
 
 app.whenReady().then(() => {
   createWindow()

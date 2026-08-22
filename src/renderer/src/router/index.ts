@@ -12,6 +12,11 @@ const router = createRouter({
       path: '/',
       name: 'bookshelf',
       component: () => import('@/views/BookshelfView.vue')
+    },
+    {
+      path: '/settings',
+      name: 'settings',
+      component: () => import('@/views/SettingsView.vue')
     }
   ]
 })

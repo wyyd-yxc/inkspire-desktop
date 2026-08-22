@@ -22,6 +22,25 @@ const MIGRATIONS: Array<{ version: number; sql: string }> = [
         created_at  TEXT NOT NULL,
         updated_at  TEXT NOT NULL
       );`
+  },
+  {
+    version: 2,
+    sql: `
+      CREATE TABLE IF NOT EXISTS api_profiles (
+        id            TEXT PRIMARY KEY,
+        name          TEXT NOT NULL,
+        provider_kind TEXT NOT NULL DEFAULT 'openai-compatible',
+        base_url      TEXT NOT NULL,
+        api_key       TEXT NOT NULL DEFAULT '',
+        model         TEXT NOT NULL DEFAULT '',
+        params        TEXT NOT NULL DEFAULT '{}',
+        created_at    TEXT NOT NULL,
+        updated_at    TEXT NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS settings (
+        key   TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+      );`
   }
 ]
 
