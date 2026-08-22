@@ -76,3 +76,33 @@
    - `books.remove("nonexistent")` → `{ok:true,data:false}`；`books.update(存在id)` → `Missing named parameter "updatedAt"`（P0-2）；`books.update(不存在id)` → `{ok:false,error:"书籍不存在"}`。
    - UI：删书后 reload → 空状态 ✅ → 点「新建第一本书」弹窗开 ✅ → 空书名提交 toast「请填写书名」且弹窗不关 ✅ → 填书名+选分类提交 toast 报 P0-1 错误 ✅（错误呈现符合规范）→ 直写书后 reload 卡片渲染 ✅ → hover 删除→确认弹窗→已删除 toast→回空状态 ✅；全程 exceptionThrown 无。
 5. `taskkill //IM electron.exe //F` 清理，无遗留进程。
+
+---
+
+## 复验记录（2026-08-22，整改 commit ae3c9d3 之后）
+
+- 复验人：GLM-5.3（zai-start-plan）· 独立验收子代理（同一验收员复验，只读，未改源码）
+- **最终结论：通过（有条件通过 → 通过）** —— 首验的全部 P0/P1/P2 问题已在 commit `ae3c9d3` 修复并经真实 Electron 环境复验；M1 全部验收点达成，可进入 ③ 用户确认环节。
+
+### 整改核实（白盒）
+
+| 首验问题 | 整改 | 核实 |
+|---|---|---|
+| P0-1/P0-2 命名参数不匹配 | `src/main/db/books.ts`：INSERT 占位符改 `@created_at/@updated_at`、UPDATE 占位符改 `@updated_at`，与 `.run()` 键一致 | ✅ 代码确认，且实测通过（见下） |
+| P1-1 selftest 盲区 | selftest 升级为 create→listSawIt→update→remove→listAfterDelete 完整 CRUD（自建自删，不污染数据） | ✅ 代码确认；两次启动均输出 `{apiType:"object",create:true,listSawIt:true,update:true,remove:true,listAfterDelete:false}` |
+| P2-1 文档漂移 | architecture.md：`cover_path`→`cover`、nanoid→randomUUID | ✅ diff 确认 |
+
+### 用户路径复验（真实 Electron，CDP 驱动，等价真实操作）
+
+1. **新建书籍（UI 弹窗全程）**：点「新建第一本书」→ 填书名「复验之书」+ 选分类「玄幻」+ 填简介 → 点「开始创作」→ toast「《复验之书》已创建」、弹窗自动关闭、卡片网格出现该书 ✅（渲染层全程无未捕获异常）。
+2. **编辑→保存**：`books.update` 改标题为「复验之书·改」、简介「编辑后的简介」→ 返回 `{ok:true}` 且 `updatedAt` 刷新 → reload 后卡片显示新标题/新简介 ✅（M1 无编辑 UI 入口，此为保存链路验证；编辑界面属后续里程碑）。
+3. **新建→重启→仍在**：完全关闭应用（taskkill）→ 重新 `INKSPIRE_SELFTEST=1 npm run dev` → 应用 API list 返回「复验之书·改」、DOM 卡片同步渲染 ✅（编辑内容跨重启保留）。
+4. typecheck 双 tsconfig 0 错误 ✅；主进程日志无报错 ✅。
+5. 清理：复验测试书已通过应用 API 删除（books 表恢复为空），electron 进程已全部 taskkill，无遗留。
+
+### 复验后遗留（不阻断，转后续里程碑）
+
+- 首验 P2-2（删除按钮仅 hover 可达、封面首字 slice 边缘情况）未在本次整改范围，维持轻微级挂账。
+- 建议 3（mock 降级改显式开关）未实施，转 M2 顺手处理。
+- 下一步：③ 用户确认（亲手验证指引：启动 `npm run dev` → 书斋点「新建书籍」→ 填书名建书 → 关闭重开确认还在 → hover 卡片删除），确认后 commit+tag 并更新 roadmap/worklog。
+

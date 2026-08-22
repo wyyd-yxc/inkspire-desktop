@@ -83,3 +83,11 @@
 - **修改的文件**：src/main/db/books.ts、src/main/index.ts（selftest 扩展）、docs/design/architecture.md、docs/worklog/worklog.md。
 - **遗留问题**：无新增；复验通过后 M1 转「待用户确认」。
 - **下一步**：验收员复验 M1 → 用户确认 → tag v0.2.0-m1-bookshelf；M2 设置中心。
+
+---
+
+## [2026-08-22 14:10] 会话 4 补记：M1 复验通过
+
+- 验收员复验结论**通过**：真实 Electron 内实测「新建书籍（UI 全流程）→ 完全重启 → 仍在」与「编辑→保存→重启保留」两条用户路径，typecheck 双 0，测试数据与进程已清理。报告已追加「复验记录」一节。
+- M1 状态转「待用户确认」；用户确认后打 tag `v0.1.0-m0-scaffold` 与 `v0.2.0-m1-bookshelf`。
+- 验收遗留的轻微项（删除按钮仅 hover 可达、mock 显式开关）已登记至 roadmap 技术债区，计划 M2 顺带处理。
