@@ -194,3 +194,12 @@
 - **修改的文件**：ChapterSidebar.vue、ChapterEditor.vue、WorkspaceView.vue、chapters.ts、scripts/accept-via-llm.mjs。
 - **遗留问题**：P3（一次未复现的跳回书斋）保持观察，再现时按 bug 流程处理。
 - **下一步**：用户确认 M3 → tag v0.4.0-m3-workspace；M4 AI 写作。
+
+---
+
+## [2026-08-22 21:00] 会话 9：M3 确认；交接保障先行
+
+- **使用的模型**：GLM-5.3（zai-start-plan）
+- **用户已确认 M3**，已打 tag `v0.4.0-m3-workspace`。
+- **额度预警**：用户告知当前模型额度将尽，将切换其他模型继续。应对：新增 `docs/HANDOVER.md` 交接文档（新会话第一入口：状态总览/开工 SOP/架构速览/验收流程/踩坑速查/凭据位置/M4 任务卡/快速命令），并承诺此后每完成一小块即 commit、每会话必更新 worklog，保证任意断点可无损交接。
+- **下一步**：M4 AI 写作（任务卡见 HANDOVER.md 第 9 节）。
