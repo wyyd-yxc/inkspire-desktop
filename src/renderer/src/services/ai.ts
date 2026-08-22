@@ -63,12 +63,17 @@ export async function chatStream(
   // 1) 先订阅并缓冲全部事件（此刻 requestId 未知，全部入队）
   const buffer: AiStreamEvent[] = []
   let bindRequestId = ''
-  const unsub = window.api.ai.onStreamEvent((evt) => {
+  let unsub: (() => void) | null = null
+  unsub = window.api.ai.onStreamEvent((evt) => {
     if (!bindRequestId) {
       buffer.push(evt)
       return
     }
-    if (evt.requestId === bindRequestId) dispatch(evt, handlers)
+    if (evt.requestId === bindRequestId && dispatch(evt, handlers)) {
+      // 终结事件（done/error）：解绑监听器，避免高频调用下累积泄漏
+      unsub?.()
+      unsub = null
+    }
   })
 
   try {
@@ -85,7 +90,8 @@ export async function chatStream(
       if (evt.requestId !== bindRequestId) continue
       if (dispatch(evt, handlers)) {
         buffer.length = 0
-        unsub()
+        unsub?.()
+        unsub = null
         break
       }
     }
@@ -98,7 +104,7 @@ export async function chatStream(
       }
     }
   } catch (err) {
-    unsub()
+    unsub?.()
     throw err
   }
 }

@@ -131,3 +131,14 @@
 - **修改的文件**：src/main/db/apiProfiles.ts、src/main/ipc/ai.ts、src/renderer/src/services/ai.ts、components/ApiProfileDialog.vue、docs/plan/roadmap.md、worklog。
 - **遗留问题**：无。待复验 → 用户确认 → tag。
 - **下一步**：复验 M2 → M3 正文工作台。
+
+---
+
+## [2026-08-22 17:00] 会话 5 补记 2：M2 复验小修
+
+- 复验结论：整改 5/7 全过、P3 引入监听器泄漏回归、P4 断言残留，另发现行内测试按钮完成后不复位（问题 8）。三处修复：
+  1. services/ai.ts 终结事件后解绑监听器（防高频累积泄漏）
+  2. ipc/ai.ts ResolvedChat.kind 直接标注 ProviderKind，删除 as 断言
+  3. SettingsView 行内测试：testingId（进行中）与 resultForId（结果归属）分离——按钮复位且结果保留显示（修复过程中曾误删「编辑」按钮，当即发现恢复）
+- 实测：CDP 点击真实行内「测试」→ 完成后按钮恢复「测试」、输出区保留「连接成功（首字 2634ms · 总 2.7s）」、编辑按钮存在；typecheck 双 0。
+- M2 全部验收意见闭环，待用户确认后 tag v0.3.0-m2-settings。

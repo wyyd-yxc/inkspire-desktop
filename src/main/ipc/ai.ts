@@ -10,7 +10,7 @@ import { getProvider, registerProvider, type ChatConnection } from '../ai/provid
 import { openAiCompatibleProvider } from '../ai/openaiCompatible'
 import { getProfile } from '../db/apiProfiles'
 import { wrap } from './wrap'
-import type { ChatStreamRequest } from '../../shared/ai.types'
+import type { ChatStreamRequest, ProviderKind } from '../../shared/ai.types'
 
 registerProvider(openAiCompatibleProvider)
 
@@ -22,7 +22,7 @@ const HARD_TIMEOUT_MS = 5 * 60 * 1000
 /** 解析结果：连接信息 + 协议类型（分离返回，避免类型断言） */
 interface ResolvedChat {
   conn: ChatConnection
-  kind: string
+  kind: ProviderKind
 }
 
 /** 从请求里解析出连接信息（profileId 优先，其次临时 profile） */
@@ -64,7 +64,7 @@ export function registerAiIpc(): void {
         // 异步启动流；事件推回发起方
         void (async () => {
           try {
-            const provider = getProvider(resolved.kind as Parameters<typeof getProvider>[0])
+            const provider = getProvider(resolved.kind)
             await provider.chatStream(resolved.conn, req.messages ?? [], controller.signal, (evt) => {
               if (!e.sender.isDestroyed()) e.sender.send('ai:stream:event', evt)
             }, requestId)

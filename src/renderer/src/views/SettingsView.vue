@@ -19,8 +19,9 @@ const showEditor = ref(false)
 const editing = ref<ApiProfile | null>(null)
 const pendingDelete = ref<ApiProfile | null>(null)
 
-// 快速测试（列表行内）
+// 快速测试（列表行内）：testingId 标记进行中；resultForId 标记结果归属（结果在完成后继续展示）
 const testingId = ref('')
+const resultForId = ref('')
 const testText = ref('')
 const testStatus = ref<'' | 'ok' | 'fail'>('')
 const testInfo = ref('')
@@ -92,6 +93,7 @@ async function doDelete(): Promise<void> {
 /** 行内快速连通测试 */
 async function quickTest(p: ApiProfile): Promise<void> {
   testingId.value = p.id
+  resultForId.value = p.id
   testText.value = ''
   testStatus.value = ''
   testInfo.value = ''
@@ -104,10 +106,12 @@ async function quickTest(p: ApiProfile): Promise<void> {
       onDone: (info) => {
         testStatus.value = 'ok'
         testInfo.value = `首字 ${info.firstTokenMs}ms · 总 ${(info.totalMs / 1000).toFixed(1)}s`
+        testingId.value = ''
       },
       onError: (m) => {
         testStatus.value = 'fail'
         testInfo.value = m
+        testingId.value = ''
       }
     })
     quickSession = session
@@ -200,7 +204,7 @@ onMounted(refresh)
             {{ p.model }} · {{ p.baseUrl }}
           </p>
           <p
-            v-if="testingId === p.id && (testText || testInfo)"
+            v-if="resultForId === p.id && (testText || testInfo)"
             class="mt-2 whitespace-pre-wrap rounded-lg bg-paper px-3 py-2 text-sm"
             :class="testStatus === 'fail' ? 'text-ink-danger' : testStatus === 'ok' ? 'text-ink-success' : 'text-ink-text-secondary'"
           >{{ testText || testInfo }}{{ testStatus === 'ok' && testInfo ? `（${testInfo}）` : testStatus === 'fail' ? `：${testInfo}` : '' }}</p>
