@@ -224,3 +224,20 @@
 - **修改的文件**：services/aiWriting.ts（新）、components/AiWritingPanel.vue（新）、ChapterEditor.vue（大改）、WorkspaceView.vue、main/index.ts（backgroundThrottling）。
 - **遗留问题**：M4 双轨验收未做（额度告急，主动收尾交接）——下一会话第一件事：按 HANDOVER 第 5 节跑 ox-alpha 材料审查 + 黑盒验收，然后请用户确认 → tag v0.5.0。
 - **下一步**：交接（更新 HANDOVER 至 M4 状态）→ 新模型执行 M4 验收 → M5 创世台。
+
+---
+
+## [2026-08-22 23:30] 会话 11：M4 双轨验收（用户追加额度授权）
+
+- **使用的模型**：GLM-5.3（zai-start-plan）
+- **双轨验收执行**：
+  1. **静态审查**：ox-alpha 当日不可用（连短输入都返回空，此前正常——服务端波动）+ OpenRouter 账户 402 无 credits（付费模型不可用）。降级方案：accept-via-llm.mjs 增加 --base-url/--key-env 参数 → 用 TokenRhythm deepseek-v4-pro 代理执行。**审查报告**（llm-review-2026-08-22-10-10-.md）发现 2 高 + 1 中 + 1 低：
+     - 高：续写/停止竞态（nextTick 回调在 stop 后仍发起生成）
+     - 高：划词采纳用生成前位置快照，生成期间文档变化会替换错位置
+     - 中：浮条定位未叠加滚动偏移
+     - 低：整章润色无入口确认（采纳即确认，登记不改）
+  2. **整改**（commit a44ff3e）：generationSeq 序号作废机制（双检：nextTick 回调前+会话建立后）、划词采纳前快照文字校验（漂移则拒绝并保留面板内容）、浮条 scrollTop 叠加+滚动隐藏。
+  3. **黑盒验收**：首次派发子代理模型请求失败（ZCode 后端波动），重派成功执行中。
+- **修改的文件**：ChapterEditor.vue、scripts/accept-via-llm.mjs。
+- **遗留问题**：ox-alpha 空回复根因未明（服务端 vs 免费额度），恢复后应复审；OpenRouter 无付费 credits（如需付费模型审查需用户充值或继续用 TokenRhythm 代理）。
+- **下一步**：黑盒验收报告 → 整改（若有）→ 用户确认 → tag v0.5.0-m4-ai-writing → M5 创世台。
