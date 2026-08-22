@@ -199,6 +199,7 @@ onBeforeUnmount(() => {
       ref="editorRef"
       :key="activeChapter?.id ?? 'none'"
       :chapter="activeChapter"
+      :book="book"
       @content-change="onContentChange"
       @title-change="(t) => activeChapter && renameChapter(activeChapter.id, t)"
       @save-now="flushSave"

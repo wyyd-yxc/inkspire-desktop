@@ -1,27 +1,35 @@
 <script setup lang="ts">
 /**
- * 正文编辑器：TipTap 封装。
- * - 标题行内编辑（失焦/回车提交）
- * - 正文区（StarterKit：段落/加粗/斜体等基础能力，网文写作以纯文本段落为主）
- * - 底部状态栏：字数（纯文本去空白）与保存状态
- * - 内容变更经防抖后由父组件持久化；Ctrl+S 立即保存
+ * 正文编辑器：TipTap 封装 + AI 写作集成。
+ * - 标题行内编辑；正文区（网文排版）
+ * - AI 三入口：状态栏「续写」、划词浮条（润色/扩写/改写）、标题栏「整章润色」
+ * - 生成结果经底部 AiWritingPanel 预览：流式显示 → 采纳插入（续写=光标处、划词=替换选区、整章=全文替换）
+ * - 父组件以 :key=章节id 重建本组件（undo 历史隔离），AI 面板状态随组件重置
  */
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, reactive, ref } from 'vue'
+import type { Book } from '../../../shared/book.types'
 import type { Chapter } from '../../../shared/chapter.types'
+import type { StreamSession } from '../services/ai'
+import type { SelectionAction } from '../services/aiWriting'
+import { buildChapterPolishMessages, buildContinueMessages, buildSelectionMessages, generateWriting } from '../services/aiWriting'
+import { useToast } from '@/composables/useToast'
+import AiWritingPanel from '@/components/AiWritingPanel.vue'
 
-const props = defineProps<{ chapter: Chapter | null }>()
+const props = defineProps<{
+  chapter: Chapter | null
+  book: Pick<Book, 'title' | 'genre' | 'description'> | null
+}>()
 
 const emit = defineEmits<{
-  /** content 变更（HTML）+ 实时字数 */
   'content-change': [html: string, wordCount: number]
   'title-change': [title: string]
   'save-now': []
 }>()
 
+const toast = useToast()
 const saveState = ref<'saved' | 'dirty' | 'saving'>('saved')
-
 const titleText = ref(props.chapter?.title ?? '')
 
 /** 纯文本字数（去所有空白字符，符合网文计数习惯） */
@@ -30,8 +38,7 @@ function countWords(text: string): number {
 }
 
 const editor = useEditor({
-  // 父组件以 :key=章节id 强制重建本组件，因此每章都是全新编辑器实例——
-  // 这样切换章节不会残留上一章的 undo 历史（避免 Ctrl+Z 撤销出别章内容）
+  // 每章全新编辑器实例（父组件 :key 控制），切换章节不残留 undo 历史
   content: props.chapter?.content || '',
   extensions: [StarterKit],
   editorProps: {
@@ -39,7 +46,6 @@ const editor = useEditor({
       class: 'prose-editor outline-none min-h-full px-14 py-10 text-[15px] leading-8'
     },
     handleKeyDown: (_view, event) => {
-      // Ctrl/Cmd + S 立即保存（编辑区内；全局兜底在 WorkspaceView）
       if ((event.ctrlKey || event.metaKey) && event.key === 's') {
         event.preventDefault()
         emit('save-now')
@@ -51,14 +57,164 @@ const editor = useEditor({
   onUpdate: ({ editor: ed }) => {
     saveState.value = 'dirty'
     emit('content-change', ed.getHTML(), countWords(ed.getText()))
+  },
+  onSelectionUpdate: ({ editor: ed }) => {
+    updateSelectionBar(ed)
   }
 })
+
+// ---------------- AI 写作编排 ----------------
+
+type PanelKind = 'continue' | SelectionAction | 'chapter-polish'
+
+const panel = ref<InstanceType<typeof AiWritingPanel> | null>(null)
+const panelVisible = ref(false)
+const panelKind = ref<PanelKind>('continue')
+let activeSession: StreamSession | null = null
+let busy = false
+
+/** 划词目标（发起划词操作时的选区快照） */
+let selectionTarget: { from: number; to: number; text: string } | null = null
+
+/** 组装写作上下文（前文 = 当前正文纯文本） */
+function writingContext() {
+  return {
+    book: props.book,
+    chapterTitle: props.chapter?.title ?? '',
+    contextTail: editor.value?.getText() ?? ''
+  }
+}
+
+/** 发起一次生成（流式推给面板） */
+async function runGeneration(kind: PanelKind): Promise<void> {
+  if (busy) {
+    toast.info('正在生成中，请先停止或等待完成')
+    return
+  }
+  if (!editor.value) return
+  busy = true
+  panelKind.value = kind
+  panelVisible.value = true
+  // 等面板重置完成（v-if 渲染）
+  requestAnimationFrame(() => {
+    void (async () => {
+      try {
+        const messages =
+          kind === 'continue'
+            ? buildContinueMessages(writingContext())
+            : kind === 'chapter-polish'
+              ? buildChapterPolishMessages(writingContext(), editor.value!.getText())
+              : buildSelectionMessages(
+                  writingContext(),
+                  selectionTarget?.text ?? '',
+                  kind,
+                )
+        const { session } = await generateWriting(messages, {
+          onChunk: (t) => panel.value?.append(t),
+          onReasoning: () => {
+            /* 推理链不进预览，仅正文 */
+          },
+          onDone: () => panel.value?.finish(),
+          onError: (m) => {
+            panel.value?.fail()
+            toast.error(m)
+          }
+        })
+        activeSession = session
+      } catch (err) {
+        panel.value?.fail()
+        toast.error(err instanceof Error ? err.message : '生成失败')
+      } finally {
+        busy = false
+      }
+    })()
+  })
+}
+
+/** 停止生成 */
+function stopGeneration(): void {
+  activeSession?.abort()
+  activeSession = null
+  busy = false
+  panel.value?.finish()
+}
+
+/** 重写：关面板重新发起同 kind */
+function retryGeneration(): void {
+  stopGeneration()
+  void runGeneration(panelKind.value)
+}
+
+/** 采纳：按 kind 插入正文 */
+function acceptGeneration(text: string): void {
+  if (!editor.value || !text) return
+  const ed = editor.value
+  if (panelKind.value === 'continue') {
+    ed.chain().focus('end').insertContent(text).run()
+  } else if (panelKind.value === 'chapter-polish') {
+    ed.commands.setContent(text, { emitUpdate: true })
+  } else if (selectionTarget) {
+    const { from, to } = selectionTarget
+    ed.chain().focus().deleteRange({ from, to }).insertContentAt(from, text).run()
+    selectionTarget = null
+  }
+  closePanel()
+  toast.success('已插入正文，记得保存')
+}
+
+function closePanel(): void {
+  stopGeneration()
+  panelVisible.value = false
+  selectionTarget = null
+}
+
+onBeforeUnmount(() => stopGeneration())
+
+// ---------------- 划词浮条 ----------------
+
+const selectionBar = reactive({ visible: false, top: 0, left: 0 })
+
+/** 选区变化：有非空选区时把浮条定位到选区上方 */
+function updateSelectionBar(ed: NonNullable<ReturnType<typeof useEditor>['value']>): void {
+  const { from, to, empty } = ed.state.selection
+  if (empty || to - from < 2) {
+    selectionBar.visible = false
+    return
+  }
+  const text = ed.state.doc.textBetween(from, to, '\n')
+  if (!text.trim()) {
+    selectionBar.visible = false
+    return
+  }
+  // 选区坐标转为编辑器容器内坐标
+  const start = ed.view.coordsAtPos(from)
+  const container = rootEl.value?.getBoundingClientRect()
+  if (!container) return
+  selectionBar.visible = true
+  selectionBar.top = start.top - container.top - 42
+  selectionBar.left = Math.max(8, start.left - container.left)
+}
+
+const rootEl = ref<HTMLElement | null>(null)
+
+/** 划词操作入口：快照选区后发起生成 */
+function startSelectionAction(action: SelectionAction): void {
+  const ed = editor.value
+  if (!ed) return
+  const { from, to } = ed.state.selection
+  const text = ed.state.doc.textBetween(from, to, '\n')
+  if (!text.trim()) return
+  selectionTarget = { from, to, text }
+  selectionBar.visible = false
+  void runGeneration(action)
+}
+
+// ---------------- 暴露与杂项 ----------------
 
 const wordCount = computed(() =>
   editor.value ? countWords(editor.value.getText()) : countWords(plainText(props.chapter?.content || ''))
 )
 
-/** HTML → 纯文本（用于编辑器未就绪时的初始字数） */
 function plainText(html: string): string {
   return html.replace(/<[^>]+>/g, '')
 }
@@ -69,31 +225,37 @@ function submitTitle(): void {
   else titleText.value = props.chapter?.title ?? ''
 }
 
-/** 供父组件查询当前编辑器内容 */
 function getHTML(): string {
   return editor.value?.getHTML() ?? ''
 }
 
-defineExpose({ getHTML, setSaveState: (s: 'saved' | 'dirty' | 'saving') => (saveState.value = s) })
+defineExpose({
+  getHTML,
+  setSaveState: (s: 'saved' | 'dirty' | 'saving') => (saveState.value = s)
+})
 
 const saveLabel = computed(
-  () =>
-    ({ saved: '已保存', dirty: '未保存…', saving: '保存中…' })[saveState.value]
+  () => ({ saved: '已保存', dirty: '未保存…', saving: '保存中…' })[saveState.value]
 )
 </script>
 
 <template>
-  <div class="flex h-full min-w-0 flex-1 flex-col bg-surface">
+  <div ref="rootEl" class="relative flex h-full min-w-0 flex-1 flex-col bg-surface">
     <template v-if="chapter">
       <!-- 标题栏 -->
-      <div class="border-b border-ink-border/60 px-14 py-5">
+      <div class="flex items-center gap-3 border-b border-ink-border/60 px-14 py-5">
         <input
           v-model="titleText"
-          class="w-full bg-transparent text-xl font-bold outline-none placeholder:text-ink-text-muted"
+          class="min-w-0 flex-1 bg-transparent text-xl font-bold outline-none placeholder:text-ink-text-muted"
           placeholder="章节标题"
           @blur="submitTitle"
           @keyup.enter="($event.target as HTMLInputElement).blur()"
         />
+        <button
+          class="shrink-0 rounded-full border border-ink-border px-3 py-1 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
+          title="保持情节不变，逐段打磨文笔"
+          @click="runGeneration('chapter-polish')"
+        >✧ 整章润色</button>
       </div>
 
       <!-- 正文 -->
@@ -101,10 +263,40 @@ const saveLabel = computed(
         <EditorContent v-if="editor" :editor="editor" class="prose-editor-wrapper" />
       </div>
 
+      <!-- AI 预览面板（正文与状态栏之间） -->
+      <AiWritingPanel
+        ref="panel"
+        :visible="panelVisible"
+        :kind="panelKind"
+        @accept="acceptGeneration"
+        @retry="retryGeneration"
+        @stop="stopGeneration"
+        @close="closePanel"
+      />
+
       <!-- 状态栏 -->
       <div class="flex items-center justify-between border-t border-ink-border/60 px-14 py-2 text-xs text-ink-text-muted">
         <span :class="saveState === 'saved' ? 'text-ink-success' : ''">{{ saveLabel }}</span>
-        <span>{{ wordCount.toLocaleString('zh-CN') }} 字 · Ctrl+S 立即保存</span>
+        <div class="flex items-center gap-4">
+          <button
+            class="flex items-center gap-1 rounded-full px-2 py-0.5 text-ink-primary transition-colors hover:bg-ink-primary-soft"
+            title="AI 从前文自然续写（流式预览后采纳）"
+            @click="runGeneration('continue')"
+          >✦ AI 续写</button>
+          <span>{{ wordCount.toLocaleString('zh-CN') }} 字 · Ctrl+S 立即保存</span>
+        </div>
+      </div>
+
+      <!-- 划词浮条 -->
+      <div
+        v-if="selectionBar.visible"
+        class="absolute z-20 flex items-center gap-0.5 rounded-lg border border-ink-border bg-surface px-1 py-1 shadow-card"
+        :style="{ top: `${selectionBar.top}px`, left: `${selectionBar.left}px` }"
+        @mousedown.prevent
+      >
+        <button class="rounded-md px-2 py-1 text-xs text-ink-text-secondary transition-colors hover:bg-ink-primary-soft hover:text-ink-primary" @click="startSelectionAction('polish')">润色</button>
+        <button class="rounded-md px-2 py-1 text-xs text-ink-text-secondary transition-colors hover:bg-ink-primary-soft hover:text-ink-primary" @click="startSelectionAction('expand')">扩写</button>
+        <button class="rounded-md px-2 py-1 text-xs text-ink-text-secondary transition-colors hover:bg-ink-primary-soft hover:text-ink-primary" @click="startSelectionAction('rewrite')">改写</button>
       </div>
     </template>
 
@@ -115,7 +307,6 @@ const saveLabel = computed(
 </template>
 
 <style scoped>
-/* 编辑器排版：段落间距与首行缩进贴近网文阅读习惯 */
 .prose-editor-wrapper :deep(.tiptap) {
   min-height: 100%;
 }
