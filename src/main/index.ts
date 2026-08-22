@@ -24,7 +24,9 @@ function createWindow(): void {
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: true,
-      contextIsolation: true
+      contextIsolation: true,
+      // 写作应用：窗口后台时仍保持 AI 流式与自动保存的定时器运转
+      backgroundThrottling: false
     }
   })
 

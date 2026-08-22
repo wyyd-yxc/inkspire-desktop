@@ -8,7 +8,7 @@
  */
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
-import { computed, onBeforeUnmount, reactive, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, reactive, ref } from 'vue'
 import type { Book } from '../../../shared/book.types'
 import type { Chapter } from '../../../shared/chapter.types'
 import type { StreamSession } from '../services/ai'
@@ -95,8 +95,9 @@ async function runGeneration(kind: PanelKind): Promise<void> {
   busy = true
   panelKind.value = kind
   panelVisible.value = true
-  // 等面板重置完成（v-if 渲染）
-  requestAnimationFrame(() => {
+  // 等面板挂载并重置完成。用 nextTick（微任务）而非 requestAnimationFrame：
+  // 窗口后台/失焦时 rAF 会被系统节流冻结，导致生成流程永不启动
+  void nextTick().then(() => {
     void (async () => {
       try {
         const messages =
@@ -110,11 +111,15 @@ async function runGeneration(kind: PanelKind): Promise<void> {
                   kind,
                 )
         const { session } = await generateWriting(messages, {
-          onChunk: (t) => panel.value?.append(t),
+          onChunk: (t) => {
+            panel.value?.append(t)
+          },
           onReasoning: () => {
             /* 推理链不进预览，仅正文 */
           },
-          onDone: () => panel.value?.finish(),
+          onDone: () => {
+            panel.value?.finish()
+          },
           onError: (m) => {
             panel.value?.fail()
             toast.error(m)
