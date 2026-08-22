@@ -28,7 +28,7 @@ const editorRef = ref<InstanceType<typeof ChapterEditor> | null>(null)
 /** 待写盘的最新编辑状态（html+字数） */
 const pendingContent = ref<{ html: string; wordCount: number } | null>(null)
 let saveTimer: ReturnType<typeof setTimeout> | null = null
-let switching = false
+let isSwitching = false
 
 const totalWords = computed(() => chapters.value.reduce((s, c) => s + c.wordCount, 0))
 
@@ -90,14 +90,14 @@ function onContentChange(html: string, wordCount: number): void {
 }
 
 async function selectChapter(c: Chapter): Promise<void> {
-  if (switching) return
+  if (isSwitching) return
   if (activeChapter.value?.id === c.id) return
-  switching = true
+  isSwitching = true
   try {
     await flushSave() // 切走前保存当前章节
     activeChapter.value = c
   } finally {
-    switching = false
+    isSwitching = false
   }
 }
 
@@ -161,8 +161,20 @@ async function doDelete(): Promise<void> {
   }
 }
 
-onMounted(loadAll)
+/** 全局 Ctrl+S 兜底（编辑区 handleKeyDown 之外的焦点位置，如标题输入框） */
+function onGlobalKeydown(e: KeyboardEvent): void {
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    e.preventDefault()
+    void flushSave()
+  }
+}
+
+onMounted(() => {
+  void loadAll()
+  window.addEventListener('keydown', onGlobalKeydown)
+})
 onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onGlobalKeydown)
   // 卸载前同步保存（路由切走）；异步竞态由 pendingContent 幂等性兜底
   void flushSave()
   if (saveTimer) clearTimeout(saveTimer)
@@ -185,6 +197,7 @@ onBeforeUnmount(() => {
 
     <ChapterEditor
       ref="editorRef"
+      :key="activeChapter?.id ?? 'none'"
       :chapter="activeChapter"
       @content-change="onContentChange"
       @title-change="(t) => activeChapter && renameChapter(activeChapter.id, t)"

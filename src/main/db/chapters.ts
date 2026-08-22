@@ -49,18 +49,33 @@ export function getChapter(id: string): Chapter | undefined {
   return row ? toChapter(row) : undefined
 }
 
-/** 新建章节（追加到末尾，自动命名「第 N 章」） */
+/** 新建章节（追加到末尾；自动命名「第 N 章」，与现存标题重复时递增避开） */
 export function createChapter(input: CreateChapterInput): Chapter {
   if (!input.bookId) throw new Error('缺少书籍 id')
   const d: Database = getDb()
   const count = (
     d.prepare('SELECT COUNT(*) AS c FROM chapters WHERE book_id = ?').get(input.bookId) as { c: number }
   ).c
+  const existingTitles = new Set(
+    (
+      d.prepare('SELECT title FROM chapters WHERE book_id = ?').all(input.bookId) as Array<{
+        title: string
+      }>
+    ).map((r) => r.title)
+  )
   const now = new Date().toISOString()
+  let title = input.title?.trim() || `第 ${count + 1} 章`
+  if (!input.title?.trim()) {
+    let n = count + 1
+    while (existingTitles.has(title)) {
+      n += 1
+      title = `第 ${n} 章`
+    }
+  }
   const chapter: Chapter = {
     id: randomUUID(),
     bookId: input.bookId,
-    title: input.title?.trim() || `第 ${count + 1} 章`,
+    title,
     summary: input.summary?.trim() ?? '',
     sortOrder: count + 1,
     content: '',

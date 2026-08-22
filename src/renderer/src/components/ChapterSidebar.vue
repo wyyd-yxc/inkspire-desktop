@@ -23,15 +23,22 @@ const emit = defineEmits<{
 
 const editingId = ref('')
 const editingTitle = ref('')
-const editInputRef = ref<HTMLInputElement | null>(null)
+/** v-for 内的函数式 ref 收集（Vue3 中 v-for 的字符串 ref 是数组，改用 id 映射避免误用） */
+const editInputs = new Map<string, HTMLInputElement>()
+
+function setEditInputRef(id: string, el: unknown): void {
+  if (el instanceof HTMLInputElement) editInputs.set(id, el)
+  else editInputs.delete(id)
+}
 
 /** 进入重命名编辑态 */
 async function startRename(c: Chapter): Promise<void> {
   editingId.value = c.id
   editingTitle.value = c.title
   await nextTick()
-  editInputRef.value?.focus()
-  editInputRef.value?.select()
+  const input = editInputs.get(c.id)
+  input?.focus()
+  input?.select()
 }
 
 /** 提交重命名 */
@@ -80,7 +87,7 @@ const wordsLabel = computed(() => props.totalWords.toLocaleString('zh-CN'))
 
         <input
           v-if="editingId === c.id"
-          ref="editInputRef"
+          :ref="(el) => setEditInputRef(c.id, el)"
           v-model="editingTitle"
           class="min-w-0 flex-1 rounded border border-ink-primary bg-surface px-1.5 py-0.5 text-sm outline-none"
           @click.stop

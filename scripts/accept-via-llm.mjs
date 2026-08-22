@@ -31,8 +31,8 @@ function resolveOpenRouterKey() {
   }
 }
 
-/** 收集上一 tag 到 HEAD 的 src/ 变更 diff（限长防请求超限） */
-function collectDiff(maxChars = 60000) {
+/** 收集上一 tag 到 HEAD 的 src/ 变更 diff（限长防请求超限：ox-alpha 对超长输入会返回空，经验上限约 2 万字） */
+function collectDiff(maxChars = 15000) {
   let base
   try {
     base = execSync('git describe --abbrev=0 --tags', { cwd: ROOT })
@@ -42,7 +42,7 @@ function collectDiff(maxChars = 60000) {
     base = 'HEAD~5'
   }
   try {
-    const diff = execSync(`git diff ${base}..HEAD -- src/ docs/`, {
+    const diff = execSync(`git diff ${base}..HEAD -- src/`, {
       cwd: ROOT,
       maxBuffer: 20 * 1024 * 1024
     }).toString()
@@ -85,22 +85,64 @@ ${material}
 ${diff}
 \`\`\``
 
-  console.error(`调用 ${model} 审查中…（材料 ${material.length} 字 + diff ${diff.length} 字）`)
-  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
-    body: JSON.stringify({
-      model,
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: 4000
+  const key2 = key
+  /** 该模型非流式响应可能返回空白，统一走 SSE 流式拼接 */
+  async function callApi(maxTokens) {
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key2}` },
+      body: JSON.stringify({
+        model,
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: maxTokens,
+        stream: true
+      })
     })
-  })
-  if (!res.ok) {
-    console.error(`API 失败 HTTP ${res.status}: ${(await res.text()).slice(0, 300)}`)
-    process.exit(1)
+    if (!res.ok || !res.body) {
+      throw new Error(`HTTP ${res.status}: ${(await res.text()).slice(0, 300)}`)
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+    let out = ''
+    for (;;) {
+      const { done, value } = await reader.read()
+      if (done) break
+      buffer += decoder.decode(value, { stream: true })
+      let nl
+      while ((nl = buffer.indexOf('\n')) >= 0) {
+        const line = buffer.slice(0, nl).trim()
+        buffer = buffer.slice(nl + 1)
+        if (!line.startsWith('data:')) continue
+        const payload = line.slice(5).trim()
+        if (payload === '[DONE]') return out
+        try {
+          const j = JSON.parse(payload)
+          out += j.choices?.[0]?.delta?.content || ''
+        } catch {
+          // 忽略心跳/注释行
+        }
+      }
+    }
+    return out
   }
-  const j = await res.json()
-  const out = j.choices?.[0]?.message?.content || '(空回复)'
+
+  console.error(`调用 ${model} 审查中…（材料 ${material.length} 字 + diff ${diff.length} 字）`)
+  let out = ''
+  try {
+    out = await callApi(16000)
+  } catch (e) {
+    console.error(`首次调用失败: ${e instanceof Error ? e.message : e}`)
+  }
+  if (!out.trim()) {
+    console.error('回复为空/失败，重试（32k 预算）…')
+    try {
+      out = await callApi(32000)
+    } catch (e) {
+      console.error(`重试失败: ${e instanceof Error ? e.message : e}`)
+    }
+  }
+  if (!out.trim()) out = '(模型两次均未返回内容，静态审查未完成——以子代理黑盒验收为准，本报告需人工复核)'
   console.log(out)
 
   const stamp = new Date().toISOString().replace(/[:T]/g, '-').slice(0, 17)

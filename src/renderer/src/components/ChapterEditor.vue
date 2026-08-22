@@ -8,7 +8,7 @@
  */
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import type { Chapter } from '../../../shared/chapter.types'
 
 const props = defineProps<{ chapter: Chapter | null }>()
@@ -24,20 +24,14 @@ const saveState = ref<'saved' | 'dirty' | 'saving'>('saved')
 
 const titleText = ref(props.chapter?.title ?? '')
 
-watch(
-  () => props.chapter?.id,
-  () => {
-    titleText.value = props.chapter?.title ?? ''
-    saveState.value = 'saved'
-  }
-)
-
 /** 纯文本字数（去所有空白字符，符合网文计数习惯） */
 function countWords(text: string): number {
   return text.replace(/\s/g, '').length
 }
 
 const editor = useEditor({
+  // 父组件以 :key=章节id 强制重建本组件，因此每章都是全新编辑器实例——
+  // 这样切换章节不会残留上一章的 undo 历史（避免 Ctrl+Z 撤销出别章内容）
   content: props.chapter?.content || '',
   extensions: [StarterKit],
   editorProps: {
@@ -45,7 +39,7 @@ const editor = useEditor({
       class: 'prose-editor outline-none min-h-full px-14 py-10 text-[15px] leading-8'
     },
     handleKeyDown: (_view, event) => {
-      // Ctrl/Cmd + S 立即保存
+      // Ctrl/Cmd + S 立即保存（编辑区内；全局兜底在 WorkspaceView）
       if ((event.ctrlKey || event.metaKey) && event.key === 's') {
         event.preventDefault()
         emit('save-now')
@@ -59,18 +53,6 @@ const editor = useEditor({
     emit('content-change', ed.getHTML(), countWords(ed.getText()))
   }
 })
-
-// 切换章节时重设编辑器内容（不进 undo 历史）
-watch(
-  () => props.chapter?.id,
-  () => {
-    const next = props.chapter?.content || ''
-    if (editor.value && editor.value.getHTML() !== next) {
-      editor.value.commands.setContent(next, { emitUpdate: false })
-    }
-    saveState.value = 'saved'
-  }
-)
 
 const wordCount = computed(() =>
   editor.value ? countWords(editor.value.getText()) : countWords(plainText(props.chapter?.content || ''))

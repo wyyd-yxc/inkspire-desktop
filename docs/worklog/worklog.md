@@ -177,3 +177,20 @@
 - **遇到的问题与解决**：无阻断；updateChapter 初版有冗余分支（wordCount 双写）已精简。
 - **遗留问题**：右栏（章节信息/后续作品记忆）未做，规划 M8；章节拖拽排序未做（上下移替代），挂技术债。
 - **下一步**：M3 双轨验收（ox-alpha 静态审查 + 子代理黑盒）→ 用户确认 → tag；M4 AI 写作。
+
+---
+
+## [2026-08-22 20:30] 会话 8：M3 双轨验收与整改
+
+- **双轨验收结果**：
+  - 黑盒子代理：**有条件通过**（P1 重命名 focus 报错、P2 布尔命名、P3 一次未复现跳回书斋）；报告 2026-08-22-M3-workspace.md
+  - ox-alpha 静态审查（LLM）：**有条件通过**——数据层「相互印证质量扎实」；揪出 undo 历史跨章节残留与自动命名重名两个我和黑盒都漏掉的问题；报告 llm-review-2026-08-22-06-14-.md
+- **整改（全部 CDP 实测验证）**：
+  1. P1：v-for 内字符串 ref 是数组 → 改函数式 ref（Map 收集），focus/select 正常
+  2. undo 串章节：ChapterEditor 以 :key=章节id 整体重建（全新编辑器实例，历史干净）；实测甲→乙切换内容正确
+  3. 自动命名重名：删章后再建递增避开现存标题（实测删第2章后新建得「第 4 章」，无重复）
+  4. P2：switching→isSwitching；Ctrl+S 全局兜底（window keydown，覆盖标题框焦点）
+- **ox-alpha 接入踩坑（写给后续模型）**：非流式返回空白体（HTTP 200 但 body 全空格）；流式对 >2 万字输入也返回空。最终方案：diff 限 1.5 万字+流式 SSE 解析。脚本 accept-via-llm.mjs 已固化。
+- **修改的文件**：ChapterSidebar.vue、ChapterEditor.vue、WorkspaceView.vue、chapters.ts、scripts/accept-via-llm.mjs。
+- **遗留问题**：P3（一次未复现的跳回书斋）保持观察，再现时按 bug 流程处理。
+- **下一步**：用户确认 M3 → tag v0.4.0-m3-workspace；M4 AI 写作。
