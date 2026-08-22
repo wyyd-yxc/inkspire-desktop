@@ -277,3 +277,24 @@
 - 用户亲手验证 M4 通过，已打 tag `v0.5.0-m4-ai-writing`（MVP 进度 4/5）。
 - roadmap/HANDOVER 同步更新至「下一步 M5 创世台」。GLM-5.2 从 HANDOVER 第 9 节任务卡开始 M5。
 - GLM-5.3 使命完成，正式交棒。
+
+---
+
+## [2026-08-23 10:30] 会话 15：M5 创世台五步（MVP 收官，开发+自测完成）
+
+- **使用的模型**：GLM-5.3（额度恢复后继续，用户未切换）
+- **完成内容**：
+  1. migration v4（genesis_steps 表，复合主键 book_id+step，FK 级联）；DAO UPSERT；IPC get/save/save-step
+  2. 预设风格包 5 种（热血/轻松/悬疑/古风/硬科幻，含 promptHint，M14 拆书后换真实风格包）
+  3. genesisPrompts：定魂 AI 辅助（JSON 输出解析填表）+ 造世冷启动（【段名】四段解析：全书大纲/第一卷大纲/世界法则/主角设定）
+  4. GenesisView 五步向导：步骤条跳转/完成打勾/每步独立保存/复用 AiWritingPanel
+  5. 接通 M4：ChapterEditor 加载该书 genesis（文风 promptHint + 定魂 logline/支柱 + 布局写作规则）注入 systemPrompt
+  6. 入口：书斋卡片「创世台」按钮 + 工作台侧栏「创世台」链接 + 创世台第5步跳工作台
+- **自测结果**（CDP 真实 Electron，tmp/m5-verify.mjs）：
+  - 五步全走通：定风绑定/定魂保存/布局保存（IPC 直接存）+ 造世冷启动（真实 AI 生成+采纳落库）
+  - 持久化：genesis.get 返回 4 步全部 done+hasData
+  - **设定注入**：续写 579 字紧扣设定（陈默/剑灵/灵力/封印——来自定魂与文风约束）✓
+  - typecheck 双 0
+- **修改的文件**：shared/{genesis.types,presetStyles}.ts、main/db/{database,genesis}.ts、main/ipc/genesis.ts、main/index.ts、preload/index.ts、renderer/services/{genesisPrompts,aiWriting}.ts、views/GenesisView.vue、components/{ChapterSidebar,ChapterEditor,BookCard}.vue、views/WorkspaceView.vue、router。
+- **遗留问题**：布局大纲与 M3 章节树不自动同步（M7 章节画布接）；万物百科词条管理（M6）。
+- **下一步**：M5 双轨验收 → 用户确认 → tag v0.6.0 → **MVP 全部完成** → 建议 M16 打包出安装包。
