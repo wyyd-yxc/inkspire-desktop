@@ -72,6 +72,8 @@ const panelVisible = ref(false)
 const panelKind = ref<PanelKind>('continue')
 let activeSession: StreamSession | null = null
 let busy = false
+/** 生成序号：stop 时递增使尚未启动的 nextTick 回调失效（防「点续写后立刻停止仍会发起生成」竞态） */
+let generationSeq = 0
 
 /** 划词目标（发起划词操作时的选区快照） */
 let selectionTarget: { from: number; to: number; text: string } | null = null
@@ -93,11 +95,13 @@ async function runGeneration(kind: PanelKind): Promise<void> {
   }
   if (!editor.value) return
   busy = true
+  const mySeq = ++generationSeq
   panelKind.value = kind
   panelVisible.value = true
   // 等面板挂载并重置完成。用 nextTick（微任务）而非 requestAnimationFrame：
   // 窗口后台/失焦时 rAF 会被系统节流冻结，导致生成流程永不启动
   void nextTick().then(() => {
+    if (mySeq !== generationSeq) return // 等待期间已被停止，放弃本次发起
     void (async () => {
       try {
         const messages =
@@ -125,12 +129,17 @@ async function runGeneration(kind: PanelKind): Promise<void> {
             toast.error(m)
           }
         })
+        if (mySeq !== generationSeq) {
+          // 请求建立期间已被停止：立即中止，不挂到 activeSession
+          session.abort()
+          return
+        }
         activeSession = session
       } catch (err) {
         panel.value?.fail()
         toast.error(err instanceof Error ? err.message : '生成失败')
       } finally {
-        busy = false
+        if (mySeq === generationSeq) busy = false
       }
     })()
   })
@@ -138,6 +147,7 @@ async function runGeneration(kind: PanelKind): Promise<void> {
 
 /** 停止生成 */
 function stopGeneration(): void {
+  generationSeq++ // 使挂起的 nextTick 回调与刚建立的会话失效
   activeSession?.abort()
   activeSession = null
   busy = false
@@ -159,7 +169,15 @@ function acceptGeneration(text: string): void {
   } else if (panelKind.value === 'chapter-polish') {
     ed.commands.setContent(text, { emitUpdate: true })
   } else if (selectionTarget) {
-    const { from, to } = selectionTarget
+    const { from, to, text: snapshot } = selectionTarget
+    // 防位置失效：生成期间正文可能被编辑，ProseMirror 位置随内容漂移。
+    // 采纳前核对快照位置上的文字是否仍是原文字，不一致则拒绝替换。
+    const current = ed.state.doc.textBetween(from, to, '\n')
+    if (current !== snapshot) {
+      toast.error('生成期间正文已变化，无法定位原选区。内容保留在面板中，可手动复制')
+      selectionTarget = null
+      return
+    }
     ed.chain().focus().deleteRange({ from, to }).insertContentAt(from, text).run()
     selectionTarget = null
   }
@@ -178,6 +196,14 @@ onBeforeUnmount(() => stopGeneration())
 // ---------------- 划词浮条 ----------------
 
 const selectionBar = reactive({ visible: false, top: 0, left: 0 })
+const rootEl = ref<HTMLElement | null>(null)
+/** 正文滚动容器：浮条定位需叠加其滚动偏移；滚动时隐藏浮条防错位 */
+const scrollBodyEl = ref<HTMLElement | null>(null)
+
+/** 滚动时隐藏浮条（选区视觉位置随滚动变化，重新选择时再显示） */
+function onBodyScroll(): void {
+  selectionBar.visible = false
+}
 
 /** 选区变化：有非空选区时把浮条定位到选区上方 */
 function updateSelectionBar(ed: NonNullable<ReturnType<typeof useEditor>['value']>): void {
@@ -191,16 +217,16 @@ function updateSelectionBar(ed: NonNullable<ReturnType<typeof useEditor>['value'
     selectionBar.visible = false
     return
   }
-  // 选区坐标转为编辑器容器内坐标
+  // 选区视口坐标 → rootEl 内容坐标：差值需叠加滚动容器的已滚动距离
+  //（absolute 元素不随内容滚动，而 coordsAtPos 给的是当前视口位置）
   const start = ed.view.coordsAtPos(from)
   const container = rootEl.value?.getBoundingClientRect()
   if (!container) return
+  const scrollTop = scrollBodyEl.value?.scrollTop ?? 0
   selectionBar.visible = true
-  selectionBar.top = start.top - container.top - 42
+  selectionBar.top = start.top - container.top + scrollTop - 42
   selectionBar.left = Math.max(8, start.left - container.left)
 }
-
-const rootEl = ref<HTMLElement | null>(null)
 
 /** 划词操作入口：快照选区后发起生成 */
 function startSelectionAction(action: SelectionAction): void {
@@ -264,7 +290,7 @@ const saveLabel = computed(
       </div>
 
       <!-- 正文 -->
-      <div class="min-h-0 flex-1 overflow-y-auto">
+      <div ref="scrollBodyEl" class="min-h-0 flex-1 overflow-y-auto" @scroll="onBodyScroll">
         <EditorContent v-if="editor" :editor="editor" class="prose-editor-wrapper" />
       </div>
 

@@ -1,9 +1,9 @@
 /**
  * 外部模型二次验收脚本（LLM Review）。
- * 用法：node scripts/accept-via-llm.mjs <材料文件.md> [--model stealth/ox-alpha]
- * - 材料文件：markdown，包含里程碑号、验收点清单、自测声明等（由开发会话准备）
+ * 用法：node scripts/accept-via-llm.mjs <材料文件.md> [--model <模型名>] [--base-url <API根地址>] [--key-env <密钥环境变量名>]
+ * - 默认走 OpenRouter（stealth/ox-alpha）；--base-url 可切换任意 OpenAI 兼容端点
+ * - Key 优先级：--key-env 指定的环境变量 > OPENROUTER_API_KEY > ZCode 配置中的 OpenRouter 档案
  * - 附带材料：自动附加 git diff <上一tag>..HEAD 中 src/ 的变更（截断至上限）
- * - Key 来源：环境变量 OPENROUTER_API_KEY，缺省回退读取 ZCode 配置中的 OpenRouter 档案
  * - 输出：模型审查意见打印到 stdout，并保存到 docs/acceptance/llm-review-<时间戳>.md
  * 注意：任何情况下不得把 key 打印到输出。
  */
@@ -16,7 +16,17 @@ import { fileURLToPath } from 'node:url'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.resolve(__dirname, '..')
 
-function resolveOpenRouterKey() {
+function argValue(flag) {
+  const i = process.argv.indexOf(flag)
+  return i > 0 ? process.argv[i + 1] : undefined
+}
+
+const BASE_URL = (argValue('--base-url') || 'https://openrouter.ai/api/v1').replace(/\/+$/, '')
+const MODEL = argValue('--model') || 'stealth/ox-alpha'
+const KEY_ENV = argValue('--key-env')
+
+function resolveKey() {
+  if (KEY_ENV && process.env[KEY_ENV]) return process.env[KEY_ENV]
   if (process.env.OPENROUTER_API_KEY) return process.env.OPENROUTER_API_KEY
   try {
     const cfg = JSON.parse(
@@ -60,7 +70,7 @@ async function main() {
     console.error('用法: node scripts/accept-via-llm.mjs <材料文件.md> [--model <模型名>]')
     process.exit(1)
   }
-  const key = resolveOpenRouterKey()
+  const key = resolveKey()
   if (!key) {
     console.error('未找到 OpenRouter Key（环境变量 OPENROUTER_API_KEY 或 ZCode 配置）')
     process.exit(1)
@@ -88,7 +98,7 @@ ${diff}
   const key2 = key
   /** 该模型非流式响应可能返回空白，统一走 SSE 流式拼接 */
   async function callApi(maxTokens) {
-    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    const res = await fetch(`${BASE_URL}/chat/completions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key2}` },
       body: JSON.stringify({
