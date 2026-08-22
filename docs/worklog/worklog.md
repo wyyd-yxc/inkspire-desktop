@@ -269,3 +269,11 @@
 - **移交载体**：docs/HANDOVER.md（第 0 节新增移交摘要+M4 验证指引）+ 本日志。
 - **给 GLM-5.2 的提示**：严格按 HANDOVER 第 3 节 SOP 开工；第 6 节 12 条踩坑必读（尤其 HMR 污染与 rAF 节流）；验收双轨制继续执行；额度同样有限时优先保 worklog/HANDOVER 同步，小步 commit。
 - **下一步**（交接后）：M4 用户确认+tag → M5 创世台（HANDOVER 第 9 节任务卡）。
+
+---
+
+## [2026-08-23 09:00] 会话 14：M4 用户确认收官
+
+- 用户亲手验证 M4 通过，已打 tag `v0.5.0-m4-ai-writing`（MVP 进度 4/5）。
+- roadmap/HANDOVER 同步更新至「下一步 M5 创世台」。GLM-5.2 从 HANDOVER 第 9 节任务卡开始 M5。
+- GLM-5.3 使命完成，正式交棒。
