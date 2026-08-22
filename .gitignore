@@ -1,0 +1,38 @@
+# 依赖
+node_modules/
+
+# 构建产物
+dist/
+dist-electron/
+out/
+build/
+release/
+
+# 日志与缓存
+logs/
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+# 编辑器/系统
+.vscode/
+.idea/
+*.swp
+
+# 本地环境变量与私密配置（API Key 一律不进仓库）
+.env
+.env.*
+*.local
+
+# 数据库与用户数据（开发期本地测试库不入库）
+*.sqlite
+*.sqlite3
+*.db
+data/
+
+# 验收过程产物（临时截图等）
+tmp/
+
+# ZCode 会话文件
+.zcode/

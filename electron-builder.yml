@@ -1,0 +1,23 @@
+# electron-builder 打包配置（NSIS 安装包）
+appId: cn.inkspire.desktop
+productName: 墨灵
+directories:
+  buildResources: build
+files:
+  - out/**
+  - "!**/.vscode/*"
+  - "!src/*"
+  - "!electron.vite.config.{js,ts,mjs,cjs}"
+  - "!{.eslintignore,.eslintrc.cjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}"
+  - "!{.env,.env.*,.npmrc,pnpm-lock.yaml,yarn.lock}"
+asarUnpack:
+  - resources/**
+win:
+  target:
+    - nsis
+  executableName: InkSpire
+nsis:
+  artifactName: InkSpire-Setup-${version}.exe
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  shortcutName: 墨灵
