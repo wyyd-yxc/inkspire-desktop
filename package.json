@@ -15,6 +15,7 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
+    "@types/better-sqlite3": "^9.6.0",
     "@vitejs/plugin-vue": "^6.0.8",
     "electron": "^43.4.1",
     "electron-builder": "^26.15.3",
@@ -23,6 +24,7 @@
     "typescript": "^7.0.2"
   },
   "dependencies": {
+    "better-sqlite3": "^13.0.3",
     "pinia": "^4.0.3",
     "vue": "^3.5.41",
     "vue-router": "^5.2.0"

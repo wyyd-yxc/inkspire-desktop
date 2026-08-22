@@ -1,32 +1,114 @@
 <script setup lang="ts">
 /**
- * 书斋页（占位版，M1 完整实现）。
- * M0 阶段用于验证：窗口渲染、路由、样式令牌、IPC 通路（ping 按钮）。
+ * 书斋页：全部作品的管理中心。
+ * 布局：顶部标题栏（墨灵 logo + 新建按钮）+ 书籍卡片网格 + 空状态引导。
  */
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
+import type { Book } from '../../../shared/book.types'
+import { bookService } from '../services/books'
+import { useToast } from '@/composables/useToast'
+import BookCard from '@/components/BookCard.vue'
+import BookCreateDialog from '@/components/BookCreateDialog.vue'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
 
-const pong = ref('')
+const toast = useToast()
+const books = ref<Book[]>([])
+const loading = ref(true)
 
-/** 调用主进程 ping，验证 IPC 通路 */
-async function testIpc(): Promise<void> {
-  const res = await window.api.ping()
-  pong.value = res.ok ? res.data : `IPC 错误：${res.error}`
+const showCreate = ref(false)
+const pendingDelete = ref<Book | null>(null)
+
+/** 拉取书籍列表 */
+async function refresh(): Promise<void> {
+  loading.value = true
+  try {
+    books.value = await bookService.list()
+  } catch (err) {
+    toast.error(err instanceof Error ? err.message : '加载书架失败')
+  } finally {
+    loading.value = false
+  }
 }
+
+/** 确认删除：调服务并刷新 */
+async function doDelete(): Promise<void> {
+  const target = pendingDelete.value
+  if (!target) return
+  try {
+    const ok = await bookService.remove(target.id)
+    if (!ok) throw new Error('书籍不存在')
+    toast.success(`《${target.title}》已删除`)
+    await refresh()
+  } catch (err) {
+    toast.error(err instanceof Error ? err.message : '删除失败')
+  } finally {
+    pendingDelete.value = null
+  }
+}
+
+onMounted(refresh)
 </script>
 
 <template>
-  <div class="flex h-full flex-col items-center justify-center gap-8">
-    <div class="flex flex-col items-center gap-3">
-      <h1 class="text-4xl font-bold tracking-[0.3em] text-ink-primary">墨灵</h1>
-      <p class="text-ink-text-secondary">AI 驱动的小说创作工作台 · 桌面版</p>
-      <p class="text-xs text-ink-text-muted">书斋（M1 完整实现中）</p>
-    </div>
-    <button
-      class="rounded-full bg-ink-primary px-6 py-2 text-white transition-colors hover:bg-ink-primary-hover"
-      @click="testIpc"
-    >
-      测试 IPC 通路
-    </button>
-    <p v-if="pong" class="text-sm text-ink-success">主进程响应：{{ pong }} ✓</p>
+  <div class="h-full overflow-y-auto">
+    <!-- 顶栏 -->
+    <header class="sticky top-0 z-10 flex items-center justify-between border-b border-ink-border/60 bg-paper/80 px-8 py-4 backdrop-blur">
+      <div class="flex items-baseline gap-3">
+        <h1 class="text-xl font-bold tracking-widest text-ink-primary">墨灵</h1>
+        <span class="text-sm text-ink-text-muted">书斋</span>
+      </div>
+      <button
+        class="flex items-center gap-1.5 rounded-full bg-ink-primary px-4 py-2 text-sm text-white shadow-card transition-colors hover:bg-ink-primary-hover"
+        @click="showCreate = true"
+      >
+        <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 5v14M5 12h14" />
+        </svg>
+        新建书籍
+      </button>
+    </header>
+
+    <!-- 内容区 -->
+    <main class="px-8 py-6">
+      <!-- 加载中 -->
+      <div v-if="loading" class="py-24 text-center text-ink-text-muted">正在加载书斋…</div>
+
+      <!-- 空状态 -->
+      <div v-else-if="books.length === 0" class="flex flex-col items-center gap-4 py-24">
+        <div class="flex h-20 w-20 items-center justify-center rounded-full bg-ink-primary-soft">
+          <svg viewBox="0 0 24 24" class="h-9 w-9 text-ink-primary" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4a1 1 0 0 0-1-1H6.5A2.5 2.5 0 0 0 4 5.5v14z" />
+            <path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5" />
+          </svg>
+        </div>
+        <p class="text-ink-text-secondary">还没有作品，从一个书名开始你的故事</p>
+        <button
+          class="rounded-full bg-ink-primary px-6 py-2.5 text-white transition-colors hover:bg-ink-primary-hover"
+          @click="showCreate = true"
+        >
+          新建第一本书
+        </button>
+      </div>
+
+      <!-- 书籍网格 -->
+      <div v-else class="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-5">
+        <BookCard
+          v-for="b in books"
+          :key="b.id"
+          :book="b"
+          @delete="pendingDelete = $event"
+        />
+      </div>
+    </main>
+
+    <!-- 弹窗们 -->
+    <BookCreateDialog v-model="showCreate" @created="refresh" />
+    <ConfirmDialog
+      :model-value="pendingDelete !== null"
+      @update:model-value="pendingDelete = null"
+      :title="`删除《${pendingDelete?.title ?? ''}》？`"
+      description="删除后书籍数据不可恢复，请谨慎操作。"
+      @confirm="doDelete"
+    />
   </div>
 </template>

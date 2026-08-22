@@ -6,6 +6,7 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'node:path'
 import { wrap } from './ipc/wrap'
+import { registerBookIpc } from './ipc/books'
 
 /** 创建应用主窗口（1280x800，中文标题「墨灵」）。 */
 function createWindow(): void {
@@ -26,12 +27,18 @@ function createWindow(): void {
 
   win.on('ready-to-show', () => win.show())
 
-  // 自检开关（INKSPIRE_SELFTEST=1 时启用）：确认 preload 桥接对象注入成功，结果打到主进程日志
+  // 自检开关（INKSPIRE_SELFTEST=1 时启用）：确认 preload 桥接与数据库全链路，结果打到主进程日志
   win.webContents.on('did-finish-load', () => {
     if (process.env.INKSPIRE_SELFTEST) {
       win.webContents
-        .executeJavaScript('typeof window.api')
-        .then((t: string) => console.log(`[selftest] window.api 类型: ${t}`))
+        .executeJavaScript(
+          `(async () => {
+            const apiType = typeof window.api
+            const books = apiType === 'object' ? await window.api.books.list() : null
+            return JSON.stringify({ apiType, books })
+          })()`
+        )
+        .then((out: string) => console.log(`[selftest] ${out}`))
         .catch((err: unknown) => console.error('[selftest] 检查失败:', err))
     }
   })
@@ -49,8 +56,11 @@ function createWindow(): void {
   }
 }
 
-// IPC 通道：app:ping —— M0 用于验证「渲染进程 ↔ 主进程」通路是否正常
+// IPC 通道：app:ping —— 通路自检
 ipcMain.handle('app:ping', () => wrap(() => 'pong'))
+
+// 各业务域 IPC 注册（books / settings / ai / ... 随里程碑增加）
+registerBookIpc()
 
 app.whenReady().then(() => {
   createWindow()

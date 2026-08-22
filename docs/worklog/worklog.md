@@ -44,3 +44,27 @@
   3. npm 项目级 .npmrc 自定义键（electron_mirror）每次告警 → 删除，改用环境变量方案（见上）。
 - **遗留问题**：M0 的「测试 IPC 通路」按钮需在 Electron 窗口内人工点击确认（外部浏览器无 preload），待用户亲自验收时一并体验。
 - **下一步**：用户确认 M0 → tag v0.1.0-m0-scaffold；进入 M1 书斋（better-sqlite3 引入、books 表、书斋 UI）。
+
+---
+
+## [2026-08-22 12:40] 会话 3：M1 书斋（数据库 + 完整 UI）
+
+- **使用的模型**：GLM-5.3（zai-start-plan）
+- **完成内容**：
+  1. 引入 better-sqlite3 13（NAPI 预编译二进制，跨 Node/Electron ABI，无需 node-gyp rebuild；electron-builder install-app-deps 的 node-gyp 失败可忽略，已在本文登记）。
+  2. 数据层：`db/database.ts`（WAL 模式 + schema_migrations 版本化迁移）+ `db/books.ts`（行↔实体映射、CRUD、空书名校验）。
+  3. IPC：`ipc/books.ts` 四通道（books:list/create/update/delete）全走 wrap() 统一 IpcResult；preload 暴露 window.api.books.*。
+  4. 书斋 UI：BookCard（渐变封面按书名稳定取色、分类标签、状态徽标、hover 删除）、BookCreateDialog（书名/十分类/简介）、ConfirmDialog（通用危险确认）、ToastHost+useToast（自制轻量提示）、空状态引导、加载态。
+  5. 渲染层服务 `services/books.ts`：Electron 内走真实 IPC；纯浏览器调试时自动降级为内存 mock（便于 UI 视觉调试）。
+- **修改的文件**：src/shared/book.types.ts（新）、src/main/db/（新 2 个）、src/main/ipc/books.ts（新）、src/main/index.ts（注册+selftest 扩展）、src/preload/index.ts、src/renderer/src/（views/BookshelfView 重写、components 3 个新、services/composables 各 1 新、App.vue 挂 ToastHost）、package.json。
+- **遇到的问题与解决**：
+  1. `v-model="expr"` 编译报错（v-model 必须是合法成员表达式）→ ConfirmDialog 改 `:model-value` + `@update:model-value`。
+  2. **时序 bug**：确认弹窗按钮先关弹窗（连带清空 pendingDelete）后 emit confirm，导致 doDelete 读到 null 静默跳过、书删不掉 → 改为组件内先 emit('confirm') 再 visible=false。浏览器实测复现并验证修复。
+  3. hover 显示的删除按钮 Playwright 不可点（hidden）→ CUA 坐标方案（hover 卡片后按卡片矩形推算按钮位置）。
+- **自测结果**（全过）：
+  - Electron 全链路 selftest：`books:list → {"ok":true,"data":[...]}`（better-sqlite3 在 Electron ABI 正常）
+  - 持久化：Node 直写书籍→重启 Electron→selftest 读到该书→清理
+  - 浏览器 mock 模式 UI 验收：卡片网格/新建全流程/删除全流程（含 hover 交互）/toast/空状态
+  - typecheck node/web 双 0 错误
+- **遗留问题**：封面上传未做（M1 验收点未含，挂 M12 作品风格附近再做）；「点击卡片进入创作」待 M3 路由。
+- **下一步**：M1 子代理二次验收 → 用户确认 → tag；然后 M2 设置中心（API 档案 CRUD + 连通测试）。
