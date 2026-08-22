@@ -203,3 +203,24 @@
 - **用户已确认 M3**，已打 tag `v0.4.0-m3-workspace`。
 - **额度预警**：用户告知当前模型额度将尽，将切换其他模型继续。应对：新增 `docs/HANDOVER.md` 交接文档（新会话第一入口：状态总览/开工 SOP/架构速览/验收流程/踩坑速查/凭据位置/M4 任务卡/快速命令），并承诺此后每完成一小块即 commit、每会话必更新 worklog，保证任意断点可无损交接。
 - **下一步**：M4 AI 写作（任务卡见 HANDOVER.md 第 9 节）。
+
+---
+
+## [2026-08-22 22:30] 会话 10：M4 AI 写作（开发+自测完成，待双轨验收）
+
+- **使用的模型**：GLM-5.3（zai-start-plan）
+- **完成内容**：
+  1. `services/aiWriting.ts`：续写/划词（润色/扩写/改写）/整章润色的提示词构造（书信息+前文尾部 3k+输出纪律）+ 默认档案解析（默认→第一个→报错引导）。
+  2. `AiWritingPanel.vue`：流式预览面板（generating/ready 两态、停止/重写/采纳）。
+  3. `ChapterEditor.vue` 集成：状态栏「✦ AI 续写」、划词浮条（润色/扩写/改写，函数式定位+mousedown.prevent 防丢选区）、标题栏「✧ 整章润色」；采纳：续写=文末插入、划词=替换选区、整章=setContent；busy 锁防并发；卸载中止。
+  4. WorkspaceView 传 book 上下文。
+- **自测结果**（CDP 真实 Electron，测试脚本 tmp/m4-*.mjs）：
+  - 续写全链路：点击→170+ chunk 流式→面板 ready→采纳→插入 592 字符→flushSave 落库 569 字 ✓
+  - 划词：DOM Range 选中「他走进房间。」→浮条出现→润色→采纳→选区精准替换（「房间很大。」保留）→落库 43 字 ✓
+- **踩坑（重大，写给后续模型）**：
+  1. **rAF 节流冻结**：窗口后台/失焦时 requestAnimationFrame 不执行，生成流程永不启动（面板永远「等待模型输出…」）。修复：nextTick（微任务）+ 主进程 `backgroundThrottling: false`。诊断方法：window.__m4dbg 数组逐步打点。
+  2. **HMR 状态污染**：多次热重载后 onUpdate→保存链路失效（M3 时代正常的路径测出「不保存」假象）。**涉及编辑器/生成流程的改动必须完全重启 dev 再测**。
+  3. TokenRhythm API 有慢时段（5-20s 首字），测试超时要给足（脚本 50×3s）。
+- **修改的文件**：services/aiWriting.ts（新）、components/AiWritingPanel.vue（新）、ChapterEditor.vue（大改）、WorkspaceView.vue、main/index.ts（backgroundThrottling）。
+- **遗留问题**：M4 双轨验收未做（额度告急，主动收尾交接）——下一会话第一件事：按 HANDOVER 第 5 节跑 ox-alpha 材料审查 + 黑盒验收，然后请用户确认 → tag v0.5.0。
+- **下一步**：交接（更新 HANDOVER 至 M4 状态）→ 新模型执行 M4 验收 → M5 创世台。

@@ -1,7 +1,7 @@
 # 项目交接文档（HANDOVER）
 
 > **新会话/新模型开工第一入口**。本文件始终保持「随时可交接」状态，每次里程碑收尾后更新。
-> 最后更新：2026-08-22 · 会话 9 · M3 已确认打 tag，M4 进行中
+> 最后更新：2026-08-22 · 会话 10 · **M4 开发+自测完成（待双轨验收）**，用户额度预警收尾交接
 
 ## 1. 项目是什么
 
@@ -15,7 +15,7 @@
 | M1 | 书斋（书籍 CRUD） | ✅ tag v0.2.0 |
 | M2 | 设置中心（AI Provider+API 档案） | ✅ tag v0.3.0 |
 | M3 | 正文工作台（章节树+TipTap+自动保存） | ✅ tag v0.4.0（用户已确认） |
-| M4 | AI 写作（续写/划词/整章润色） | ⬜ **下一步，未开始** |
+| M4 | AI 写作（续写/划词/整章润色） | 🔄 **开发+自测完成，待双轨验收**（详见第 9 节） |
 | M5 | 创世台五步 | ⬜ |
 | M6+ | 见 docs/plan/roadmap.md（百科/画布/记忆/助手/灵感墙/风格/统计/拆书/Agent/打包） | ⬜ |
 
@@ -75,18 +75,29 @@ Electron(main: db/ ai/ ipc/) ←IPC(preload 白名单桥)→ Vue3 渲染层(view
 - 用户要求：留扩展余地（Provider 抽象已就位）；UI 先还原原站（截图为据）；详细解释选项（小白）
 - 用户可能随时切换模型：靠本文档+worklog 无缝接力，**会话结束前必须追加 worklog**
 
-## 9. M4 任务卡（下一执行者从这里开始）
+## 9. M4 状态与验收任务卡（下一执行者从这里开始）
 
-**目标**：把 AI 能力接进编辑器（MVP 最后一块）。
-1. `services/aiWriting.ts`（渲染层）：续写/润色/扩写/改写的提示词构造与调用封装（复用 services/ai.ts 的 chatStream；用默认档案，档案选择 M15 再做）
-2. 幽灵续写：编辑器底部/光标旁「续写」按钮 → 流式文字以浅色/占位形式逐字出现 → 「采纳/重写/放弃」三键；采纳则插入正文。TipTap 用 decoration 或临时段落实现预览态
-3. 划词浮条：选中文本浮出小工具条（润色/扩写/改写）→ 流式生成 → 预览面板（替换预览，diff 高亮可后置）→ 采纳替换选区
-4. 整章润色：编辑器右上菜单 → 后台生成（不动正文）→ 完成后预览 → 采纳整章替换
-5. 提示词要点：system 说明网文写作助手角色；user 带书籍类型/章节标题/前文尾部（截断至 ~3000 字）/选中文字与指令；输出纯正文不加解释
-6. 中断：全部可停止（复用 StreamSession.abort）；生成中 UI 锁定防并发
-7. selftest：CDP 实测续写真实出字、划词替换落库
-8. 验收：双轨（材料文件写 docs/acceptance/material-M4-*.md）→ 用户确认 → tag v0.5.0-m4-ai-writing
-9. 完成后 M5 创世台（五步向导）——MVP 收官，之后优先做 M16 打包出安装包让用户先用起来（可与 M5-M15 并行，视用户意愿）
+**M4 已开发完成并自测通过，待双轨验收**。交付物：
+- `src/renderer/src/services/aiWriting.ts`：提示词构造（书信息+前文尾部3k+输出纪律）+ 默认档案解析
+- `src/renderer/src/components/AiWritingPanel.vue`：流式预览面板（停止/重写/采纳）
+- `ChapterEditor.vue`：状态栏「✦ AI 续写」、划词浮条（润色/扩写/改写）、标题栏「✧ 整章润色」；采纳分别=文末插入/替换选区/整章替换
+- `main/index.ts`：backgroundThrottling: false（配合 rAF 修复）
+- 自测证据见 worklog 会话 10（续写 569 字落库、划词替换选区 43 字落库）
+
+**下一会话立即执行（按序）**：
+1. M4 双轨验收：
+   a. 写材料 `docs/acceptance/material-M4-ai-writing.md`（参考 material-M3-workspace.md 格式：验收点+自测声明+实现定位）
+   b. 跑 `node scripts/accept-via-llm.mjs docs/acceptance/material-M4-ai-writing.md`（ox-alpha 静态审查）
+   c. 派黑盒子代理（提示词参考 M3 那次：验收点+CDP 方法+自建自清纪律；可复用 tmp/m4-verify.mjs 和 tmp/m4-selection-test.mjs 的思路）
+   d. 整改（若有）→ 复验 → 请用户亲手验证（点「AI 续写」看流式→采纳；划选文字→润色→采纳）→ tag `v0.5.0-m4-ai-writing`
+2. 然后 M5 创世台五步（定风/定魂/造世/布局/执笔——五步向导+AI 冷启动；数据表 genesis_steps 已在 architecture 规划）
+3. MVP 完成后建议尽早做 M16 打包（用户能先用上），再继续 M6+ 功能
+
+**M4 相关关键坑（M4 期间新发现，必读）**：
+- rAF 节流：窗口后台时 requestAnimationFrame 冻结 → 已改 nextTick + backgroundThrottling:false
+- HMR 污染：改编辑器/生成相关代码后必须完全重启 dev 再测（taskkill electron 后重启）
+- TokenRhythm 有慢时段：自动化测试超时给足（≥150s）
+- 测试脚本模板：tmp/m4-verify.mjs（续写全流程）、tmp/m4-selection-test.mjs（划词）
 
 ## 10. 快速命令
 
