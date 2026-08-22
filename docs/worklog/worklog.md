@@ -241,3 +241,21 @@
 - **修改的文件**：ChapterEditor.vue、scripts/accept-via-llm.mjs。
 - **遗留问题**：ox-alpha 空回复根因未明（服务端 vs 免费额度），恢复后应复审；OpenRouter 无付费 credits（如需付费模型审查需用户充值或继续用 TokenRhythm 代理）。
 - **下一步**：黑盒验收报告 → 整改（若有）→ 用户确认 → tag v0.5.0-m4-ai-writing → M5 创世台。
+
+---
+
+## [2026-08-23 00:40] 会话 12：M4 黑盒验收与整改复验
+
+- **黑盒验收**（报告 2026-08-22-M4-ai-writing.md）：**有条件通过**（7/9 过，抓到 1 阻断 + 1 高）：
+  - P1（阻断）流式中并发锁失效：chatStream 会话建立即 resolve，finally 提前释放 busy → 流式中可再发起并行请求（实测两个 requestId 各 200+ chunk——双倍计费）
+  - P2（高）面板跨生成不重置：reset 只依赖 visible 翻转，停止后再发起旧文本残留/停止按钮消失/可采纳半截文本
+  - P3-P6（轻微）：主动停止弹错误 toast；被拒后再点采纳误报成功；\n\n 塌陷单段；busy 命名
+  - 亮点：LLM 审查三缺陷的整改全部实测有效；整章润色/划词/持久化全过
+- **整改**（实测复验 tmp/m4-reverify.mjs 全过）：
+  1. P1：并发锁生命周期覆盖到 onDone/onError（release 按 seq 校验）；主动停止的流静默（mySeq 不匹配时不弹错——P3 一并解决）
+  2. P2：AiWritingPanel 暴露 reset()，runGeneration 发起前显式调用
+  3. P4：划词快照被清空后再点采纳 → 引导提示而非误报成功
+  4. P5：aiTextToHtml（换行分段+HTML 转义）保住网文段落
+  5. P6：busy → isBusy
+- **复验证据**：流式中再点续写 requestId 保持 1 + 拦截提示出现；停止后再发起面板为新内容无残留；主动停止无错误 toast。
+- **下一步**：用户确认 M4 → tag v0.5.0-m4-ai-writing → M5 创世台。

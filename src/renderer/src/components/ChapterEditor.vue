@@ -71,9 +71,21 @@ const panel = ref<InstanceType<typeof AiWritingPanel> | null>(null)
 const panelVisible = ref(false)
 const panelKind = ref<PanelKind>('continue')
 let activeSession: StreamSession | null = null
-let busy = false
+let isBusy = false
 /** 生成序号：stop 时递增使尚未启动的 nextTick 回调失效（防「点续写后立刻停止仍会发起生成」竞态） */
 let generationSeq = 0
+
+/** AI 输出纯文本 → TipTap HTML：按换行分段（保留网文段落结构），HTML 特殊字符转义 */
+function aiTextToHtml(text: string): string {
+  const escapeHtml = (s: string): string =>
+    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  return text
+    .split(/\n+/)
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .map((p) => `<p>${escapeHtml(p)}</p>`)
+    .join('')
+}
 
 /** 划词目标（发起划词操作时的选区快照） */
 let selectionTarget: { from: number; to: number; text: string } | null = null
@@ -89,12 +101,12 @@ function writingContext() {
 
 /** 发起一次生成（流式推给面板） */
 async function runGeneration(kind: PanelKind): Promise<void> {
-  if (busy) {
+  if (isBusy) {
     toast.info('正在生成中，请先停止或等待完成')
     return
   }
   if (!editor.value) return
-  busy = true
+  isBusy = true
   const mySeq = ++generationSeq
   panelKind.value = kind
   panelVisible.value = true
@@ -102,7 +114,12 @@ async function runGeneration(kind: PanelKind): Promise<void> {
   // 窗口后台/失焦时 rAF 会被系统节流冻结，导致生成流程永不启动
   void nextTick().then(() => {
     if (mySeq !== generationSeq) return // 等待期间已被停止，放弃本次发起
+    panel.value?.reset() // 面板可能未关闭就再次发起（重写/续点），显式清空旧内容
     void (async () => {
+      /** 释放并发锁：仅当本次生成仍是「当前代」时（被 stop 作废的由 stop 自己释放） */
+      const release = (): void => {
+        if (mySeq === generationSeq) isBusy = false
+      }
       try {
         const messages =
           kind === 'continue'
@@ -122,11 +139,16 @@ async function runGeneration(kind: PanelKind): Promise<void> {
             /* 推理链不进预览，仅正文 */
           },
           onDone: () => {
-            panel.value?.finish()
+            // 注意：chatStream 在会话建立时即 resolve，流终结以 onDone/onError 为准，
+            // 并发锁必须维持到这里释放（否则流式中可再发起并行请求）
+            if (mySeq === generationSeq) panel.value?.finish()
+            release()
           },
           onError: (m) => {
+            if (mySeq !== generationSeq) return // 已被主动停止作废的流：静默（中断不算错误）
             panel.value?.fail()
             toast.error(m)
+            release()
           }
         })
         if (mySeq !== generationSeq) {
@@ -138,8 +160,7 @@ async function runGeneration(kind: PanelKind): Promise<void> {
       } catch (err) {
         panel.value?.fail()
         toast.error(err instanceof Error ? err.message : '生成失败')
-      } finally {
-        if (mySeq === generationSeq) busy = false
+        release()
       }
     })()
   })
@@ -150,7 +171,7 @@ function stopGeneration(): void {
   generationSeq++ // 使挂起的 nextTick 回调与刚建立的会话失效
   activeSession?.abort()
   activeSession = null
-  busy = false
+  isBusy = false
   panel.value?.finish()
 }
 
@@ -164,10 +185,11 @@ function retryGeneration(): void {
 function acceptGeneration(text: string): void {
   if (!editor.value || !text) return
   const ed = editor.value
+  const html = aiTextToHtml(text)
   if (panelKind.value === 'continue') {
-    ed.chain().focus('end').insertContent(text).run()
+    ed.chain().focus('end').insertContent(html).run()
   } else if (panelKind.value === 'chapter-polish') {
-    ed.commands.setContent(text, { emitUpdate: true })
+    ed.commands.setContent(html, { emitUpdate: true })
   } else if (selectionTarget) {
     const { from, to, text: snapshot } = selectionTarget
     // 防位置失效：生成期间正文可能被编辑，ProseMirror 位置随内容漂移。
@@ -178,8 +200,12 @@ function acceptGeneration(text: string): void {
       selectionTarget = null
       return
     }
-    ed.chain().focus().deleteRange({ from, to }).insertContentAt(from, text).run()
+    ed.chain().focus().deleteRange({ from, to }).insertContentAt(from, html).run()
     selectionTarget = null
+  } else {
+    // 划词类操作但选区快照已被清空（此前被拒过）：引导重新走流程
+    toast.info('请重新选择文字后再发起润色/扩写/改写')
+    return
   }
   closePanel()
   toast.success('已插入正文，记得保存')

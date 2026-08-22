@@ -37,6 +37,12 @@ function append(chunk: string): void {
   text.value += chunk
 }
 
+/** 重置到生成中初始态（同一面板连续发起第二次生成时调用——visible 不翻转不会触发 watch） */
+function reset(): void {
+  text.value = ''
+  phase.value = 'generating'
+}
+
 /** 流结束（父组件在 onDone 里调用） */
 function finish(): void {
   if (text.value.trim()) phase.value = 'ready'
@@ -62,7 +68,7 @@ const kindLabel = computed(
     })[props.kind]
 )
 
-defineExpose({ append, finish, fail })
+defineExpose({ append, reset, finish, fail })
 
 const scrollBody = ref<HTMLElement | null>(null)
 
