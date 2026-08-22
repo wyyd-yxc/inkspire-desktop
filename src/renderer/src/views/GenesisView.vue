@@ -4,7 +4,7 @@
  * 顶部步骤条可跳转；每步独立保存（UPSERT）；定魂支持 AI 辅助，造世支持一键冷启动。
  * 完成第五步（执笔）即 MVP 闭环：跳转正文工作台，设定已接通 AI 写作。
  */
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, toRaw } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { Book } from '../../../shared/book.types'
 import type {
@@ -106,9 +106,14 @@ async function loadAll(): Promise<void> {
   }
 }
 
-/** 保存某步到 DB（自动判定 isDone） */
+/**
+ * 保存某步到 DB（自动判定 isDone）。
+ * 注意：data 必须先 toRaw 去响应式——Vue 3 reactive Proxy 无法被 Electron
+ * 结构化克隆跨进程传递，否则抛 "An object could not be cloned."（M5 验收 P0）
+ */
 async function saveStep(step: GenesisStep, data: unknown, isDone?: boolean): Promise<void> {
-  const res = await window.api.genesis.saveStep(bookId, step, data, isDone ?? false)
+  const plain = JSON.parse(JSON.stringify(toRaw(data as object))) as unknown
+  const res = await window.api.genesis.saveStep(bookId, step, plain as never, isDone ?? false)
   if (!res.ok) throw new Error(res.error)
   steps.value[step] = res.data
 }

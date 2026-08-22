@@ -298,3 +298,15 @@
 - **修改的文件**：shared/{genesis.types,presetStyles}.ts、main/db/{database,genesis}.ts、main/ipc/genesis.ts、main/index.ts、preload/index.ts、renderer/services/{genesisPrompts,aiWriting}.ts、views/GenesisView.vue、components/{ChapterSidebar,ChapterEditor,BookCard}.vue、views/WorkspaceView.vue、router。
 - **遗留问题**：布局大纲与 M3 章节树不自动同步（M7 章节画布接）；万物百科词条管理（M6）。
 - **下一步**：M5 双轨验收 → 用户确认 → tag v0.6.0 → **MVP 全部完成** → 建议 M16 打包出安装包。
+
+---
+
+## [2026-08-23 12:00] 会话 16：M5 双轨验收与 P0 整改
+
+- **双轨验收**：
+  - 静态审查（deepseek-v4-pro）：有条件通过（diff 截断致 GenesisView 未送审，bookId 传递误报，as-never 已修）
+  - 黑盒验收：**不通过**——抓到 P0 阻断：Vue reactive Proxy 无法跨 IPC 结构化克隆，定风/定魂/布局三步 UI 保存静默失败（toast「An object could not be cloned.」被吞）。自测漏掉因脚本用 IPC 直调传普通对象绕过了响应式层。
+- **整改**：GenesisView.saveStep 传 IPC 前用 `JSON.parse(JSON.stringify(toRaw(data)))` 去响应式。
+- **复验**（tmp/m5-p0-reverify.mjs，真实 UI 点击路径）：定风/定魂/布局三步全部落库（step1/2/4 done+hasData），无错误 toast ✓
+- **教训（写给后续模型）**：**凡是 Vue 组件内把 ref/reactive 对象传给 window.api.*（IPC）的，必须先 toRaw+深拷贝去响应式**——Electron 结构化克隆不支持 Proxy。自测脚本不能只走 IPC 直调，必须覆盖真实 UI 交互路径。
+- **下一步**：验收员复验 → 用户确认 → tag v0.6.0 → MVP 完成。
