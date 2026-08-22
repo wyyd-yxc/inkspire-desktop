@@ -66,7 +66,7 @@ interface AiProvider {
 /book/:id/canvas/plot               → 剧情画布
 ```
 
-主题：`styles/theme.css` 定义 CSS 变量（浅色水墨风：宣纸白背景、黛青主色、圆角卡片、柔和阴影）；预留 `[data-theme=dark]`。
+主题：`styles/theme.css` 定义 CSS 变量（浅紫罗兰风：淡紫背景 #f5f3fa、罗兰紫主色 #6c5ce7、白色圆角卡片、柔和阴影，依据 refs/ 官网截图校准）；预留 `[data-theme=dark]`。
 
 ## 5. 构建与发布
 

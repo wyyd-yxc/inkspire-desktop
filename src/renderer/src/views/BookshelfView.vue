@@ -9,7 +9,8 @@ const pong = ref('')
 
 /** 调用主进程 ping，验证 IPC 通路 */
 async function testIpc(): Promise<void> {
-  pong.value = await window.api.ping()
+  const res = await window.api.ping()
+  pong.value = res.ok ? res.data : `IPC 错误：${res.error}`
 }
 </script>
 
