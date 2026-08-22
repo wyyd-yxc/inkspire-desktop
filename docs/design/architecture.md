@@ -42,7 +42,7 @@ interface AiProvider {
 |---|---|---|
 | `settings` | key, value(json) | 应用设置（默认档案 id、主题等） |
 | `api_profiles` | id, name, provider_id, base_url, api_key, model, params, created_at | AI 接口档案 |
-| `books` | id, title, genre, description, cover_path, status, created_at, updated_at | 书籍 |
+| `books` | id, title, genre, description, cover, status, created_at, updated_at | 书籍 |
 | `genesis_steps` | book_id, step(1-5), data(json), is_done | 创世台五步状态 |
 | `chapters` | id, book_id, title, summary, sort_order, content, word_count, status, updated_at | 章节 |
 | `scenes` | id, chapter_id, node_id, title, mode, data(json), sort_order | 章节画布场景 |
@@ -52,7 +52,7 @@ interface AiProvider {
 | `style_profiles` | id, book_id?, name, prompt_data(json), source_type | 风格包 |
 | `agent_bindings` | slot, profile_id | 功能槽位→档案绑定 |
 
-约定：主键用 `TEXT`（nanoid）；时间戳 ISO 字符串；JSON 字段统一 `data`/`value` 命名。表结构演进用版本号迁移（`schema_migrations` 表，只增不改）。
+约定：主键用 TEXT（randomUUID）；时间戳 ISO 字符串；JSON 字段统一 `data`/`value` 命名。表结构演进用版本号迁移（`schema_migrations` 表，只增不改）。
 
 ## 4. 前端结构与路由（初版）
 

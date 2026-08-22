@@ -70,7 +70,7 @@ export function createBook(input: CreateBookInput): Book {
   }
   d.prepare(
     `INSERT INTO books (id, title, genre, description, cover, status, created_at, updated_at)
-     VALUES (@id, @title, @genre, @description, @cover, @status, @createdAt, @updatedAt)`
+     VALUES (@id, @title, @genre, @description, @cover, @status, @created_at, @updated_at)`
   ).run({
     id: book.id,
     title: book.title,
@@ -103,7 +103,7 @@ export function updateBook(id: string, input: UpdateBookInput): Book {
   const d: Database = getDb()
   d.prepare(
     `UPDATE books SET title=@title, genre=@genre, description=@description,
-     cover=@cover, status=@status, updated_at=@updatedAt WHERE id=@id`
+     cover=@cover, status=@status, updated_at=@updated_at WHERE id=@id`
   ).run({
     id: next.id,
     title: next.title,

@@ -68,3 +68,18 @@
   - typecheck node/web 双 0 错误
 - **遗留问题**：封面上传未做（M1 验收点未含，挂 M12 作品风格附近再做）；「点击卡片进入创作」待 M3 路由。
 - **下一步**：M1 子代理二次验收 → 用户确认 → tag；然后 M2 设置中心（API 档案 CRUD + 连通测试）。
+
+---
+
+## [2026-08-22 13:50] 会话 4：M1 二次验收整改（P0 修复）
+
+- **使用的模型**：GLM-5.3（zai-start-plan）
+- **完成内容**：
+  1. 二次验收结论**不通过**（报告 2026-08-22-M1-bookshelf.md）：`books:create/update` 的 SQL 命名参数与 run() 传参键不匹配（@createdAt/@updatedAt vs created_at/updated_at），真实 Electron 内建书 100% 失败。验收员以 --remote-debugging-port+CDP 驱动真实应用复现。
+  2. 修复 src/main/db/books.ts 两处参数名（统一 snake_case 对齐列名）。
+  3. **堵自测盲区**：selftest 从只测 list 升级为完整 CRUD 链路（create→list 确认→update→remove→list 确认删除），实测输出全部通过：`{create:true,listSawIt:true,update:true,remove:true,listAfterDelete:false}`。
+  4. P2 对齐：architecture.md 数据模型 cover_path→cover、nanoid→randomUUID。
+- **教训（写给后续模型）**：mock 测试不能替代真实链路验证；凡新增 IPC 写通道，必须将其纳入 selftest 全链路序列。
+- **修改的文件**：src/main/db/books.ts、src/main/index.ts（selftest 扩展）、docs/design/architecture.md、docs/worklog/worklog.md。
+- **遗留问题**：无新增；复验通过后 M1 转「待用户确认」。
+- **下一步**：验收员复验 M1 → 用户确认 → tag v0.2.0-m1-bookshelf；M2 设置中心。

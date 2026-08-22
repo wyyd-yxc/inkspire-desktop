@@ -27,15 +27,29 @@ function createWindow(): void {
 
   win.on('ready-to-show', () => win.show())
 
-  // 自检开关（INKSPIRE_SELFTEST=1 时启用）：确认 preload 桥接与数据库全链路，结果打到主进程日志
+  // 自检开关（INKSPIRE_SELFTEST=1 时启用）：完整 CRUD 全链路验证（含写路径），结果打到主进程日志
   win.webContents.on('did-finish-load', () => {
     if (process.env.INKSPIRE_SELFTEST) {
       win.webContents
         .executeJavaScript(
           `(async () => {
             const apiType = typeof window.api
-            const books = apiType === 'object' ? await window.api.books.list() : null
-            return JSON.stringify({ apiType, books })
+            if (apiType !== 'object') return JSON.stringify({ apiType })
+            const b = window.api.books
+            const created = await b.create({ title: 'SELFTEST-临时', genre: '', description: '自检自动创建' })
+            const id = created.ok ? created.data.id : ''
+            const listSawIt = (await b.list()).data.some((x) => x.id === id)
+            const updated = await b.update(id, { description: '自检更新' })
+            const removed = await b.remove(id)
+            const listAfterDelete = (await b.list()).data.some((x) => x.id === id)
+            return JSON.stringify({
+              apiType,
+              create: created.ok,
+              listSawIt,
+              update: updated.ok,
+              remove: removed.ok,
+              listAfterDelete
+            })
           })()`
         )
         .then((out: string) => console.log(`[selftest] ${out}`))
