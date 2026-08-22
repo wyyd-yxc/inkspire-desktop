@@ -3,7 +3,7 @@
  * API 档案编辑弹窗（新建/编辑复用）：名称、协议、地址、密钥、模型 + 高级参数折叠区。
  * 支持「保存前先测试」——测试通过再保存，降低配错的挫败感。
  */
-import { reactive, ref, watch } from 'vue'
+import { onBeforeUnmount, reactive, ref, watch } from 'vue'
 import type {
   AiParams,
   ApiProfile,
@@ -48,13 +48,13 @@ watch(visible, (v) => {
   testStatus.value = ''
 })
 
-/** 组装 params（空串不写入） */
+/** 组装 params（空串不写入；数值做范围钳制） */
 function buildParams(): AiParams {
   const params: AiParams = {}
   const t = Number(form.temperature)
   const m = Number(form.maxTokens)
-  if (form.temperature !== '' && !Number.isNaN(t)) params.temperature = t
-  if (form.maxTokens !== '' && !Number.isNaN(m)) params.maxTokens = m
+  if (form.temperature !== '' && !Number.isNaN(t)) params.temperature = Math.min(2, Math.max(0, t))
+  if (form.maxTokens !== '' && !Number.isNaN(m)) params.maxTokens = Math.max(1, Math.round(m))
   return params
 }
 
@@ -99,7 +99,9 @@ async function save(): Promise<void> {
   }
 }
 
-/** 连通测试：用当前表单内容（无需先保存）发起一次流式请求 */
+/** 连通测试：用当前表单内容（无需先保存）发起一次流式请求；可随时停止 */
+let testSession: { abort: () => void } | null = null
+
 async function test(): Promise<void> {
   if (!form.baseUrl.trim() || !form.model.trim()) {
     toast.error('请先填写 API 地址与模型名')
@@ -109,7 +111,7 @@ async function test(): Promise<void> {
   testOutput.value = ''
   testStatus.value = ''
   try {
-    const session = await chatStream(
+    testSession = await chatStream(
       {
         id: '', // 临时档案：不落库直接测
         name: form.name,
@@ -127,22 +129,34 @@ async function test(): Promise<void> {
         onDone: (info) => {
           testStatus.value = 'ok'
           testOutput.value += `\n（首字 ${info.firstTokenMs}ms，总耗时 ${(info.totalMs / 1000).toFixed(1)}s）`
+          testing.value = false
         },
         onError: (m) => {
           testStatus.value = 'fail'
           testOutput.value = testOutput.value || m
+          testing.value = false
         }
       }
     )
-    // 测试会话在弹窗关闭时随组件卸载自然结束；此处无需持有
-    void session
   } catch (err) {
     testStatus.value = 'fail'
     testOutput.value = err instanceof Error ? err.message : '测试失败'
-  } finally {
     testing.value = false
   }
 }
+
+/** 停止进行中的测试 */
+function stopTest(): void {
+  testSession?.abort()
+  testing.value = false
+}
+
+// 弹窗关闭时中止仍在进行的测试，避免后台空跑
+watch(visible, (v) => {
+  if (!v) stopTest()
+})
+
+onBeforeUnmount(() => stopTest())
 </script>
 
 <template>
@@ -253,11 +267,13 @@ async function test(): Promise<void> {
 
         <div class="mt-6 flex justify-between">
           <button
-            class="rounded-lg border border-ink-border px-4 py-2 text-sm text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary disabled:opacity-50"
-            :disabled="testing"
-            @click="test"
+            class="rounded-lg border px-4 py-2 text-sm transition-colors"
+            :class="testing
+              ? 'border-ink-danger text-ink-danger hover:brightness-110'
+              : 'border-ink-border text-ink-text-secondary hover:border-ink-primary hover:text-ink-primary'"
+            @click="testing ? stopTest() : test()"
           >
-            {{ testing ? '测试中…' : '测试连接' }}
+            {{ testing ? '停止' : '测试连接' }}
           </button>
           <div class="flex gap-3">
             <button

@@ -115,3 +115,19 @@
 - **遇到的问题与解决**：Provider 内部 setTimeout+throwIfAborted 的硬超时实现无效（无法中止外部 signal）→ 移至 IPC 层由 AbortController 统一控制。
 - **遗留问题**：无阻断项。技术债 M1 的两项（hover 删除可达性、mock 显式开关）未在 M2 处理，顺延 M3（见 roadmap）。
 - **下一步**：M2 子代理二次验收 → 用户确认 → tag v0.3.0-m2-settings；M3 正文工作台。
+
+---
+
+## [2026-08-22 16:10] 会话 5 补记：M2 验收整改
+
+- 二次验收结论**有条件通过**（8/8 验收点过；2 一般 + 5 轻微），整改情况：
+  - P1（一般）默认档案悬挂指向：清空逻辑从渲染层下沉到 DAO 层（deleteProfile 内检查并清 ai.default_profile_id）——CDP 实测 IPC 直删后 default 为空串 ✓
+  - P2（一般）弹窗测试无中断：「测试连接」变为可切换「停止」，弹窗关闭/组件卸载自动 abort
+  - P3（轻微）流订阅时序竞态：services/ai.ts 改为先订阅+队列缓冲、拿到 requestId 后回放过滤——真实 UI 点击冒烟通过（流式输出+耗时统计正常）✓
+  - P4（轻微）ipc/ai.ts 类型断言：resolveConnection 分离返回 {conn, kind}
+  - P5（轻微）高级参数范围钳制（temperature 0~2、maxTokens ≥1）
+  - P6（轻微）apiKey 明文下发渲染层：**保留现状**（单机应用、渲染层在信任边界内、编辑弹窗需回显），登记为已知设计权衡
+  - P7（轻微）worklog 与 roadmap 技术债不一致：roadmap 已更新
+- **修改的文件**：src/main/db/apiProfiles.ts、src/main/ipc/ai.ts、src/renderer/src/services/ai.ts、components/ApiProfileDialog.vue、docs/plan/roadmap.md、worklog。
+- **遗留问题**：无。待复验 → 用户确认 → tag。
+- **下一步**：复验 M2 → M3 正文工作台。

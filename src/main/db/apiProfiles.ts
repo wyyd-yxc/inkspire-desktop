@@ -5,6 +5,7 @@
 import { randomUUID } from 'node:crypto'
 import type { Database } from 'better-sqlite3'
 import { getDb } from './database'
+import { getSetting, setSetting } from './settings'
 import type {
   AiParams,
   ApiProfile,
@@ -140,5 +141,9 @@ export function updateProfile(id: string, input: UpdateApiProfileInput): ApiProf
 export function deleteProfile(id: string): boolean {
   const d: Database = getDb()
   const res = d.prepare('DELETE FROM api_profiles WHERE id = ?').run(id)
+  // 删除的是默认档案时清空默认指向，避免悬挂引用（无论调用来自 UI 还是直接 IPC）
+  if (res.changes > 0 && getSetting('ai.default_profile_id', '') === id) {
+    setSetting('ai.default_profile_id', '')
+  }
   return res.changes > 0
 }

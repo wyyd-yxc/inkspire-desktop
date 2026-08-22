@@ -19,8 +19,14 @@ const active = new Map<string, AbortController>()
 
 const HARD_TIMEOUT_MS = 5 * 60 * 1000
 
+/** 解析结果：连接信息 + 协议类型（分离返回，避免类型断言） */
+interface ResolvedChat {
+  conn: ChatConnection
+  kind: string
+}
+
 /** 从请求里解析出连接信息（profileId 优先，其次临时 profile） */
-function resolveConnection(req: ChatStreamRequest): ChatConnection & { kind: string } {
+function resolveConnection(req: ChatStreamRequest): ResolvedChat {
   let base
   if (req.profileId) {
     const p = getProfile(req.profileId)
@@ -34,10 +40,12 @@ function resolveConnection(req: ChatStreamRequest): ChatConnection & { kind: str
   if (!base.baseUrl?.trim()) throw new Error('API 地址为空')
   if (!base.model?.trim()) throw new Error('模型名称为空')
   return {
-    baseUrl: base.baseUrl.replace(/\/+$/, ''),
-    apiKey: base.apiKey ?? '',
-    model: base.model,
-    params: base.params ?? {},
+    conn: {
+      baseUrl: base.baseUrl.replace(/\/+$/, ''),
+      apiKey: base.apiKey ?? '',
+      model: base.model,
+      params: base.params ?? {}
+    },
     kind: base.providerKind
   }
 }
@@ -47,7 +55,7 @@ export function registerAiIpc(): void {
     'ai:chat-stream',
     (e: IpcMainInvokeEvent, req: ChatStreamRequest) =>
       wrap(async () => {
-        const conn = resolveConnection(req)
+        const resolved = resolveConnection(req)
         const requestId = randomUUID()
         const controller = new AbortController()
         active.set(requestId, controller)
@@ -56,8 +64,8 @@ export function registerAiIpc(): void {
         // 异步启动流；事件推回发起方
         void (async () => {
           try {
-            const provider = getProvider(conn.kind as Parameters<typeof getProvider>[0])
-            await provider.chatStream(conn, req.messages ?? [], controller.signal, (evt) => {
+            const provider = getProvider(resolved.kind as Parameters<typeof getProvider>[0])
+            await provider.chatStream(resolved.conn, req.messages ?? [], controller.signal, (evt) => {
               if (!e.sender.isDestroyed()) e.sender.send('ai:stream:event', evt)
             }, requestId)
           } finally {
