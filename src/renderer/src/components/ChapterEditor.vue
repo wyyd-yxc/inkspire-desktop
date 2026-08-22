@@ -8,18 +8,21 @@
  */
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
-import { computed, nextTick, onBeforeUnmount, reactive, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import type { Book } from '../../../shared/book.types'
 import type { Chapter } from '../../../shared/chapter.types'
 import type { StreamSession } from '../services/ai'
 import type { SelectionAction } from '../services/aiWriting'
 import { buildChapterPolishMessages, buildContinueMessages, buildSelectionMessages, generateWriting } from '../services/aiWriting'
+import type { GenesisStepRecord, Step2Soul, Step4Layout, Step1Style } from '../../../shared/genesis.types'
+import { getPresetStyle } from '../../../shared/presetStyles'
 import { useToast } from '@/composables/useToast'
 import AiWritingPanel from '@/components/AiWritingPanel.vue'
 
 const props = defineProps<{
   chapter: Chapter | null
   book: Pick<Book, 'title' | 'genre' | 'description'> | null
+  bookId?: string
 }>()
 
 const emit = defineEmits<{
@@ -31,6 +34,38 @@ const emit = defineEmits<{
 const toast = useToast()
 const saveState = ref<'saved' | 'dirty' | 'saving'>('saved')
 const titleText = ref(props.chapter?.title ?? '')
+
+/** 创世台设定缓存（bookId 变化时加载，注入 AI 写作上下文） */
+const genesisCache = ref<{ styleHint?: string; soul?: Step2Soul; rules?: Step4Layout['rules'] }>({})
+
+/** 加载该书创世台设定用于 AI 上下文注入 */
+async function loadGenesis(bookId: string): Promise<void> {
+  if (!isElectron) return
+  try {
+    const res = await window.api.genesis.get(bookId)
+    if (!res.ok) return
+    const map = new Map<number, GenesisStepRecord>()
+    for (const r of res.data) map.set(r.step, r)
+    const style = map.get(1)?.data as Step1Style | undefined
+    const soul = map.get(2)?.data as Step2Soul | undefined
+    const layout = map.get(4)?.data as Step4Layout | undefined
+    genesisCache.value = {
+      styleHint: style?.styleId ? getPresetStyle(style.styleId)?.promptHint : undefined,
+      soul: soul?.logline ? soul : undefined,
+      rules: layout?.rules?.targetWords || layout?.rules?.forbidden || layout?.rules?.styleNotes ? layout.rules : undefined
+    }
+  } catch {
+    // 创世台加载失败不阻塞写作
+  }
+}
+
+watch(
+  () => props.bookId,
+  (id) => {
+    if (id) void loadGenesis(id)
+  },
+  { immediate: true }
+)
 
 /** 纯文本字数（去所有空白字符，符合网文计数习惯） */
 function countWords(text: string): number {
@@ -90,12 +125,13 @@ function aiTextToHtml(text: string): string {
 /** 划词目标（发起划词操作时的选区快照） */
 let selectionTarget: { from: number; to: number; text: string } | null = null
 
-/** 组装写作上下文（前文 = 当前正文纯文本） */
+/** 组装写作上下文（前文 = 当前正文纯文本；含创世台设定注入 AI 提示词） */
 function writingContext() {
   return {
     book: props.book,
     chapterTitle: props.chapter?.title ?? '',
-    contextTail: editor.value?.getText() ?? ''
+    contextTail: editor.value?.getText() ?? '',
+    genesis: genesisCache.value
   }
 }
 

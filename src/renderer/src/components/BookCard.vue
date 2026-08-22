@@ -47,6 +47,11 @@ function formatDate(iso: string): string {
 function openBook(): void {
   void router.push(`/book/${props.book.id}/write`)
 }
+
+/** 进入创世台 */
+function openGenesis(): void {
+  void router.push(`/book/${props.book.id}/genesis`)
+}
 </script>
 
 <template>
@@ -77,6 +82,16 @@ function openBook(): void {
         {{ book.description || '暂无简介' }}
       </p>
       <p class="mt-auto pt-1 text-xs text-ink-text-muted">更新于 {{ formatDate(book.updatedAt) }}</p>
+      <div class="mt-2 flex gap-2">
+        <button
+          class="flex-1 rounded-lg bg-ink-primary-soft py-1 text-xs text-ink-primary transition-colors hover:bg-ink-primary hover:text-white"
+          @click.stop="openBook"
+        >写作</button>
+        <button
+          class="flex-1 rounded-lg border border-ink-border py-1 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
+          @click.stop="openGenesis"
+        >创世台</button>
+      </div>
     </div>
 
     <!-- hover 删除按钮 -->

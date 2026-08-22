@@ -11,6 +11,7 @@ const props = defineProps<{
   activeId: string
   totalWords: number
   bookTitle: string
+  bookId: string
 }>()
 
 const emit = defineEmits<{
@@ -63,10 +64,17 @@ const wordsLabel = computed(() => props.totalWords.toLocaleString('zh-CN'))
         >
           ← 书斋
         </router-link>
-        <button
-          class="rounded-full bg-ink-primary px-3 py-1 text-xs text-white transition-colors hover:bg-ink-primary-hover"
-          @click="emit('create')"
-        >+ 新章节</button>
+        <div class="flex items-center gap-1.5">
+          <router-link
+            :to="`/book/${bookId}/genesis`"
+            class="rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
+            title="创世台"
+          >创世台</router-link>
+          <button
+            class="rounded-full bg-ink-primary px-3 py-1 text-xs text-white transition-colors hover:bg-ink-primary-hover"
+            @click="emit('create')"
+          >+ 新章节</button>
+        </div>
       </div>
       <p class="mt-2 truncate text-sm font-semibold" :title="bookTitle">{{ bookTitle }}</p>
     </div>

@@ -5,6 +5,7 @@
  */
 import type { ChatMessage } from '../../../shared/ai.types'
 import type { Book } from '../../../shared/book.types'
+import type { Step2Soul, Step4Layout } from '../../../shared/genesis.types'
 import { chatStream, type StreamHandlers, type StreamSession } from './ai'
 import { isElectron } from './books'
 
@@ -14,25 +15,48 @@ export interface WritingContext {
   chapterTitle: string
   /** 前文尾部纯文本（调用方负责截断） */
   contextTail: string
+  /** 创世台设定（定魂+布局写作规则+文风），注入 AI 提示词；无则 undefined */
+  genesis?: {
+    styleHint?: string
+    soul?: Step2Soul
+    rules?: Step4Layout['rules']
+  }
 }
 
 /** 前文注入上限（字符）：过长会挤占生成预算且多数模型难以利用 */
 const CONTEXT_TAIL_LIMIT = 3000
 
-/** system 提示：网文写作助手角色与输出纪律 */
+/** system 提示：网文写作助手角色与输出纪律；注入创世台设定（文风/定魂/写作规则） */
 function systemPrompt(ctx: WritingContext): string {
   const meta: string[] = []
   if (ctx.book?.title) meta.push(`书名《${ctx.book.title}》`)
   if (ctx.book?.genre) meta.push(`题材：${ctx.book.genre}`)
   if (ctx.book?.description) meta.push(`简介：${ctx.book.description.slice(0, 200)}`)
-  return [
+  const parts: string[] = [
     '你是一位资深网文写作助手，正在为一部长篇小说执笔。',
-    meta.length ? `作品信息——${meta.join('；')}。` : '',
-    '要求：直接输出小说正文本身；不要任何解释、前言、标题、编号或引号包裹；',
-    '保持与前文一致的文风、人称与时态；中文书写，段落自然分段。'
+    meta.length ? `作品信息——${meta.join('；')}。` : ''
   ]
-    .filter(Boolean)
-    .join('')
+  // 创世台设定注入（定魂是最高指令，文风约束调性，写作规则全局约束）
+  if (ctx.genesis?.styleHint) parts.push(`目标文风：${ctx.genesis.styleHint}`)
+  if (ctx.genesis?.soul) {
+    const s = ctx.genesis.soul
+    if (s.logline) parts.push(`故事核心（最高指令）：${s.logline}`)
+    const pillars: string[] = []
+    if (s.cheat.coreAbility || s.cheat.powerSystem)
+      pillars.push(`金手指：${[s.cheat.coreAbility, s.cheat.powerSystem].filter(Boolean).join(' / ')}`)
+    if (s.conflict.mainline) pillars.push(`主线冲突：${s.conflict.mainline}`)
+    if (pillars.length) parts.push(pillars.join('；'))
+  }
+  if (ctx.genesis?.rules) {
+    const r = ctx.genesis.rules
+    const rules: string[] = []
+    if (r.targetWords) rules.push(`目标字数${r.targetWords}`)
+    if (r.forbidden) rules.push(`禁止：${r.forbidden}`)
+    if (r.styleNotes) rules.push(`写法要求：${r.styleNotes}`)
+    if (rules.length) parts.push(`写作规则——${rules.join('；')}。`)
+  }
+  parts.push('要求：直接输出小说正文本身；不要任何解释、前言、标题、编号或引号包裹；保持与前文一致的文风、人称与时态；中文书写，段落自然分段。')
+  return parts.filter(Boolean).join('')
 }
 
 function trimTail(tail: string): string {

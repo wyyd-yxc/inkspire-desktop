@@ -19,6 +19,11 @@ import type {
   CreateChapterInput,
   UpdateChapterInput
 } from '../shared/chapter.types'
+import type {
+  GenesisStep,
+  GenesisStepRecord,
+  SaveGenesisInput
+} from '../shared/genesis.types'
 
 const api = {
   /** IPC 通路自检：正常返回 { ok: true, data: 'pong' } */
@@ -47,6 +52,21 @@ const api = {
       ipcRenderer.invoke('chapters:delete', id),
     move: (id: string, dir: -1 | 1): Promise<IpcResult<boolean>> =>
       ipcRenderer.invoke('chapters:move', id, dir)
+  },
+
+  /** 创世台五步设定 */
+  genesis: {
+    get: (bookId: string): Promise<IpcResult<GenesisStepRecord[]>> =>
+      ipcRenderer.invoke('genesis:get', bookId),
+    save: (bookId: string, input: SaveGenesisInput): Promise<IpcResult<GenesisStepRecord>> =>
+      ipcRenderer.invoke('genesis:save', bookId, input),
+    saveStep: (
+      bookId: string,
+      step: GenesisStep,
+      data: unknown,
+      isDone: boolean
+    ): Promise<IpcResult<GenesisStepRecord>> =>
+      ipcRenderer.invoke('genesis:save-step', bookId, step, data, isDone)
   },
 
   /** AI 接口档案（设置中心） */

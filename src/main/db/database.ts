@@ -58,6 +58,18 @@ const MIGRATIONS: Array<{ version: number; sql: string }> = [
         updated_at  TEXT NOT NULL
       );
       CREATE INDEX IF NOT EXISTS idx_chapters_book ON chapters(book_id, sort_order);`
+  },
+  {
+    version: 4,
+    sql: `
+      CREATE TABLE IF NOT EXISTS genesis_steps (
+        book_id    TEXT NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+        step       INTEGER NOT NULL,
+        data       TEXT NOT NULL DEFAULT '{}',
+        is_done    INTEGER NOT NULL DEFAULT 0,
+        updated_at TEXT NOT NULL,
+        PRIMARY KEY (book_id, step)
+      );`
   }
 ]
 

@@ -22,6 +22,11 @@ const router = createRouter({
       path: '/book/:bookId/write',
       name: 'workspace',
       component: () => import('@/views/WorkspaceView.vue')
+    },
+    {
+      path: '/book/:bookId/genesis',
+      name: 'genesis',
+      component: () => import('@/views/GenesisView.vue')
     }
   ]
 })
