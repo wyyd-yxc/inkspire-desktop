@@ -142,3 +142,15 @@
   3. SettingsView 行内测试：testingId（进行中）与 resultForId（结果归属）分离——按钮复位且结果保留显示（修复过程中曾误删「编辑」按钮，当即发现恢复）
 - 实测：CDP 点击真实行内「测试」→ 完成后按钮恢复「测试」、输出区保留「连接成功（首字 2634ms · 总 2.7s）」、编辑按钮存在；typecheck 双 0。
 - M2 全部验收意见闭环，待用户确认后 tag v0.3.0-m2-settings。
+
+---
+
+## [2026-08-22 18:00] 会话 6：M2 确认打 tag；启用 ox-alpha 外部验收；M3 启动
+
+- **使用的模型**：GLM-5.3（zai-start-plan）
+- **完成内容**：
+  1. 用户确认 M2，已打 tag `v0.3.0-m2-settings`。
+  2. 按用户指示启用外部模型二次验收：在 ZCode 配置中找到 OpenRouter 档案（key 有效），模型列表确认 `stealth/ox-alpha` 存在并实测对话正常（HTTP 200）。
+  3. 新增 `scripts/accept-via-llm.mjs`：材料+diff 发给 ox-alpha 静态审查，报告存 docs/acceptance/llm-review-*.md；key 从环境变量或 ZCode 配置读取，绝不入日志。
+  4. acceptance-workflow.md 第 3 节更新为双轨验收：LLM 静态审查（ox-alpha）+ 本地子代理黑盒验收，两份报告都入库，任一不通过即不通过。
+- **下一步**：M3 正文工作台（chapters 表、章节树、TipTap 编辑器、自动保存、字数统计）。

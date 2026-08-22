@@ -34,10 +34,10 @@
 3. 实际启动应用执行功能清单（黑盒操作）；
 4. 输出结构化验收报告。
 
-**执行方式（升级路径，已预留）**：当用户提供 OpenRouter API Key 后，验收改由 OpenRouter 上的 `ox-alpha` 模型执行：
-- Key 存放于本机 `~/.inkspire/openrouter.key`（绝不入库）；
-- 通过脚本 `scripts/accept-via-openrouter.mjs`（M1 阶段创建）调用，把验收材料（diff+文档+运行说明）发给 ox-alpha 审查，回传报告；
-- 开发模型仅做材料准备与报告落盘，不得修改 ox-alpha 结论。
+**执行方式（升级路径，已启用）**：外部模型审查 + 本地子代理黑盒验收双轨并行：
+- **LLM 静态审查**：脚本 `scripts/accept-via-llm.mjs`（2026-08-22 启用）。Key 取环境变量 `OPENROUTER_API_KEY`，缺省回退读 ZCode 配置中的 OpenRouter 档案；默认模型 `stealth/ox-alpha`。开发模型仅准备材料（验收点+diff），不得修改外部模型结论；报告存 `docs/acceptance/llm-review-*.md`。
+- **子代理黑盒验收**：本地 Agent（general-purpose）以新接手者视角实际启动应用、执行功能清单（参考其使用 --remote-debugging-port + CDP 驱动真实 Electron 的方法）。
+- 两份报告都入库，任一「不通过」即不通过；分歧项由用户裁决。
 
 **子代理提示词必须包含**：本规范路径、目标里程碑、验收点清单、输出模板。
 
