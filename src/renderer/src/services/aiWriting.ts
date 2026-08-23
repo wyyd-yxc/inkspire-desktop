@@ -42,9 +42,11 @@ function systemPrompt(ctx: WritingContext): string {
     const s = ctx.genesis.soul
     if (s.logline) parts.push(`故事核心（最高指令）：${s.logline}`)
     const pillars: string[] = []
-    if (s.cheat.coreAbility || s.cheat.powerSystem)
-      pillars.push(`金手指：${[s.cheat.coreAbility, s.cheat.powerSystem].filter(Boolean).join(' / ')}`)
-    if (s.conflict.mainline) pillars.push(`主线冲突：${s.conflict.mainline}`)
+    const cheatAbility = s.cheat?.coreAbility
+    const cheatSystem = s.cheat?.powerSystem
+    if (cheatAbility || cheatSystem)
+      pillars.push(`金手指：${[cheatAbility, cheatSystem].filter(Boolean).join(' / ')}`)
+    if (s.conflict?.mainline) pillars.push(`主线冲突：${s.conflict.mainline}`)
     if (pillars.length) parts.push(pillars.join('；'))
   }
   if (ctx.genesis?.rules) {

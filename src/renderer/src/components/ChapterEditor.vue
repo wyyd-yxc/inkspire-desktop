@@ -40,12 +40,18 @@ const titleText = ref(props.chapter?.title ?? '')
 const genesisCache = ref<{ styleHint?: string; soul?: Step2Soul; rules?: Step4Layout['rules'] }>({})
 /** 加载状态：loadGenesis 进行中的 promise（防「秒点续写」时设定未加载完） */
 let genesisLoadingPromise: Promise<void> = Promise.resolve()
+/** 加载序号：切书时递增，防止旧请求延迟返回覆盖新书设定 */
+let genesisLoadSeq = 0
 
 /** 加载该书创世台设定用于 AI 上下文注入 */
 async function loadGenesis(bookId: string): Promise<void> {
   if (!isElectron) return
+  const mySeq = ++genesisLoadSeq
+  // 切书时立即清空缓存，防止旧书设定残留注入新书
+  genesisCache.value = {}
   try {
     const res = await window.api.genesis.get(bookId)
+    if (mySeq !== genesisLoadSeq) return // 期间已切到别的书，丢弃本次结果
     if (!res.ok) return
     const map = new Map<number, GenesisStepRecord>()
     for (const r of res.data) map.set(r.step, r)
@@ -55,7 +61,7 @@ async function loadGenesis(bookId: string): Promise<void> {
     genesisCache.value = {
       styleHint: style?.styleId ? getPresetStyle(style.styleId)?.promptHint : undefined,
       soul: soul?.logline ? soul : undefined,
-      rules: layout?.rules?.targetWords || layout?.rules?.forbidden || layout?.rules?.styleNotes ? layout.rules : undefined
+      rules: layout?.rules && (layout.rules.targetWords || layout.rules.forbidden || layout.rules.styleNotes) ? layout.rules : undefined
     }
   } catch (err) {
     // 创世台加载失败不阻塞写作，但记录便于排查（此前 isElectron 未导入导致 ReferenceError 被静默吞掉）
