@@ -319,3 +319,23 @@
 - **MVP 全部完成**（M1-M5）：建书→设定→AI 写作 闭环可用。
 - 待用户确认后打 tag v0.6.0-m5-genesis。
 - **下一步建议**：M16 打包 NSIS 安装包（让用户真正装上日常用），然后继续 M6+ 功能模块。
+
+---
+
+## [2026-08-23 14:30] 会话 17：M5 用户反馈修复（双轨验收通过）
+
+- **用户反馈两个问题**：① 创世台定魂 AI 辅助有时无法采纳 + AI 输出嵌入「定魂」等步骤昵称 ② 创世台完成后 AI 续写未遵守设定
+- **根因调查**（两个 Explore 代理）：
+  - 问题①：genesisPrompts.ts 提示词直接用「定魂设定」等步骤昵称（3 处 user prompt）；parseSoulAssist 只剥纯围栏无法处理散文包裹，且 logline 空即整表作废
+  - 问题②（阻断）：ChapterEditor.vue 用了 isElectron 但**未 import**，loadGenesis 抛 ReferenceError 被 `void` 静默吞掉，genesisCache 永远空 {}，systemPrompt 的 genesis 注入全部跳过。**此前验收「通过」是假阳性**（关键词可能来自 book.description 而非 genesis）
+- **修复**（commit f031cfa + 7ba4446）：
+  1. 提示词去昵称：定魂→故事核心（3 处）
+  2. parseSoulAssist：JSON 提取改首{到末}子串（兼容散文包裹/围栏变体）；字段降级（有任意非空即返回）
+  3. ChapterEditor 补 `import { isElectron }`；catch 加 console.warn；ensureGenesisLoaded 防「秒点续写」竞态
+  4. acceptSoulAssist 字段级合并（仅覆盖 AI 非空字段）
+  5. 静态审查额外修复：s.cheat 可选链防旧数据崩溃；loadGenesis 切书清缓存+序号防覆盖；rules 显式非空判断
+- **双轨验收**：
+  - 静态审查（deepseek-v4-pro）：发现 5 项（#2/#3 已修，#5 误报已确认 bookId 已传，#1/#4/#6 低优先级挂技术债）
+  - 黑盒验收：**通过**（6 项全过）——续写含 genesis-only 关键词「星辉/镜/家母遗物」（前文无，证明注入生效）；无昵称泄漏；采纳容错 4 用例全过；字段合并 6 断言全过；重启持久化全过
+- **教训**：① Vue 组件用 isElectron 必须 import（全仓 5 个文件都 import 了唯独 ChapterEditor 漏）；② 验收不能用「续写含关键词」间接判定 genesis 注入——关键词可能来自 book.description；③ typecheck 报 Cannot find name 应被拦截，此次漏网需排查
+- **下一步**：用户确认 → M5 修复完成可打 tag → M16 打包。
