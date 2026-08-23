@@ -163,16 +163,37 @@ async function aiAssistSoul(): Promise<void> {
   }
 }
 
-/** 采纳定魂辅助：解析 JSON 填入表单 */
+/** 采纳定魂辅助：解析 JSON 后按字段合并（仅覆盖 AI 给出的非空字段，保留用户已填内容） */
 function acceptSoulAssist(text: string): void {
   const parsed = parseSoulAssist(text)
   if (!parsed) {
     toast.error('AI 输出格式异常，无法解析。可手动复制有用部分')
     return
   }
-  step2.value = parsed
+  const cur = step2.value
+  const mergeStr = (old: string, neu: string): string => (neu.trim() ? neu : old)
+  step2.value = {
+    logline: mergeStr(cur.logline, parsed.logline),
+    genre: {
+      mainType: mergeStr(cur.genre.mainType, parsed.genre.mainType),
+      subType: mergeStr(cur.genre.subType, parsed.genre.subType),
+      targetReader: mergeStr(cur.genre.targetReader, parsed.genre.targetReader),
+      mood: mergeStr(cur.genre.mood, parsed.genre.mood)
+    },
+    cheat: {
+      coreAbility: mergeStr(cur.cheat.coreAbility, parsed.cheat.coreAbility),
+      powerSystem: mergeStr(cur.cheat.powerSystem, parsed.cheat.powerSystem),
+      limitation: mergeStr(cur.cheat.limitation, parsed.cheat.limitation)
+    },
+    conflict: {
+      opening: mergeStr(cur.conflict.opening, parsed.conflict.opening),
+      mainline: mergeStr(cur.conflict.mainline, parsed.conflict.mainline),
+      ultimate: mergeStr(cur.conflict.ultimate, parsed.conflict.ultimate),
+      villain: mergeStr(cur.conflict.villain, parsed.conflict.villain)
+    }
+  }
   closeAiPanel()
-  toast.success('已填入定魂设定，请检查后保存')
+  toast.success('已填入故事核心设定，请检查后保存')
 }
 
 // ---- 第 3 步 造世冷启动 ----

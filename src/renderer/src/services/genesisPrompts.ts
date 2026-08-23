@@ -33,7 +33,7 @@ export function buildSoulAssistMessages(
     { role: 'system', content: genesisSystemPrompt(book, styleId) },
     {
       role: 'user',
-      content: `请为这本书起草「定魂」设定，包含核心一句话与三大支柱。严格输出如下 JSON（不要任何额外文字、不要 markdown 代码块）：
+      content: `请为这本书起草故事核心设定，包含核心一句话与三大支柱。严格输出如下 JSON（不要任何额外文字、不要 markdown 代码块）：
 {
   "logline": "一句话：主角是谁、想做什么、面对什么阻碍",
   "genre": { "mainType": "", "subType": "", "targetReader": "", "mood": "" },
@@ -61,7 +61,7 @@ export function buildWorldColdStartMessages(
     { role: 'system', content: genesisSystemPrompt(book, styleId) },
     {
       role: 'user',
-      content: `基于以下定魂设定，为这部长篇小说生成一套完整初始设定。严格按以下四段输出，每段以「【段名】」开头，段内可自由分段：
+      content: `基于以下故事核心设定，为这部长篇小说生成一套完整初始设定。严格按以下四段输出，每段以「【段名】」开头，段内可自由分段：
 
 【全书大纲】
 （卷级结构、字数分配、节奏规划、伏笔布局，200-400 字）
@@ -75,7 +75,7 @@ export function buildWorldColdStartMessages(
 【主角设定】
 （人设骨架、目标冲突、可写细节，200-400 字）
 
-定魂设定：
+故事核心设定：
 ${soulText}`
     }
   ]
@@ -101,33 +101,48 @@ export function parseWorldColdStart(text: string): {
   }
 }
 
-/** 解析定魂 AI 辅助的 JSON 输出（容错：去 markdown 围栏后解析） */
+/** 解析故事核心 AI 辅助的 JSON 输出（容错：提取首个 { 到末个 } 子串，兼容散文包裹/围栏/前后说明） */
 export function parseSoulAssist(text: string): Step2Soul | null {
-  const cleaned = text.replace(/```json\s*|\s*```/g, '').trim()
+  // 提取第一个 { 到最后一个 } 之间的子串，兼容 AI 在 JSON 前后加散文说明的情况
+  const firstBrace = text.indexOf('{')
+  const lastBrace = text.lastIndexOf('}')
+  if (firstBrace < 0 || lastBrace < 0 || lastBrace <= firstBrace) return null
+  const jsonStr = text.slice(firstBrace, lastBrace + 1)
+  let obj: {
+    logline?: string
+    genre?: { mainType?: string; subType?: string; targetReader?: string; mood?: string }
+    cheat?: { coreAbility?: string; powerSystem?: string; limitation?: string }
+    conflict?: { opening?: string; mainline?: string; ultimate?: string; villain?: string }
+  }
   try {
-    const obj = JSON.parse(cleaned)
-    if (!obj.logline) return null
-    return {
-      logline: String(obj.logline ?? ''),
-      genre: {
-        mainType: String(obj.genre?.mainType ?? ''),
-        subType: String(obj.genre?.subType ?? ''),
-        targetReader: String(obj.genre?.targetReader ?? ''),
-        mood: String(obj.genre?.mood ?? '')
-      },
-      cheat: {
-        coreAbility: String(obj.cheat?.coreAbility ?? ''),
-        powerSystem: String(obj.cheat?.powerSystem ?? ''),
-        limitation: String(obj.cheat?.limitation ?? '')
-      },
-      conflict: {
-        opening: String(obj.conflict?.opening ?? ''),
-        mainline: String(obj.conflict?.mainline ?? ''),
-        ultimate: String(obj.conflict?.ultimate ?? ''),
-        villain: String(obj.conflict?.villain ?? '')
-      }
-    }
+    obj = JSON.parse(jsonStr)
   } catch {
     return null
   }
+  const result: Step2Soul = {
+    logline: String(obj.logline ?? ''),
+    genre: {
+      mainType: String(obj.genre?.mainType ?? ''),
+      subType: String(obj.genre?.subType ?? ''),
+      targetReader: String(obj.genre?.targetReader ?? ''),
+      mood: String(obj.genre?.mood ?? '')
+    },
+    cheat: {
+      coreAbility: String(obj.cheat?.coreAbility ?? ''),
+      powerSystem: String(obj.cheat?.powerSystem ?? ''),
+      limitation: String(obj.cheat?.limitation ?? '')
+    },
+    conflict: {
+      opening: String(obj.conflict?.opening ?? ''),
+      mainline: String(obj.conflict?.mainline ?? ''),
+      ultimate: String(obj.conflict?.ultimate ?? ''),
+      villain: String(obj.conflict?.villain ?? '')
+    }
+  }
+  // 逐字段降级：有任意一个非空字段即返回（不再因 logline 空就整表作废）
+  const hasAny = result.logline ||
+    Object.values(result.genre).some(Boolean) ||
+    Object.values(result.cheat).some(Boolean) ||
+    Object.values(result.conflict).some(Boolean)
+  return hasAny ? result : null
 }

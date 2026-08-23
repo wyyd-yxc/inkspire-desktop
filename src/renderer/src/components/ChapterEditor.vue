@@ -16,6 +16,7 @@ import type { SelectionAction } from '../services/aiWriting'
 import { buildChapterPolishMessages, buildContinueMessages, buildSelectionMessages, generateWriting } from '../services/aiWriting'
 import type { GenesisStepRecord, Step2Soul, Step4Layout, Step1Style } from '../../../shared/genesis.types'
 import { getPresetStyle } from '../../../shared/presetStyles'
+import { isElectron } from '../services/books'
 import { useToast } from '@/composables/useToast'
 import AiWritingPanel from '@/components/AiWritingPanel.vue'
 
@@ -37,6 +38,8 @@ const titleText = ref(props.chapter?.title ?? '')
 
 /** 创世台设定缓存（bookId 变化时加载，注入 AI 写作上下文） */
 const genesisCache = ref<{ styleHint?: string; soul?: Step2Soul; rules?: Step4Layout['rules'] }>({})
+/** 加载状态：loadGenesis 进行中的 promise（防「秒点续写」时设定未加载完） */
+let genesisLoadingPromise: Promise<void> = Promise.resolve()
 
 /** 加载该书创世台设定用于 AI 上下文注入 */
 async function loadGenesis(bookId: string): Promise<void> {
@@ -54,15 +57,21 @@ async function loadGenesis(bookId: string): Promise<void> {
       soul: soul?.logline ? soul : undefined,
       rules: layout?.rules?.targetWords || layout?.rules?.forbidden || layout?.rules?.styleNotes ? layout.rules : undefined
     }
-  } catch {
-    // 创世台加载失败不阻塞写作
+  } catch (err) {
+    // 创世台加载失败不阻塞写作，但记录便于排查（此前 isElectron 未导入导致 ReferenceError 被静默吞掉）
+    console.warn('[ChapterEditor] 创世台设定加载失败:', err)
   }
+}
+
+/** 确保 genesis 已加载完成（发起 AI 生成前调用，防竞态） */
+async function ensureGenesisLoaded(): Promise<void> {
+  await genesisLoadingPromise
 }
 
 watch(
   () => props.bookId,
   (id) => {
-    if (id) void loadGenesis(id)
+    if (id) genesisLoadingPromise = loadGenesis(id)
   },
   { immediate: true }
 )
@@ -143,6 +152,8 @@ async function runGeneration(kind: PanelKind): Promise<void> {
   }
   if (!editor.value) return
   isBusy = true
+  // 确保 genesis 设定已加载完成（防「进工作台秒点续写」时 genesisCache 仍空）
+  await ensureGenesisLoaded()
   const mySeq = ++generationSeq
   panelKind.value = kind
   panelVisible.value = true
