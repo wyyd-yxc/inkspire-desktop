@@ -1,13 +1,14 @@
 # 项目交接文档（HANDOVER）
 
 > **新会话/新模型开工第一入口**。本文件始终保持「随时可交接」状态，每次里程碑收尾后更新。
-> 最后更新：2026-08-23 · 会话 14 · **M4 已确认并打 tag v0.5.0（MVP 4/5 完成）。下一步：M5 创世台。**
+> 最后更新：2026-08-23 · 会话 17 · **M5 创世台+用户反馈修复全部完成（双轨验收通过），待用户确认打 tag v0.6.0。下一步 M16 打包。**
 
 ## 0. 移交摘要（新模型 60 秒读完）
 
-- 前任模型 GLM-5.3 额度耗尽移交；M0-M4 全部完成并打 tag（v0.1.0~v0.5.0），用户已逐一确认
-- **第一件事**：M5 创世台五步（MVP 收官，任务卡见第 9 节）
-- 项目无任何未保存工作：git 干净，23 提交 5 tag
+- M0-M5 全部开发完成并双轨验收通过；M5 用户反馈修复（设定未注入AI续写/提示词昵称泄漏/采纳容错）也已验收通过
+- **唯一待办**：用户确认 M5 修复后打 tag `v0.6.0-m5-genesis`（用户说「先不打 tag」，需等用户明确指示）
+- **下一步**：M16 打包 NSIS 安装包（让用户装到电脑上日常用），然后继续 M6+ 功能模块
+- 项目无未保存工作：git 干净，34 提交 5 tag（v0.1.0~v0.5.0）
 - 你能跑 `npm run dev` 验证环境；测试方法见第 5 节；所有坑见第 6 节
 
 ## 1. 项目是什么
@@ -22,8 +23,10 @@
 | M1 | 书斋（书籍 CRUD） | ✅ tag v0.2.0 |
 | M2 | 设置中心（AI Provider+API 档案） | ✅ tag v0.3.0 |
 | M3 | 正文工作台（章节树+TipTap+自动保存） | ✅ tag v0.4.0 |
-| M4 | AI 写作（续写/划词/整章润色） | ✅ 双轨验收+整改+复验完成，**待用户确认后打 tag v0.5.0** |
-| M5 | 创世台五步 | ⬜ **下一步** |
+| M4 | AI 写作（续写/划词/整章润色） | ✅ tag v0.5.0 |
+| M5 | 创世台五步（定风/定魂/造世/布局/执笔）+接通AI写作 | ✅ 开发+双轨验收+用户反馈修复全完成，**待用户确认打 tag v0.6.0** |
+| M6+ | 万物百科/章节画布/作品记忆/墨灵助手/灵感墙/风格包/统计/拆书/Agent偏好 | ⬜ |
+| M16 | 打包 NSIS 安装包 | ⬜ **M5 确认后立即做** |
 | M6+ | 见 docs/plan/roadmap.md（百科/画布/记忆/助手/灵感墙/风格/统计/拆书/Agent/打包） | ⬜ |
 
 Git：main 单分支，12+ 提交，约定式提交（feat/fix/docs/chore）。里程碑必须走完验收才能 tag。
@@ -62,12 +65,18 @@ Electron(main: db/ ai/ ipc/) ←IPC(preload 白名单桥)→ Vue3 渲染层(view
 2. TS7：`include` 不能写进 compilerOptions；`baseUrl` 已移除；.vue/.css 需要 env.d.ts 声明
 3. .npmrc 写 electron_mirror 会持续告警——不要写，用环境变量
 4. better-sqlite3 13 用 NAPI prebuilds 跨 ABI，无需 node-gyp rebuild（install-app-deps 失败可无视）
-5. ox-alpha：非流式返回空白体；流式对 >2 万字输入也空。**方案：diff 限 1.5 万字+stream:true**
+5. ox-alpha：非流式返回空白体；流式对 >2 万字输入也空。**方案：diff 限 1.5 万字+stream:true**。ox-alpha 近期服务不稳定，静态审查暂用 TokenRhythm deepseek-v4-pro 代理（`--base-url --key-env` 参数）。OpenRouter 账户无付费 credits（402）
 6. Vue3 v-for 内字符串 ref 是数组→用函数式 ref（Map 收集）
 7. TipTap 切换内容不清 undo 历史→用 :key=章节id 整体重建编辑器组件
 8. mock 测试不能替代真实链路（M1 的 P0 教训）：写路径必须进 selftest/CDP 实测
 9. CDP 驱动 Electron：`npm run dev -- --remote-debugging-port=9222`，`fetch http://127.0.0.1:9222/json` 找页面，原生 WebSocket 调 Runtime.evaluate（awaitPromise:true）
 10. CSP 里 connect-src 'self'：渲染层不能直接请求外部 API（本来也禁止，全部走主进程）
+11. **Vue reactive Proxy 无法跨 IPC 结构化克隆**（M5 P0）：凡 Vue 组件内把 ref/reactive 对象传给 window.api.*（IPC），必须先 `JSON.parse(JSON.stringify(toRaw(data)))` 去响应式，否则抛 "An object could not be cloned." 静默失败
+12. **rAF 节流冻结**（M4）：窗口后台/失焦时 requestAnimationFrame 不执行 → 用 nextTick（微任务）+ 主进程 `backgroundThrottling: false`
+13. **HMR 状态污染**（M3/M4）：改编辑器/生成相关代码后必须完全重启 dev 再测（taskkill electron 后重启），否则 onUpdate→保存链路可能假性失效
+14. **AI 生成并发锁生命周期**（M4）：chatStream 会话建立即 resolve，并发锁（isBusy）必须覆盖到 onDone/onError 才释放；generationSeq 序号防竞态
+15. **漏 import 导致静默失败**（M5 修复阻断级）：ChapterEditor.vue 用了 isElectron 但未 import，loadGenesis 抛 ReferenceError 被 `void` 吞掉。**教训：凡用 isElectron 必须显式 import（全仓 6 个文件都 import 了）；catch 块不要全静默，至少 console.warn；验收不能用「续写含关键词」间接判定 genesis 注入（关键词可能来自 book.description）**
+16. **提示词不要用内部流程术语**（M5 修复）：定风/定魂/造世/布局/执笔是 UI 步骤名，不能写进发给 AI 的 prompt，否则 AI 把它当故事概念写进输出
 
 ## 7. 凭据与外部资源
 
@@ -82,18 +91,33 @@ Electron(main: db/ ai/ ipc/) ←IPC(preload 白名单桥)→ Vue3 渲染层(view
 - 用户要求：留扩展余地（Provider 抽象已就位）；UI 先还原原站（截图为据）；详细解释选项（小白）
 - 用户可能随时切换模型：靠本文档+worklog 无缝接力，**会话结束前必须追加 worklog**
 
-## 9. 下一步任务（M5 创世台 + M4 收尾）
+## 9. 下一步任务（M16 打包 + M6+ 功能）
 
-**M4 已双轨验收闭环**（静态审查 deepseek-v4-pro 代理 + 黑盒子代理，两份报告+整改+复验证据见 docs/acceptance/）。待办：
-1. 用户确认 M4 → `git tag v0.5.0-m4-ai-writing`
-2. **M5 创世台五步**（MVP 收官）：定风（风格包，M12 前可先做占位选择）→定魂（Logline）→造世（世界观）→布局（大纲）→执笔。数据表 genesis_steps 已规划于 architecture.md。五步向导 UI + AI 冷启动（复用 M4 的 generateWriting 管线，提示词换成各步专用）。入口：书斋卡片/工作台加「创世台」按钮。
-3. MVP 完成后建议尽早做 **M16 打包**（用户能先用上），再继续 M6+ 功能
+**M5 已全部完成（含用户反馈修复），待用户确认打 tag v0.6.0**。用户说「先不打 tag」，新模型开工后：
+1. 询问用户是否确认 M5 → 若确认则 `git tag v0.6.0-m5-genesis`
+2. **M16 打包 NSIS 安装包**（优先，让用户装上日常用）：
+   - `npm run dist`（electron-builder，配置在 electron-builder.yml，NSIS 目标）
+   - 注意 better-sqlite3 原生模块打包：asarUnpack 可能需要调整；electron-builder install-app-deps 对 better-sqlite3 的 node-gyp rebuild 会失败（无 VS 编译环境），但 NAPI prebuilds 应能直接打入
+   - 产出 InkSpire-Setup-0.1.0.exe（或当前版本号）
+   - 验收：全新 Windows 机器双击安装 → 建书→设定→AI 写一章 全程无报错
+   - 数据目录 userData 与安装目录解耦，升级不丢数据
+3. **M6 万物百科**：wiki_entries 表（migration v5）；词条 CRUD（人物/地点/势力/物品/规则）；AI 写作时自动注入相关词条；M5 造世冷启动生成的设定从 genesis_steps 迁移到 wiki_entries
+4. 后续 M7-M15 见 roadmap
 
-**M4 遗留技术细节（供 M5 参考）**：
-- AI 生成并发管理：isBusy 锁生命周期必须覆盖到 onDone/onError（chatStream 建立即 resolve）；generationSeq 作废机制防竞态
+**M5 关键技术细节（供 M6 参考）**：
+- AI 生成并发管理：isBusy 锁生命周期必须覆盖到 onDone/onError；generationSeq 作废机制防竞态
 - 面板复用：连续发起需显式 panel.reset()
 - AI 输出转 HTML：aiTextToHtml（换行分段+转义）
-- **验收模型现状**：ox-alpha 当日不稳定（空回复）；OpenRouter 无付费 credits（402）；静态审查暂用 TokenRhythm deepseek-v4-pro 代理（--base-url --key-env 参数）
+- 创世台设定注入：ChapterEditor.loadGenesis → genesisCache → writingContext.genesis → systemPrompt
+- 提示词不要用内部流程术语（定风/定魂等），用面向故事的中性描述
+- **验收模型现状**：ox-alpha 不稳定；OpenRouter 无付费 credits；静态审查用 TokenRhythm deepseek-v4-pro 代理
+
+**M5 用户反馈修复记录（commit f031cfa + 7ba4446，详见 worklog 会话 17）**：
+- 阻断：isElectron 未 import 导致设定从未注入（此前验收假阳性）
+- 提示词昵称泄漏 → 去昵称
+- parseSoulAssist 容错 + 字段降级
+- acceptSoulAssist 字段级合并
+- s.cheat 可选链 + loadGenesis 切书竞态 + rules 零值判断
 
 ## 10. 快速命令
 
