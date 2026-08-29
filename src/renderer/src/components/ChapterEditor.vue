@@ -12,7 +12,7 @@ import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import type { Book } from '../../../shared/book.types'
 import type { Chapter } from '../../../shared/chapter.types'
 import type { StreamSession } from '../services/ai'
-import type { SelectionAction } from '../services/aiWriting'
+import type { SelectionAction, SelectionContext } from '../services/aiWriting'
 import { buildChapterPolishMessages, buildContinueMessages, buildSelectionMessages, generateWriting } from '../services/aiWriting'
 import type { GenesisStepRecord, Step2Soul, Step4Layout, Step1Style } from '../../../shared/genesis.types'
 import { getPresetStyle } from '../../../shared/presetStyles'
@@ -137,8 +137,8 @@ function aiTextToHtml(text: string): string {
     .join('')
 }
 
-/** 划词目标（发起划词操作时的选区快照） */
-let selectionTarget: { from: number; to: number; text: string } | null = null
+/** 划词目标（发起划词操作时的选区快照，含前后文供 AI 无缝衔接） */
+let selectionTarget: (SelectionContext & { from: number; to: number }) | null = null
 
 /** 组装写作上下文（前文 = 当前正文纯文本；含创世台设定注入 AI 提示词） */
 function writingContext() {
@@ -181,7 +181,7 @@ async function runGeneration(kind: PanelKind): Promise<void> {
               ? buildChapterPolishMessages(writingContext(), editor.value!.getText())
               : buildSelectionMessages(
                   writingContext(),
-                  selectionTarget?.text ?? '',
+                  selectionTarget ?? { text: '', before: '', after: '' },
                   kind,
                 )
         const { session } = await generateWriting(messages, {
@@ -253,7 +253,15 @@ function acceptGeneration(text: string): void {
       selectionTarget = null
       return
     }
-    ed.chain().focus().deleteRange({ from, to }).insertContentAt(from, html).run()
+    // 区分替换形态：句中片段（起止在同一块节点内）→ 行内纯文本替换，保持原段落不拆；
+    // 跨段落/整段 → 块级 HTML 替换。此前一律包 <p> 插入会把原句拆成三段，破坏衔接。
+    const sameParent = ed.state.doc.resolve(from).sameParent(ed.state.doc.resolve(to))
+    if (sameParent) {
+      const inlineText = text.replace(/\n+/g, '')
+      ed.chain().focus().insertContentAt({ from, to }, inlineText).run()
+    } else {
+      ed.chain().focus().deleteRange({ from, to }).insertContentAt(from, html).run()
+    }
     selectionTarget = null
   } else {
     // 划词类操作但选区快照已被清空（此前被拒过）：引导重新走流程
@@ -307,14 +315,27 @@ function updateSelectionBar(ed: NonNullable<ReturnType<typeof useEditor>['value'
   selectionBar.left = Math.max(8, start.left - container.left)
 }
 
-/** 划词操作入口：快照选区后发起生成 */
+/** 划词前后文窗口（字符），与 services/aiWriting 的 SELECTION_CONTEXT_LIMIT 一致 */
+const SEL_CTX_WINDOW = 1500
+
+/** 划词操作入口：快照选区及其前后文后发起生成 */
 function startSelectionAction(action: SelectionAction): void {
   const ed = editor.value
   if (!ed) return
   const { from, to } = ed.state.selection
   const text = ed.state.doc.textBetween(from, to, '\n')
   if (!text.trim()) return
-  selectionTarget = { from, to, text }
+  // 截取选区前后紧邻的文字窗口，供 AI 做无缝衔接（开头接前文末句、结尾接后文首句）
+  const docSize = ed.state.doc.content.size
+  const before = ed.state.doc.textBetween(Math.max(0, from - SEL_CTX_WINDOW), from, '\n')
+  const after = ed.state.doc.textBetween(to, Math.min(docSize, to + SEL_CTX_WINDOW), '\n')
+  selectionTarget = {
+    from,
+    to,
+    text,
+    before: before.length > SEL_CTX_WINDOW ? '…' + before.slice(-SEL_CTX_WINDOW) : before,
+    after: after.length > SEL_CTX_WINDOW ? after.slice(0, SEL_CTX_WINDOW) + '…' : after
+  }
   selectionBar.visible = false
   void runGeneration(action)
 }

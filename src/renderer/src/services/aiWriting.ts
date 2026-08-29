@@ -90,28 +90,46 @@ export function buildContinueMessages(
 
 export type SelectionAction = 'polish' | 'expand' | 'rewrite'
 
-/** 划词操作提示词：润色/扩写/改写选中文字 */
+/** 划词上下文快照：选区文本 + 选区前后紧邻的文字（供 AI 做无缝衔接，截断由编辑器层完成） */
+export interface SelectionContext {
+  text: string
+  /** 选区之前紧邻的文字（末尾 N 字，截断加…） */
+  before: string
+  /** 选区之后紧邻的文字（开头 N 字，截断加…） */
+  after: string
+}
+
+/** 划词操作提示词：润色/扩写/改写选中文字（三段式上下文，强调无缝衔接） */
 export function buildSelectionMessages(
   ctx: WritingContext,
-  selectedText: string,
+  sel: SelectionContext,
   action: SelectionAction,
   customInstruction?: string
 ): ChatMessage[] {
   const actionText: Record<SelectionAction, string> = {
-    polish: '润色这段文字：提升文笔与画面感，去除赘余，保持情节与信息不变',
-    expand: '扩写这段文字：丰富细节描写、人物心理与环境，情节走向不变',
-    rewrite: '改写这段文字：换一种写法重新表达，保留核心情节但可调整措辞与节奏'
+    polish: '润色这段文字：提升文笔与画面感，去除赘余，保持情节与信息不变，长度与原文相当',
+    expand: `扩写这段文字：丰富细节描写、人物心理与环境，情节走向不变，长度扩到原文的 2~3 倍（原文 ${sel.text.replace(/\s/g, '').length} 字）`,
+    rewrite: '改写这段文字：换一种写法重新表达，保留核心情节但可调整措辞与节奏，长度与原文相当'
   }
+  const contextBlocks: string[] = []
+  if (sel.before.trim()) contextBlocks.push(`【选区前文】（衔接参考，不要重复其中的句子）\n${sel.before}`)
+  contextBlocks.push(`【待处理原文】\n${sel.text}`)
+  if (sel.after.trim()) contextBlocks.push(`【选区后文】（衔接参考，不要重复其中的句子）\n${sel.after}`)
   return [
     { role: 'system', content: systemPrompt(ctx) },
     {
       role: 'user',
       content: [
         `当前章节：${ctx.chapterTitle}`,
-        ctx.contextTail ? `前文结尾（仅供衔接参考）：\n${trimTail(ctx.contextTail)}` : '',
-        `请${actionText[action]}。原文如下：\n${selectedText}`,
+        ...contextBlocks,
+        `任务：请${actionText[action]}。`,
+        '衔接要求（重要）：',
+        '- 你输出的文字将原位替换【待处理原文】，因此开头必须能自然接上【选区前文】的末句，结尾必须能自然接上【选区后文】的首句；',
+        '- 不得重复选区前后文已有的句子或短语；',
+        '- 保持文风、人称、时态与前后文一致；',
+        '- 若【待处理原文】是句子的一部分（片段），输出也保持片段形态，不要补全成完整句子、不要自行分段；若是完整段落（可多段），输出保持相应的段落结构。',
         customInstruction ? `补充要求：${customInstruction}` : '',
-        '只输出处理后的文字本身。'
+        '只输出处理后的文字本身，不要任何解释。'
       ]
         .filter(Boolean)
         .join('\n')
