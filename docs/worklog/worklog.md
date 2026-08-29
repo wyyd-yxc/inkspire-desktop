@@ -348,3 +348,16 @@
 - 移交时状态：git 干净（34 提交 5 tag v0.1.0~v0.5.0）；M5 全部完成含用户反馈修复，双轨验收通过；无未保存工作、无进行中进程。
 - HANDOVER 已更新至当前状态（第 0/2/6/9 节），踩坑速查扩充至 16 条（含 M4/M5 新增 6 条）。
 - **给新模型的指示**：① 询问用户是否确认 M5 → 打 tag v0.6.0；② M16 打包 NSIS 安装包（优先）；③ 然后 M6 万物百科。详见 HANDOVER 第 9 节。
+
+---
+
+## [2026-08-23 16:00] 会话 19：默认 AI 模型更换为 GMI Cloud MiniMax M3
+
+- **用户要求**：软件内模型替换为 ZCode 中 GMI Cloud 来源的 MiniMax M3。
+- **操作**：
+  1. 从 ZCode 配置定位 GMI Cloud（https://api.gmi-serving.com/v1，模型 MiniMaxAI/MiniMax-M3）；实测 OpenAI 兼容协议非流式+流式均可用（HTTP 200，流式 [DONE] 正常）
+  2. 直写应用数据库新增档案「GMI Cloud · MiniMax M3」并设为默认（key 从 ZCode 配置读取，仅存本机 SQLite，未入 git/日志）
+  3. 端到端验证：启动应用经自身管线（preload→IPC→Provider→SSE）以新默认档案流式对话成功（回复正常、无错误）
+- **档案现状**：「GMI Cloud · MiniMax M3」（默认）+「基元律动（ZCode 同款）」（保留，仍作验收审查模型来源）
+- **注意**：MiniMax M3 无 reasoning_content（非推理输出格式），应用面板仅显示正文，无影响
+- **下一步**：不变——用户确认 M5 打 tag v0.6.0 → M16 打包。
