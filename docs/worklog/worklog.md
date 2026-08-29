@@ -361,3 +361,23 @@
 - **档案现状**：「GMI Cloud · MiniMax M3」（默认）+「基元律动（ZCode 同款）」（保留，仍作验收审查模型来源）
 - **注意**：MiniMax M3 无 reasoning_content（非推理输出格式），应用面板仅显示正文，无影响
 - **下一步**：不变——用户确认 M5 打 tag v0.6.0 → M16 打包。
+
+---
+
+## [2026-08-29 18:00] 会话 20：划词润色/扩写/改写上下文衔接修复
+
+- **用户反馈**：划词功能生成文字有时与上下文冲突或衔接不好。
+- **根因**（Explore 代理确证）：
+  1. contextTail 传编辑器全文（含选区+选区后文字）且锚定文档末尾——选区紧邻前文可能不在窗口内；选区后文被错标为「前文结尾」诱导 AI 复述 → 替换后与保留的后文冲突；选区文字出现两次
+  2. 提示词无衔接纪律（无接前文末句/接后文首句/禁重复/片段形态保持）
+  3. selectionTarget 无前后文概念
+  4. aiTextToHtml 一律包 <p>，句中片段替换把原段拆成三段
+- **修复**（commit 683262d）：
+  1. selectionTarget 快照增加 before/after 窗口（选区前后各 1500 字，textBetween 截取）
+  2. buildSelectionMessages 新签名 (ctx, sel:{text,before,after}, action)；三段式提示词【选区前文】【待处理原文】【选区后文】+ 衔接纪律（开头接前文末句/结尾接后文首句/禁重复/片段保持片段/扩写 2~3 倍）
+  3. 采纳区分形态：同段落内（sameParent）行内纯文本替换（折叠换行）不拆段；跨段走块替换
+- **自测**（tmp/seam-verify.mjs + seam-regression.mjs，CDP 真实 UI）：句中片段润色后段落数不变、前后文保留、无重复句、衔接自然（"井绳冰凉刺骨。→他仰起头…师父嘱托→远处传来鸡鸣"）；回归续写/整章润色/跨段选区全过；typecheck 双 0
+- **双轨验收**：
+  - 静态审查改用 **GMI Cloud MiniMax M3**（deepseek-v4-pro 被平台下线）；结论**有条件通过**——其"严重"项实为材料限制：diff 窗口（v0.5.0..HEAD 含整个 M5）15000 字截断致 aiWriting.ts 未送审（代码实际已改否则 typecheck 必败）；"scope creep"同因（tag 未打导致 diff 跨里程碑）。中等项 #5（常量同步）已在最后编辑中消除（SELECTION_CONTEXT_LIMIT 已删，仅剩编辑器侧 SEL_CTX_WINDOW）；#6（genesisLoadingPromise 竞态）经分析不成立（变量在调用时读最新值）；#3/#4/#7-#10 记录在案
+  - 黑盒验收执行中
+- **下一步**：黑盒报告 → 收尾 → 用户验证。
