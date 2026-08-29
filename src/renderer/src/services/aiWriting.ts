@@ -90,6 +90,23 @@ export function buildContinueMessages(
 
 export type SelectionAction = 'polish' | 'expand' | 'rewrite'
 
+/** 提取一段文字的最后一个句子（上文接缝锚点：输出的第一句要紧接它之后） */
+function lastSentence(text: string): string {
+  const re = /[。！？…][”』」’]?/g
+  const ends: number[] = []
+  let m: RegExpExecArray | null
+  while ((m = re.exec(text))) ends.push(m.index + m[0].length)
+  if (ends.length >= 2) return text.slice(ends[ends.length - 2]).trim()
+  return text.trim().slice(-80)
+}
+
+/** 提取一段文字的第一个句子（下文接缝锚点：输出的最后一句要能自然接到它之前） */
+function firstSentence(text: string): string {
+  const m = text.trim().match(/[\s\S]*?[。！？…][”』」’]?/)
+  if (m) return m[0].trim()
+  return text.trim().slice(0, 80)
+}
+
 /** 划词上下文快照：选区文本 + 选区前后紧邻的文字（供 AI 做无缝衔接，截断由编辑器层完成） */
 export interface SelectionContext {
   text: string
@@ -99,7 +116,7 @@ export interface SelectionContext {
   after: string
 }
 
-/** 划词操作提示词：润色/扩写/改写选中文字（三段式上下文，强调无缝衔接） */
+/** 划词操作提示词：润色/扩写/改写选中文字（三段式上下文 + 接缝锚点，强调无缝衔接） */
 export function buildSelectionMessages(
   ctx: WritingContext,
   sel: SelectionContext,
@@ -114,7 +131,11 @@ export function buildSelectionMessages(
   const contextBlocks: string[] = []
   if (sel.before.trim()) contextBlocks.push(`【选区前文】（衔接参考，不要重复其中的句子）\n${sel.before}`)
   contextBlocks.push(`【待处理原文】\n${sel.text}`)
-  if (sel.after.trim()) contextBlocks.push(`【选区后文】（衔接参考，不要重复其中的句子）\n${sel.after}`)
+  if (sel.after.trim()) contextBlocks.push(`【选区后文】（衔接参考，不要提前展开其中的情节）\n${sel.after}`)
+  // 接缝锚点：把真正决定衔接质量的紧邻两句单独拎出来高亮，避免被长窗口稀释注意力
+  const anchors: string[] = []
+  if (sel.before.trim()) anchors.push(`▲ 你输出的第一句要紧接这句之后：「${lastSentence(sel.before)}」`)
+  if (sel.after.trim()) anchors.push(`▼ 你输出的最后一句要能自然接到这句之前：「${firstSentence(sel.after)}」`)
   return [
     { role: 'system', content: systemPrompt(ctx) },
     {
@@ -122,11 +143,15 @@ export function buildSelectionMessages(
       content: [
         `当前章节：${ctx.chapterTitle}`,
         ...contextBlocks,
+        anchors.length ? `【衔接锚点】\n${anchors.join('\n')}` : '',
         `任务：请${actionText[action]}。`,
         '衔接要求（重要）：',
         '- 你输出的文字将原位替换【待处理原文】，因此开头必须能自然接上【选区前文】的末句，结尾必须能自然接上【选区后文】的首句；',
         '- 不得重复选区前后文已有的句子或短语；',
         '- 保持文风、人称、时态与前后文一致；',
+        '- 不得引入与前后文矛盾的新人物、新设定、新事件；不得提前揭示或消耗【选区后文】将要展开的情节与信息；',
+        '- 保留原文中的关键名词（人名、地名、物品名等专有名词），不得改写为代称或泛称——前后文对这些词的指代必须仍然成立；',
+        '- 不得切换叙事视角、时间线或场景地点；若原文含对话，保持对话的引号等格式形态；',
         '- 若【待处理原文】是句子的一部分（片段），输出也保持片段形态，不要补全成完整句子、不要自行分段；若是完整段落（可多段），输出保持相应的段落结构。',
         customInstruction ? `补充要求：${customInstruction}` : '',
         '只输出处理后的文字本身，不要任何解释。'

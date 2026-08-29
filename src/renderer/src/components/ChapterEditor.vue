@@ -315,8 +315,29 @@ function updateSelectionBar(ed: NonNullable<ReturnType<typeof useEditor>['value'
   selectionBar.left = Math.max(8, start.left - container.left)
 }
 
-/** 划词前后文窗口（字符），与 services/aiWriting 的 SELECTION_CONTEXT_LIMIT 一致 */
+/** 划词前后文窗口（字符） */
 const SEL_CTX_WINDOW = 1500
+
+/**
+ * 截取选区前文窗口：超长时从「最近的段落边界」开始，保证窗口首句完整
+ * （否则 AI 看到的上文以半句开头，衔接锚点模糊）。
+ */
+function clipBefore(text: string): string {
+  if (text.length <= SEL_CTX_WINDOW) return text
+  let clipped = text.slice(-SEL_CTX_WINDOW)
+  const nl = clipped.indexOf('\n')
+  if (nl >= 0 && nl < SEL_CTX_WINDOW - 1) clipped = clipped.slice(nl + 1)
+  return '…' + clipped
+}
+
+/** 截取选区后文窗口：超长时到「最近的段落边界」为止，保证窗口末句完整 */
+function clipAfter(text: string): string {
+  if (text.length <= SEL_CTX_WINDOW) return text
+  let clipped = text.slice(0, SEL_CTX_WINDOW)
+  const nl = clipped.lastIndexOf('\n')
+  if (nl > 0) clipped = clipped.slice(0, nl)
+  return clipped + '…'
+}
 
 /** 划词操作入口：快照选区及其前后文后发起生成 */
 function startSelectionAction(action: SelectionAction): void {
@@ -325,7 +346,7 @@ function startSelectionAction(action: SelectionAction): void {
   const { from, to } = ed.state.selection
   const text = ed.state.doc.textBetween(from, to, '\n')
   if (!text.trim()) return
-  // 截取选区前后紧邻的文字窗口，供 AI 做无缝衔接（开头接前文末句、结尾接后文首句）
+  // 截取选区前后紧邻的文字窗口（切点吸附段落边界，保证首末句完整），供 AI 做无缝衔接
   const docSize = ed.state.doc.content.size
   const before = ed.state.doc.textBetween(Math.max(0, from - SEL_CTX_WINDOW), from, '\n')
   const after = ed.state.doc.textBetween(to, Math.min(docSize, to + SEL_CTX_WINDOW), '\n')
@@ -333,8 +354,8 @@ function startSelectionAction(action: SelectionAction): void {
     from,
     to,
     text,
-    before: before.length > SEL_CTX_WINDOW ? '…' + before.slice(-SEL_CTX_WINDOW) : before,
-    after: after.length > SEL_CTX_WINDOW ? after.slice(0, SEL_CTX_WINDOW) + '…' : after
+    before: clipBefore(before),
+    after: clipAfter(after)
   }
   selectionBar.visible = false
   void runGeneration(action)
