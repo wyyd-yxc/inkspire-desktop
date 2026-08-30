@@ -70,6 +70,11 @@ const wordsLabel = computed(() => props.totalWords.toLocaleString('zh-CN'))
             class="rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
             title="创世台"
           >创世台</router-link>
+          <router-link
+            :to="`/book/${bookId}/wiki`"
+            class="rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
+            title="万物百科"
+          >百科</router-link>
           <button
             class="rounded-full bg-ink-primary px-3 py-1 text-xs text-white transition-colors hover:bg-ink-primary-hover"
             @click="emit('create')"

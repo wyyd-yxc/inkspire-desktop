@@ -24,6 +24,11 @@ import type {
   GenesisStepRecord,
   SaveGenesisInput
 } from '../shared/genesis.types'
+import type {
+  CreateWikiInput,
+  UpdateWikiInput,
+  WikiEntry
+} from '../shared/wiki.types'
 
 const api = {
   /** IPC 通路自检：正常返回 { ok: true, data: 'pong' } */
@@ -67,6 +72,18 @@ const api = {
       isDone: boolean
     ): Promise<IpcResult<GenesisStepRecord>> =>
       ipcRenderer.invoke('genesis:save-step', bookId, step, data, isDone)
+  },
+
+  /** 万物百科词条 */
+  wiki: {
+    list: (bookId: string): Promise<IpcResult<WikiEntry[]>> =>
+      ipcRenderer.invoke('wiki:list', bookId),
+    create: (input: CreateWikiInput): Promise<IpcResult<WikiEntry>> =>
+      ipcRenderer.invoke('wiki:create', input),
+    update: (id: string, input: UpdateWikiInput): Promise<IpcResult<WikiEntry>> =>
+      ipcRenderer.invoke('wiki:update', id, input),
+    remove: (id: string): Promise<IpcResult<boolean>> =>
+      ipcRenderer.invoke('wiki:remove', id)
   },
 
   /** AI 接口档案（设置中心） */

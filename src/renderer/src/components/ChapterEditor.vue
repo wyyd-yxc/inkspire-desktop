@@ -15,6 +15,7 @@ import type { StreamSession } from '../services/ai'
 import type { SelectionAction, SelectionContext } from '../services/aiWriting'
 import { buildChapterPolishMessages, buildContinueMessages, buildSelectionMessages, generateWriting } from '../services/aiWriting'
 import type { GenesisStepRecord, Step2Soul, Step4Layout, Step1Style } from '../../../shared/genesis.types'
+import { WIKI_TYPE_LABELS } from '../../../shared/wiki.types'
 import { getPresetStyle } from '../../../shared/presetStyles'
 import { isElectron } from '../services/books'
 import { useToast } from '@/composables/useToast'
@@ -74,10 +75,55 @@ async function ensureGenesisLoaded(): Promise<void> {
   await genesisLoadingPromise
 }
 
+// ---------------- 百科词条注入（M6，与 genesisCache 同款三件套） ----------------
+
+/** injection=always 词条注入预算（字符） */
+const WIKI_INJECT_LIMIT = 1200
+
+const wikiCache = ref<{ entries: string }>({})
+let wikiLoadingPromise: Promise<void> = Promise.resolve()
+let wikiLoadSeq = 0
+
+/** 加载该书 injection=always 的词条，拼接为 AI 上下文注入文本 */
+async function loadWiki(bookId: string): Promise<void> {
+  if (!isElectron) return
+  const mySeq = ++wikiLoadSeq
+  wikiCache.value = {}
+  try {
+    const res = await window.api.wiki.list(bookId)
+    if (mySeq !== wikiLoadSeq) return
+    if (!res.ok) return
+    const always = res.data.filter((w) => w.injection === 'always')
+    const blocks: string[] = []
+    let budget = WIKI_INJECT_LIMIT
+    for (const w of always) {
+      const attrs = w.attributes.map((a) => `${a.key}:${a.value}`).join('；')
+      const rels = w.relations
+        .map((r) => {
+          const target = res.data.find((x) => x.id === r.targetId)
+          return target ? `${r.label}→${target.name}` : ''
+        })
+        .filter(Boolean)
+        .join('；')
+      const block = `【${WIKI_TYPE_LABELS[w.type]}·${w.name}】${w.summary}${attrs ? '｜' + attrs : ''}${rels ? '｜' + rels : ''}`
+      if (block.length > budget) break
+      blocks.push(block)
+      budget -= block.length
+    }
+    wikiCache.value = { entries: blocks.join('\n') }
+  } catch (err) {
+    console.warn('[ChapterEditor] 百科词条加载失败:', err)
+  }
+}
+
+async function ensureWikiLoaded(): Promise<void> {
+  await wikiLoadingPromise
+}
+
 watch(
   () => props.bookId,
   (id) => {
-    if (id) genesisLoadingPromise = loadGenesis(id)
+    if (id) wikiLoadingPromise = loadWiki(id)
   },
   { immediate: true }
 )
@@ -140,13 +186,14 @@ function aiTextToHtml(text: string): string {
 /** 划词目标（发起划词操作时的选区快照，含前后文供 AI 无缝衔接） */
 let selectionTarget: (SelectionContext & { from: number; to: number }) | null = null
 
-/** 组装写作上下文（前文 = 当前正文纯文本；含创世台设定注入 AI 提示词） */
+/** 组装写作上下文（前文 = 当前正文纯文本；含创世台设定+百科词条注入 AI 提示词） */
 function writingContext() {
   return {
     book: props.book,
     chapterTitle: props.chapter?.title ?? '',
     contextTail: editor.value?.getText() ?? '',
-    genesis: genesisCache.value
+    genesis: genesisCache.value,
+    wiki: wikiCache.value.entries ? wikiCache.value : undefined
   }
 }
 
@@ -160,6 +207,7 @@ async function runGeneration(kind: PanelKind): Promise<void> {
   isBusy = true
   // 确保 genesis 设定已加载完成（防「进工作台秒点续写」时 genesisCache 仍空）
   await ensureGenesisLoaded()
+  await ensureWikiLoaded()
   const mySeq = ++generationSeq
   panelKind.value = kind
   panelVisible.value = true

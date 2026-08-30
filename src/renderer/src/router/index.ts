@@ -27,6 +27,11 @@ const router = createRouter({
       path: '/book/:bookId/genesis',
       name: 'genesis',
       component: () => import('@/views/GenesisView.vue')
+    },
+    {
+      path: '/book/:bookId/wiki',
+      name: 'wiki',
+      component: () => import('@/views/WikiView.vue')
     }
   ]
 })

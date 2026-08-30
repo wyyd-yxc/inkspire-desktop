@@ -70,6 +70,25 @@ const MIGRATIONS: Array<{ version: number; sql: string }> = [
         updated_at TEXT NOT NULL,
         PRIMARY KEY (book_id, step)
       );`
+  },
+  {
+    version: 5,
+    sql: `
+      CREATE TABLE IF NOT EXISTS wiki_entries (
+        id          TEXT PRIMARY KEY,
+        book_id     TEXT NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+        type        TEXT NOT NULL DEFAULT 'character',
+        name        TEXT NOT NULL,
+        summary     TEXT NOT NULL DEFAULT '',
+        content     TEXT NOT NULL DEFAULT '',
+        attributes  TEXT NOT NULL DEFAULT '[]',
+        relations   TEXT NOT NULL DEFAULT '[]',
+        system_role TEXT NOT NULL DEFAULT '',
+        injection   TEXT NOT NULL DEFAULT 'manual',
+        created_at  TEXT NOT NULL,
+        updated_at  TEXT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_wiki_book ON wiki_entries(book_id, type);`
   }
 ]
 
