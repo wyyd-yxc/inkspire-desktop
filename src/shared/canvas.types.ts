@@ -56,6 +56,38 @@ export interface UpdateSceneInput {
   sortOrder?: number
 }
 
+/** 场景连线类型：main 主线顺序 / logic 因果 / relation 关联（多线叙事表达） */
+export type SceneEdgeType = 'main' | 'logic' | 'relation'
+
+/** 场景连线实体 */
+export interface SceneEdge {
+  id: string
+  chapterId: string
+  sourceId: string
+  targetId: string
+  type: SceneEdgeType
+  label: string
+  createdAt: string
+}
+
+export interface CreateSceneEdgeInput {
+  chapterId: string
+  sourceId: string
+  targetId: string
+  type?: SceneEdgeType
+  label?: string
+}
+
+export interface UpdateSceneEdgeInput {
+  type?: SceneEdgeType
+  label?: string
+}
+
+export interface UpdateSceneEdgeInput {
+  type?: SceneEdgeType
+  label?: string
+}
+
 /** AI 场景生成模式（v1 五种；平行推演/素材组依赖灵感墙 M11 后续） */
 export type SceneGenMode =
   | 'init' // 初始化场景：空画布按章节背景生成初始场景链

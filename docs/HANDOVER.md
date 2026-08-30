@@ -1,15 +1,14 @@
 # 项目交接文档（HANDOVER）
 
 > **新会话/新模型开工第一入口**。本文件始终保持「随时可交接」状态，每次里程碑收尾后更新。
-> 最后更新：2026-08-23 · 会话 17 · **M5 创世台+用户反馈修复全部完成（双轨验收通过），待用户确认打 tag v0.6.0。下一步 M16 打包。**
+> 最后更新：2026-08-30 · 会话 26 · **移交：连线功能（M7 增强）开发中途暂停**。M0-M6 已交付，M7 画布已验收待打 tag。
 
 ## 0. 移交摘要（新模型 60 秒读完）
 
-- M0-M5 全部开发完成并双轨验收通过；M5 用户反馈修复（设定未注入AI续写/提示词昵称泄漏/采纳容错）也已验收通过
-- **唯一待办**：用户确认 M5 修复后打 tag `v0.6.0-m5-genesis`（用户说「先不打 tag」，需等用户明确指示）
-- **下一步**：M16 打包 NSIS 安装包（让用户装到电脑上日常用），然后继续 M6+ 功能模块
-- 项目无未保存工作：git 干净，34 提交 5 tag（v0.1.0~v0.5.0）
-- 你能跑 `npm run dev` 验证环境；测试方法见第 5 节；所有坑见第 6 节
+- M0-M6 全部完成打 tag（v0.1.0~v0.7.0）；**M7 章节画布已完成双轨验收（三轮复验闭环），用户尚未确认打 tag v0.8.0**
+- **进行中（本文件第 9 节有精确断点）**：画布「场景连线」功能开发到 ~10%（types 已建，migration/DAO/IPC/UI 全未做），用户要求暂停移交
+- **开工顺序**：① 问用户是否确认 M7 → 打 tag v0.8.0-m7-canvas；② 完成连线功能（第 9 节断点续做）；③ M8 作品记忆 → M9 助手 → M10 剧情画布
+- git 干净（最新提交含连线 types 半成品，可编译）；无进行中进程
 
 ## 1. 项目是什么
 
@@ -24,10 +23,12 @@
 | M2 | 设置中心（AI Provider+API 档案） | ✅ tag v0.3.0 |
 | M3 | 正文工作台（章节树+TipTap+自动保存） | ✅ tag v0.4.0 |
 | M4 | AI 写作（续写/划词/整章润色） | ✅ tag v0.5.0 |
-| M5 | 创世台五步（定风/定魂/造世/布局/执笔）+接通AI写作 | ✅ 开发+双轨验收+用户反馈修复全完成，**待用户确认打 tag v0.6.0** |
-| M6+ | 万物百科/章节画布/作品记忆/墨灵助手/灵感墙/风格包/统计/拆书/Agent偏好 | ⬜ |
-| M16 | 打包 NSIS 安装包 | ⬜ **M5 确认后立即做** |
-| M6+ | 见 docs/plan/roadmap.md（百科/画布/记忆/助手/灵感墙/风格/统计/拆书/Agent/打包） | ⬜ |
+| M5 | 创世台五步+接通AI写作+用户反馈修复 | ✅ tag v0.6.0 |
+| M6 | 万物百科（词条/AI生成/创世台导入/写作注入） | ✅ tag v0.7.0 |
+| M7 | 章节画布（Vue Flow 场景编排+AI 场景生成+生成正文） | ✅ 三轮复验闭环，**待用户确认打 tag v0.8.0** |
+| M16 | 打包 NSIS 安装包 | ✅ InkSpire-Setup-0.6.0.exe 已构建并安装本机（黑盒通过；tag 待确认；0.6.0 后代码变更未重打包） |
+| 连线 | 画布场景连线（关系表达+AI 参考） | 🔄 **开发中途暂停（~10%），断点见第 9 节** |
+| M8-M10 | 记忆/助手/剧情画布；M11-M15 | ⬜ 见 roadmap |
 
 Git：main 单分支，12+ 提交，约定式提交（feat/fix/docs/chore）。里程碑必须走完验收才能 tag。
 
@@ -91,33 +92,25 @@ Electron(main: db/ ai/ ipc/) ←IPC(preload 白名单桥)→ Vue3 渲染层(view
 - 用户要求：留扩展余地（Provider 抽象已就位）；UI 先还原原站（截图为据）；详细解释选项（小白）
 - 用户可能随时切换模型：靠本文档+worklog 无缝接力，**会话结束前必须追加 worklog**
 
-## 9. 下一步任务（M16 打包 + M6+ 功能）
+## 9. 断点续做任务卡（画布场景连线，~10% 完成度）
 
-**M5 已全部完成（含用户反馈修复），待用户确认打 tag v0.6.0**。用户说「先不打 tag」，新模型开工后：
-1. 询问用户是否确认 M5 → 若确认则 `git tag v0.6.0-m5-genesis`
-2. **M16 打包 NSIS 安装包**（优先，让用户装上日常用）：
-   - `npm run dist`（electron-builder，配置在 electron-builder.yml，NSIS 目标）
-   - 注意 better-sqlite3 原生模块打包：asarUnpack 可能需要调整；electron-builder install-app-deps 对 better-sqlite3 的 node-gyp rebuild 会失败（无 VS 编译环境），但 NAPI prebuilds 应能直接打入
-   - 产出 InkSpire-Setup-0.1.0.exe（或当前版本号）
-   - 验收：全新 Windows 机器双击安装 → 建书→设定→AI 写一章 全程无报错
-   - 数据目录 userData 与安装目录解耦，升级不丢数据
-3. **M6 万物百科**：wiki_entries 表（migration v5）；词条 CRUD（人物/地点/势力/物品/规则）；AI 写作时自动注入相关词条；M5 造世冷启动生成的设定从 genesis_steps 迁移到 wiki_entries
-4. 后续 M7-M15 见 roadmap
+**已完成**：src/shared/canvas.types.ts 已含连线类型（SceneEdgeType/SceneEdge/CreateSceneEdgeInput/UpdateSceneEdgeInput，可编译）。
+**剩余步骤（按序）**：
+1. migration v7：scene_edges 表（id / chapter_id FK 级联删章 / source_id+target_id FK 级联删场景 / type: main主线|logic因果|relation关联 / label / created_at + chapter 索引）
+2. main/db/sceneEdges.ts DAO：listByChapter / create（校验 source≠target、防同向同类型重复）/ update(type,label) / remove
+3. main/ipc/sceneEdges.ts 四通道 + main/index.ts 注册 + preload 暴露 scenesEdges 组
+4. CanvasView.vue：
+   - 场景节点模板加 Handle（type=target 左侧 / type=source 右侧，import { Handle, Position } from '@vue-flow/core'）
+   - edges ref 从 DB 派生为 Vue Flow Edge（样式：main 实线金 #c9a227 / logic 虚线蓝 #5b9bd1 / relation 点线灰 #9d97b5，label 显示在边上）
+   - @connect → 校验非自身、防同向重复 → IPC create
+   - 单击边选中 → 工具栏连线编辑器（类型切换 + 标签输入 + 删除按钮）
+   - 删场景时连线由 FK 自动级联
+5. buildSceneProseMessages（scenePrompts.ts）增 relationText 参数：生成正文时携带该场景出入连线描述（「承接自 X」「因果指向 Y」），CanvasView startProseGen 计算传入
 
-**M5 关键技术细节（供 M6 参考）**：
-- AI 生成并发管理：isBusy 锁生命周期必须覆盖到 onDone/onError；generationSeq 作废机制防竞态
-- 面板复用：连续发起需显式 panel.reset()
-- AI 输出转 HTML：aiTextToHtml（换行分段+转义）
-- 创世台设定注入：ChapterEditor.loadGenesis → genesisCache → writingContext.genesis → systemPrompt
-- 提示词不要用内部流程术语（定风/定魂等），用面向故事的中性描述
-- **验收模型现状**：ox-alpha 不稳定；OpenRouter 无付费 credits；静态审查用 TokenRhythm deepseek-v4-pro 代理
+**设计决策（用户已确认）**：连线 v1 = 关系表达 + AI 生成参考；生成顺序仍按 x 坐标线性；分支独立生成后续版本。
+**验证**：npm run typecheck（tsc×2 + electron-vite build SFC 闸门）→ CDP 自测（IPC 建边渲染/connect 拖线/编辑删除/正文引用关系）→ commit → 双轨验收（静态 GMI MiniMax M3 + 黑盒，黑盒报错超 3 次取消；AI 用例重试≤3）→ 用户确认（连线并入 v0.8.0-m7-canvas tag）。
 
-**M5 用户反馈修复记录（commit f031cfa + 7ba4446，详见 worklog 会话 17）**：
-- 阻断：isElectron 未 import 导致设定从未注入（此前验收假阳性）
-- 提示词昵称泄漏 → 去昵称
-- parseSoulAssist 容错 + 字段降级
-- acceptSoulAssist 字段级合并
-- s.cheat 可选链 + loadGenesis 切书竞态 + rules 零值判断
+**后续里程碑**：M8 作品记忆（五类事实卡片+AI 抽取+前章单向注入）→ M9 墨灵助手（浮球+上下文感知+@召唤，v1 仅工作台）→ M10 剧情画布（事件节点+四类连线+AI 三模式）。
 
 ## 10. 快速命令
 
