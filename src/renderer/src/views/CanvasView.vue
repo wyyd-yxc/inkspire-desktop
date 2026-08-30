@@ -382,7 +382,7 @@ async function acceptScenes(text: string): Promise<void> {
         }
       }
       scenes.value.push(...created)
-      await onNodeDragStopReorder()
+      await reorderByX()
       toast.success(`已插入 ${parsed.length} 个过渡场景`)
     } else {
       let sortOrder = ordered.value.length
