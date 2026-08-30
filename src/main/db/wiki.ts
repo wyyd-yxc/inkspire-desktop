@@ -35,7 +35,9 @@ interface WikiRow {
 function parseJson<T>(raw: string, fallback: T): T {
   try {
     return JSON.parse(raw) as T
-  } catch {
+  } catch (err) {
+    // 脏数据不拖垮列表，但留痕便于排查（M6 静态审查建议）
+    console.warn('[wiki] JSON 字段解析失败，已回退:', err)
     return fallback
   }
 }

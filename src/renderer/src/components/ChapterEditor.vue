@@ -93,6 +93,7 @@ async function loadWiki(bookId: string): Promise<void> {
     const res = await window.api.wiki.list(bookId)
     if (mySeq !== wikiLoadSeq) return
     if (!res.ok) return
+    const byId = new Map(res.data.map((w) => [w.id, w]))
     const always = res.data.filter((w) => w.injection === 'always')
     const blocks: string[] = []
     let budget = WIKI_INJECT_LIMIT
@@ -100,7 +101,7 @@ async function loadWiki(bookId: string): Promise<void> {
       const attrs = w.attributes.map((a) => `${a.key}:${a.value}`).join('；')
       const rels = w.relations
         .map((r) => {
-          const target = res.data.find((x) => x.id === r.targetId)
+          const target = byId.get(r.targetId)
           return target ? `${r.label}→${target.name}` : ''
         })
         .filter(Boolean)
@@ -127,6 +128,10 @@ watch(
   },
   { immediate: true }
 )
+
+onBeforeUnmount(() => {
+  wikiLoadSeq++ // 组件销毁后到达的加载结果直接作废
+})
 
 /** 纯文本字数（去所有空白字符，符合网文计数习惯） */
 function countWords(text: string): number {
