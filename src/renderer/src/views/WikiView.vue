@@ -3,7 +3,7 @@
  * 万物百科页：世界观知识库（对照原站三栏布局）。
  * 左栏类型筛选+搜索；中栏词条卡片；右侧滑出编辑面板；AI 生成词条；创世台导入。
  */
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import type { Book } from '../../../shared/book.types'
 import type {
@@ -27,7 +27,8 @@ import ConfirmDialog from '@/components/ConfirmDialog.vue'
 
 const route = useRoute()
 const toast = useToast()
-const bookId = route.params.bookId as string
+// 响应式 bookId：同路由跨书导航时组件复用，setup 一次性捕获会拿到旧书 id（FK 失败，M6 自测教训）
+const bookId = computed(() => route.params.bookId as string)
 
 const book = ref<Pick<Book, 'title' | 'genre' | 'description'> | null>(null)
 const entries = ref<WikiEntry[]>([])
@@ -100,11 +101,11 @@ async function loadAll(): Promise<void> {
   try {
     const [booksRes, wikiRes] = await Promise.all([
       window.api.books.list(),
-      window.api.wiki.list(bookId)
+      window.api.wiki.list(bookId.value)
     ])
     if (!booksRes.ok) throw new Error(booksRes.error)
     if (!wikiRes.ok) throw new Error(wikiRes.error)
-    book.value = booksRes.data.find((b) => b.id === bookId) ?? null
+    book.value = booksRes.data.find((b) => b.id === bookId.value) ?? null
     entries.value = wikiRes.data
   } catch (err) {
     toast.error(err instanceof Error ? err.message : '加载失败')
@@ -163,7 +164,7 @@ async function save(): Promise<void> {
     }))
     const res = editing.value
       ? await window.api.wiki.update(editing.value.id, plain)
-      : await window.api.wiki.create({ bookId, ...plain })
+      : await window.api.wiki.create({ bookId: bookId.value, ...plain })
     if (!res.ok) throw new Error(res.error)
     const i = entries.value.findIndex((w) => w.id === res.data.id)
     if (i >= 0) entries.value[i] = res.data
@@ -255,10 +256,7 @@ async function importFromGenesis(): Promise<void> {
   if (importing.value || !isElectron) return
   importing.value = true
   try {
-    const [genesisRes, genesisList] = await Promise.all([
-      window.api.genesis.get(bookId),
-      window.api.genesis.get(bookId)
-    ])
+    const genesisRes = await window.api.genesis.get(bookId.value)
     if (!genesisRes.ok) throw new Error(genesisRes.error)
     const step3Rec = genesisRes.data.find((s) => s.step === 3)
     if (!step3Rec?.data) {
@@ -272,7 +270,7 @@ async function importFromGenesis(): Promise<void> {
     for (const c of candidates) {
       if (entries.value.some((w) => w.name === c.name)) continue
       const res = await window.api.wiki.create({
-        bookId,
+        bookId: bookId.value,
         type: c.type,
         name: c.name,
         summary: c.summary,
@@ -293,7 +291,8 @@ async function importFromGenesis(): Promise<void> {
   }
 }
 
-onMounted(loadAll)
+watch(bookId, () => void loadAll())
+onMounted(() => void loadAll())
 </script>
 
 <template>

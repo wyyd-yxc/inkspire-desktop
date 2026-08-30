@@ -13,6 +13,7 @@ import type {
 } from '../../../shared/wiki.types'
 import { WIKI_TYPE_LABELS } from '../../../shared/wiki.types'
 import type { Step3World } from '../../../shared/genesis.types'
+import { lenientParse } from './jsonRepair'
 
 /** AI 生成词条的 system 提示 */
 function wikiSystemPrompt(book: Pick<Book, 'title' | 'genre' | 'description'>): string {
@@ -56,7 +57,7 @@ ${existing}
   "attributes": [{ "key": "属性名", "value": "属性值" }],
   "systemRole": "${type === 'character' ? 'protagonist 或 important 或 villain 或留空' : type === 'lore' ? 'rule 或 foundation 或留空' : ''}"
 }
-attributes 给 2-4 个该类型最有用的属性（如角色给年龄/修为/武器，地点给方位/势力/特色）。systemRole 只能从 protagonist/important/villain/rule/foundation 中选或留空串。`
+attributes 给 2-4 个该类型最有用的属性（如角色给年龄/修为/武器，地点给方位/势力/特色）。systemRole 只能从 protagonist/important/villain/rule/foundation 中选或留空串。注意：所有字段值内部禁止使用英文双引号（引用请用「」）。`
     }
   ]
 }
@@ -75,18 +76,15 @@ export function parseWikiGenerate(
   const firstBrace = text.indexOf('{')
   const lastBrace = text.lastIndexOf('}')
   if (firstBrace < 0 || lastBrace <= firstBrace) return null
-  let obj: {
+  // 宽容解析：字段值内未转义的英文双引号（如 剑名"寂鸣"）由修复器转义后重试（M6 实测教训）
+  const obj = lenientParse<{
     name?: string
     summary?: string
     content?: string
     attributes?: Array<{ key?: string; value?: string }>
     systemRole?: string
-  }
-  try {
-    obj = JSON.parse(text.slice(firstBrace, lastBrace + 1))
-  } catch {
-    return null
-  }
+  }>(text.slice(firstBrace, lastBrace + 1))
+  if (!obj) return null
   const attributes: WikiAttribute[] = (obj.attributes ?? [])
     .filter((a) => a?.key?.trim())
     .slice(0, 6)

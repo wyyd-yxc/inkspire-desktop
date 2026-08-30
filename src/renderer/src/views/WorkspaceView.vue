@@ -3,7 +3,7 @@
  * 正文工作台页：左章节树 + 中编辑器。
  * 数据编排：章节列表加载/CRUD、编辑器内容防抖自动保存（1.5s）+ Ctrl+S、切换章节前保存。
  */
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import type { Book } from '../../../shared/book.types'
 import type { Chapter } from '../../../shared/chapter.types'
@@ -15,7 +15,8 @@ import ConfirmDialog from '@/components/ConfirmDialog.vue'
 
 const route = useRoute()
 const toast = useToast()
-const bookId = route.params.bookId as string
+// 响应式 bookId（防同路由跨书导航时组件复用拿旧 id，M6 自测教训）
+const bookId = computed(() => route.params.bookId as string)
 
 const book = ref<Book | null>(null)
 const chapters = ref<Chapter[]>([])
@@ -40,11 +41,11 @@ async function loadAll(): Promise<void> {
   try {
     const [booksRes, chaptersRes] = await Promise.all([
       window.api.books.list(),
-      window.api.chapters.list(bookId)
+      window.api.chapters.list(bookId.value)
     ])
     if (!booksRes.ok) throw new Error(booksRes.error)
     if (!chaptersRes.ok) throw new Error(chaptersRes.error)
-    book.value = booksRes.data.find((b) => b.id === bookId) ?? null
+    book.value = booksRes.data.find((b) => b.id === bookId.value) ?? null
     chapters.value = chaptersRes.data
     activeChapter.value = chapters.value[0] ?? null
   } catch (err) {
@@ -104,7 +105,7 @@ async function selectChapter(c: Chapter): Promise<void> {
 async function createChapter(): Promise<void> {
   try {
     await flushSave()
-    const res = await window.api.chapters.create({ bookId })
+    const res = await window.api.chapters.create({ bookId: bookId.value })
     if (!res.ok) throw new Error(res.error)
     chapters.value.push(res.data)
     activeChapter.value = res.data
@@ -131,7 +132,7 @@ async function moveChapter(id: string, dir: -1 | 1): Promise<void> {
     const res = await window.api.chapters.move(id, dir)
     if (!res.ok) throw new Error(res.error)
     if (!res.data) return // 已在边界
-    const listRes = await window.api.chapters.list(bookId)
+    const listRes = await window.api.chapters.list(bookId.value)
     if (listRes.ok) {
       chapters.value = listRes.data
       // 保持选中项跟随
@@ -148,7 +149,7 @@ async function doDelete(): Promise<void> {
   try {
     const res = await window.api.chapters.remove(target.id)
     if (!res.ok) throw new Error(res.error)
-    const listRes = await window.api.chapters.list(bookId)
+    const listRes = await window.api.chapters.list(bookId.value)
     if (listRes.ok) chapters.value = listRes.data
     if (activeChapter.value?.id === target.id) {
       activeChapter.value = chapters.value[0] ?? null
@@ -173,6 +174,7 @@ onMounted(() => {
   void loadAll()
   window.addEventListener('keydown', onGlobalKeydown)
 })
+watch(bookId, () => void loadAll())
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onGlobalKeydown)
   // 卸载前同步保存（路由切走）；异步竞态由 pendingContent 幂等性兜底

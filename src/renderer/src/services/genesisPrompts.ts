@@ -6,6 +6,7 @@ import type { ChatMessage } from '../../../shared/ai.types'
 import type { Book } from '../../../shared/book.types'
 import type { Step2Soul } from '../../../shared/genesis.types'
 import { getPresetStyle } from '../../../shared/presetStyles'
+import { lenientParse } from './jsonRepair'
 
 /** 组装创世台的 system 提示：网文策划专家角色 + 书籍元信息 + 已绑定的文风 */
 function genesisSystemPrompt(book: Pick<Book, 'title' | 'genre' | 'description'>, styleId?: string): string {
@@ -108,17 +109,14 @@ export function parseSoulAssist(text: string): Step2Soul | null {
   const lastBrace = text.lastIndexOf('}')
   if (firstBrace < 0 || lastBrace < 0 || lastBrace <= firstBrace) return null
   const jsonStr = text.slice(firstBrace, lastBrace + 1)
-  let obj: {
+  // 宽容解析：字段值内未转义的英文双引号由修复器转义后重试（与 parseWikiGenerate 同类风险）
+  const obj = lenientParse<{
     logline?: string
     genre?: { mainType?: string; subType?: string; targetReader?: string; mood?: string }
     cheat?: { coreAbility?: string; powerSystem?: string; limitation?: string }
     conflict?: { opening?: string; mainline?: string; ultimate?: string; villain?: string }
-  }
-  try {
-    obj = JSON.parse(jsonStr)
-  } catch {
-    return null
-  }
+  }>(jsonStr)
+  if (!obj) return null
   const result: Step2Soul = {
     logline: String(obj.logline ?? ''),
     genre: {

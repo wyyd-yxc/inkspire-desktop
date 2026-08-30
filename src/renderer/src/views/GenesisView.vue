@@ -4,7 +4,7 @@
  * 顶部步骤条可跳转；每步独立保存（UPSERT）；定魂支持 AI 辅助，造世支持一键冷启动。
  * 完成第五步（执笔）即 MVP 闭环：跳转正文工作台，设定已接通 AI 写作。
  */
-import { computed, onMounted, ref, toRaw } from 'vue'
+import { computed, onMounted, ref, toRaw, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { Book } from '../../../shared/book.types'
 import type {
@@ -31,7 +31,8 @@ import AiWritingPanel from '@/components/AiWritingPanel.vue'
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
-const bookId = route.params.bookId as string
+// 响应式 bookId（防同路由跨书导航时组件复用拿旧 id，M6 自测教训）
+const bookId = computed(() => route.params.bookId as string)
 
 const book = ref<Pick<Book, 'title' | 'genre' | 'description'> | null>(null)
 const steps = ref<Record<number, GenesisStepRecord>>({})
@@ -87,11 +88,11 @@ async function loadAll(): Promise<void> {
   try {
     const [booksRes, genesisRes] = await Promise.all([
       window.api.books.list(),
-      window.api.genesis.get(bookId)
+      window.api.genesis.get(bookId.value)
     ])
     if (!booksRes.ok) throw new Error(booksRes.error)
     if (!genesisRes.ok) throw new Error(genesisRes.error)
-    book.value = booksRes.data.find((b) => b.id === bookId) ?? null
+    book.value = booksRes.data.find((b) => b.id === bookId.value) ?? null
     for (const r of genesisRes.data) steps.value[r.step] = r
     // 回填本地编辑态
     if (steps.value[1]?.data) step1.value = steps.value[1].data as Step1Style
@@ -113,7 +114,7 @@ async function loadAll(): Promise<void> {
  */
 async function saveStep(step: GenesisStep, data: unknown, isDone?: boolean): Promise<void> {
   const plain = JSON.parse(JSON.stringify(toRaw(data as object))) as unknown
-  const res = await window.api.genesis.saveStep(bookId, step, plain as never, isDone ?? false)
+  const res = await window.api.genesis.saveStep(bookId.value, step, plain as never, isDone ?? false)
   if (!res.ok) throw new Error(res.error)
   steps.value[step] = res.data
 }
@@ -273,7 +274,7 @@ async function startWriting(): Promise<void> {
   try {
     await saveStep(5, { started: true }, true)
     toast.success('设定已就绪，进入正文工作台')
-    router.push(`/book/${bookId}/write`)
+    router.push(`/book/${bookId.value}/write`)
   } catch (err) {
     toast.error(err instanceof Error ? err.message : '保存失败')
   }
@@ -289,7 +290,8 @@ function onAiAccept(text: string): void {
   else acceptWorldColdStart(text)
 }
 
-onMounted(loadAll)
+watch(bookId, () => void loadAll())
+onMounted(() => void loadAll())
 </script>
 
 <template>

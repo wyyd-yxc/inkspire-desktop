@@ -419,3 +419,15 @@
 - **重要发现**：安装版与开发版共享 userData（%APPDATA%/inkspire-desktop，app.getName 取自 package.json name）→ 本机安装后 AI 档案即席可用
 - **应用已安装**：C:/Users/Administrator.DESKTOP-GRPRATA/AppData/Local/Programs/InkSpire/InkSpire.exe（黑盒安装并保留；显式 asarUnpack 重建版已通过静默覆盖安装同步至本机——外壳进程会挂起但 NSIS 子进程正常完成，杀掉外壳即可，安装版 mtime 已对齐最终产物并启动验证通过）
 - **待办**：用户确认 M16 → tag v0.7.0-m16-package；后续 M6 万物百科 / 代码签名 / 自动更新
+
+---
+
+## [2026-08-30 15:30] 会话 23：M6 万物百科（开发+自测完成）
+
+- **交付**：migration v5 wiki_entries（6 类型/属性/关系/系统角色/注入模式）；wiki 四通道 IPC；wikiPrompts（AI 生成词条严格 JSON+容错解析+防撞名+创世台导入幂等转换）；WikiView 三栏 UI（筛选/搜索/卡片/右侧编辑面板）；AI 写作注入（wikiCache 三件套，always 词条 1200 字预算进 systemPrompt）；入口三处。
+- **自测中抓到并修复 2 个真实 bug**：
+  1. **stale bookId（产品级）**：WikiView/GenesisView/WorkspaceView 在 setup 一次性捕获 route.params.bookId，同路由跨书导航时 Vue Router 复用组件实例→旧书 id 残留→FK 失败/数据错乱。修复：三视图 bookId 改 computed + watch 重载。教训记入踩坑速查。
+  2. **AI 输出 JSON 内未转义引号**：实测复现「剑名"寂鸣"」致 JSON.parse 必败。修复：新增 services/jsonRepair.ts lenientJsonRepair（状态机把值内孤立引号转义）+ lenientParse，parseWikiGenerate 与 parseSoulAssist 共用；提示词同步加「字段值内禁用英文双引号」。
+- **自测结果**（tmp/m6-*.mjs，真实 UI 路径）：CRUD 回环 ✓、UI 新建落库 ✓、AI 生成词条→采纳填表（name/属性 4 个）✓、创世台导入（2 条 always+幂等）✓、always 词条注入续写 663 字紧扣设定 ✓、typecheck 双 0
+- **小瑕疵（不阻塞）**：创世台导入的词条名取首行可能带句号（用户可在面板改）；接缝锚点对无标点长句回退长度截取
+- **下一步**：M6 双轨验收 → 用户确认 → tag v0.7.0 → M7 章节画布。
