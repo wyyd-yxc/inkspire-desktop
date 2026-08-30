@@ -24,38 +24,53 @@ function argValue(flag) {
 const BASE_URL = (argValue('--base-url') || 'https://openrouter.ai/api/v1').replace(/\/+$/, '')
 const MODEL = argValue('--model') || 'stealth/ox-alpha'
 const KEY_ENV = argValue('--key-env')
+/** 直接指定 ZCode 配置里的 provider 名（如 "GMI Cloud"）读取 key 与默认地址 */
+const PROVIDER_NAME = argValue('--provider-name')
 
-function resolveKey() {
-  if (KEY_ENV && process.env[KEY_ENV]) return process.env[KEY_ENV]
-  if (process.env.OPENROUTER_API_KEY) return process.env.OPENROUTER_API_KEY
+function resolveKeyAndBase() {
+  if (KEY_ENV && process.env[KEY_ENV]) return { key: process.env[KEY_ENV], base: undefined }
+  if (process.env.OPENROUTER_API_KEY)
+    return { key: process.env.OPENROUTER_API_KEY, base: 'https://openrouter.ai/api/v1' }
   try {
     const cfg = JSON.parse(
       fs.readFileSync(path.join(os.homedir(), '.zcode', 'v2', 'config.json'), 'utf8')
     )
+    // --provider-name：按 provider 名精确匹配（GMI Cloud / 基元律动 / OpenRouter…）
+    if (PROVIDER_NAME) {
+      const p = Object.values(cfg.provider || {}).find((x) => x.name === PROVIDER_NAME)
+      if (p?.options?.apiKey)
+        return { key: p.options.apiKey, base: p.options.baseURL || undefined }
+      throw new Error(`ZCode 配置中未找到名为「${PROVIDER_NAME}」的 provider`)
+    }
     const p = Object.values(cfg.provider || {}).find((x) =>
       (x.options?.baseURL || '').includes('openrouter')
     )
-    return p?.options?.apiKey || ''
+    return { key: p?.options?.apiKey || '', base: 'https://openrouter.ai/api/v1' }
   } catch {
-    return ''
+    return { key: '', base: undefined }
   }
 }
 
-/** 收集上一 tag 到 HEAD 的 src/ 变更 diff（限长防请求超限：ox-alpha 对超长输入会返回空，经验上限约 2 万字） */
+/** 收集上一 tag 到 HEAD 的 src/ 变更 diff（限长防请求超限：ox-alpha 对超长输入会返回空，经验上限约 2 万字）
+ *  --base <ref>：显式指定 diff 基准（tag/commit）。里程碑验收在打 tag 之后进行时必须提供，
+ *  否则「最近 tag」就是 HEAD，diff 为空、审查无料可看（M16 教训）。 */
 function collectDiff(maxChars = 15000) {
-  let base
-  try {
-    base = execSync('git describe --abbrev=0 --tags', { cwd: ROOT })
-      .toString()
-      .trim()
-  } catch {
-    base = 'HEAD~5'
+  let base = argValue('--base')
+  if (!base) {
+    try {
+      base = execSync('git describe --abbrev=0 --tags', { cwd: ROOT })
+        .toString()
+        .trim()
+    } catch {
+      base = 'HEAD~5'
+    }
   }
   try {
-    const diff = execSync(`git diff ${base}..HEAD -- src/`, {
+    const diff = execSync(`git diff ${base}..HEAD -- src/ electron-builder.yml package.json`, {
       cwd: ROOT,
       maxBuffer: 20 * 1024 * 1024
     }).toString()
+    if (!diff.trim()) return `(基准 ${base}..HEAD 无 src/ 与打包配置差异——请确认 --base 是否正确)`
     return diff.length > maxChars ? diff.slice(0, maxChars) + '\n…(diff 已截断)' : diff
   } catch (e) {
     return `(diff 收集失败: ${e.message})`
@@ -70,11 +85,13 @@ async function main() {
     console.error('用法: node scripts/accept-via-llm.mjs <材料文件.md> [--model <模型名>]')
     process.exit(1)
   }
-  const key = resolveKey()
-  if (!key) {
-    console.error('未找到 OpenRouter Key（环境变量 OPENROUTER_API_KEY 或 ZCode 配置）')
+  const resolved = resolveKeyAndBase()
+  if (!resolved.key) {
+    console.error('未找到可用的 API Key（--key-env / OPENROUTER_API_KEY / --provider-name / ZCode 配置）')
     process.exit(1)
   }
+  const effectiveBase = (argValue('--base-url') || resolved.base || 'https://openrouter.ai/api/v1').replace(/\/+$/, '')
+  const key = resolved.key
 
   const material = fs.readFileSync(materialFile, 'utf8')
   const diff = collectDiff()
@@ -98,7 +115,7 @@ ${diff}
   const key2 = key
   /** 该模型非流式响应可能返回空白，统一走 SSE 流式拼接 */
   async function callApi(maxTokens) {
-    const res = await fetch(`${BASE_URL}/chat/completions`, {
+    const res = await fetch(`${effectiveBase}/chat/completions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key2}` },
       body: JSON.stringify({

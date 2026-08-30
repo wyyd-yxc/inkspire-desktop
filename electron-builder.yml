@@ -15,6 +15,8 @@ files:
   - "!{.env,.env.*,.npmrc,pnpm-lock.yaml,yarn.lock}"
 asarUnpack:
   - resources/**
+  # 显式声明原生模块解包（依赖 builder 隐式行为不可靠，见 M16 静态审查）
+  - "**/node_modules/better-sqlite3/prebuilds/**/*.node"
 win:
   target:
     - nsis

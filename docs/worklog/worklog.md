@@ -401,3 +401,21 @@
 - **修改的文件**：src/renderer/src/services/aiWriting.ts、src/renderer/src/components/ChapterEditor.vue。
 - **遗留问题**：接缝锚点对超长句（无句末标点）回退为按长度截取（80 字），极端情况锚点可能不是完整句——可接受。
 - **下一步**：用户验证 → M5 修复确认后打 tag v0.6.0 → M16 打包。
+
+---
+
+## [2026-08-30 13:30] 会话 22：M16 打包发布完成（双轨验收：黑盒通过+静态有条件通过已整改）
+
+- **前置**：用户确认 M5，已打 tag `v0.6.0-m5-genesis`。
+- **交付**：
+  1. 应用版本 0.1.0→0.6.0；程序化生成应用图标 build/icon.ico（罗兰紫底白墨滴，256 PNG-in-ICO，视觉校验通过）
+  2. `dist/InkSpire-Setup-0.6.0.exe`（111MB NSIS 安装包）+ `dist/win-unpacked/` 免安装目录
+  3. electron-builder.yml：npmRebuild:false（NAPI 预编译免重编译）+ 显式 asarUnpack 固化原生模块解包
+- **构建踩坑三连**：① node-gyp 缺 Python → npmRebuild:false；② GitHub 下载 Electron zip 超时 → ELECTRON_MIRROR；③ 同类 → ELECTRON_BUILDER_BINARIES_MIRROR（两者均为环境变量，勿写 .npmrc）
+- **自测**：打包版烟测（CDP 9223）preload/SQLite/写路径回环/默认档案(MiniMax M3)流式全过
+- **双轨验收**：
+  - 静态审查（GMI MiniMax M3，三轮迭代）：首轮 diff 为空（脚本缺陷——tag 恰为 HEAD，已修脚本支持 --base；注意 tag 全名是 v0.6.0-m5-genesis 不存在裸 v0.5.0）；二轮给补正清单；三轮「有条件通过」，必须项（显式 asarUnpack）已整改并重建+回归烟测通过
+  - 黑盒验收：**通过**（12/12）——静默安装 /S 退出码 0、卸载入口齐全、安装版 CDP 全链路验证、设置中心两档案完好、安装版内 AI 流式成功
+- **重要发现**：安装版与开发版共享 userData（%APPDATA%/inkspire-desktop，app.getName 取自 package.json name）→ 本机安装后 AI 档案即席可用
+- **应用已安装**：C:/Users/Administrator.DESKTOP-GRPRATA/AppData/Local/Programs/InkSpire/InkSpire.exe（黑盒安装并保留；显式 asarUnpack 重建版功能等同，可用新 Setup 覆盖安装，静默覆盖安装器会卡住——记录为已知怪癖）
+- **待办**：用户确认 M16 → tag v0.7.0-m16-package；后续 M6 万物百科 / 代码签名 / 自动更新
