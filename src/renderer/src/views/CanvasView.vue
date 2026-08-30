@@ -3,7 +3,7 @@
  * 章节画布：Vue Flow 场景编排 + AI 场景生成 + 按场景顺序生成正文。
  * 节点 x 坐标即叙事顺序（sort_order）；详情面板编辑全部字段；AI 面板流式预览。
  */
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { VueFlow, useVueFlow, type Node } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
@@ -28,8 +28,9 @@ import ConfirmDialog from '@/components/ConfirmDialog.vue'
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
-const bookId = route.params.bookId as string
-const chapterId = route.params.chapterId as string
+// 响应式路由参数（防同路由跨章导航组件复用拿旧 id，M6 同类教训）
+const bookId = computed(() => route.params.bookId as string)
+const chapterId = computed(() => route.params.chapterId as string)
 
 const book = ref<Pick<Book, 'title' | 'genre' | 'description'> | null>(null)
 const chapter = ref<Chapter | null>(null)
@@ -115,16 +116,16 @@ async function loadAll(): Promise<void> {
   try {
     const [booksRes, chaptersRes, scenesRes, wikiRes] = await Promise.all([
       window.api.books.list(),
-      window.api.chapters.list(bookId),
-      window.api.scenes.list(chapterId),
-      window.api.wiki.list(bookId)
+      window.api.chapters.list(bookId.value),
+      window.api.scenes.list(chapterId.value),
+      window.api.wiki.list(bookId.value)
     ])
     if (!booksRes.ok) throw new Error(booksRes.error)
     if (!chaptersRes.ok) throw new Error(chaptersRes.error)
     if (!scenesRes.ok) throw new Error(scenesRes.error)
     if (!wikiRes.ok) throw new Error(wikiRes.error)
-    book.value = booksRes.data.find((b) => b.id === bookId) ?? null
-    chapter.value = chaptersRes.data.find((c) => c.id === chapterId) ?? null
+    book.value = booksRes.data.find((b) => b.id === bookId.value) ?? null
+    chapter.value = chaptersRes.data.find((c) => c.id === chapterId.value) ?? null
     scenes.value = scenesRes.data
     wikiEntries.value = wikiRes.data
     setTimeout(() => void fitView({ padding: 0.2, maxZoom: 1 }), 120)
@@ -135,8 +136,10 @@ async function loadAll(): Promise<void> {
   }
 }
 
-/** 拖动结束：从内部节点读回位置 → 落库 → 按 x 重排 */
-async function onNodeDragStop(_e: unknown, node: Node): Promise<void> {
+/** 拖动结束：从内部节点读回位置 → 落库 → 按 x 重排。
+ *  注意 @vue-flow/core 组件事件为单参数载荷 {event, node}（黑盒验收实锤：双参数签名致 node undefined） */
+async function onNodeDragStop(payload: { event: unknown; node: Node }): Promise<void> {
+  const node = payload.node
   const s = scenes.value.find((x) => x.id === node.id)
   if (!s) return
   s.posX = Math.round(node.position.x)
@@ -144,17 +147,17 @@ async function onNodeDragStop(_e: unknown, node: Node): Promise<void> {
   const sorted = [...scenes.value].sort((a, b) => a.posX - b.posX)
   const orderedIds = sorted.map((x) => x.id)
   scenes.value = sorted.map((x, i) => ({ ...x, sortOrder: i + 1 }))
-  const res = await window.api.scenes.reorder(chapterId, orderedIds)
+  const res = await window.api.scenes.reorder(chapterId.value, orderedIds)
   if (!res.ok) toast.error(res.error)
   await window.api.scenes.update(s.id, { posX: s.posX, posY: s.posY })
 }
 
-function onNodeClick(_e: unknown, node: Node): void {
-  selectedScene.value = scenes.value.find((x) => x.id === node.id) ?? null
+function onNodeClick(payload: { node: Node }): void {
+  selectedScene.value = scenes.value.find((x) => x.id === payload.node.id) ?? null
 }
 
-function onNodeDoubleClick(_e: unknown, node: Node): void {
-  const s = scenes.value.find((x) => x.id === node.id)
+function onNodeDoubleClick(payload: { node: Node }): void {
+  const s = scenes.value.find((x) => x.id === payload.node.id)
   if (s) openPanel(s)
 }
 
@@ -219,7 +222,7 @@ async function savePanel(): Promise<void> {
       if (i >= 0) scenes.value[i] = res.data
     } else {
       const res = await window.api.scenes.create({
-        chapterId,
+        chapterId.value,
         ...plain,
         posX: panelCreatePos.value.x,
         posY: panelCreatePos.value.y
@@ -352,7 +355,7 @@ async function acceptScenes(text: string): Promise<void> {
         sortOrder += 1
         maxX += 320
         const res = await window.api.scenes.create({
-          chapterId,
+          chapterId.value,
           title: p.title,
           summary: p.summary,
           beat: p.beat,
@@ -400,7 +403,6 @@ function generateOneScene(
     wikiText,
     proseTargetWords.value
   )
-  let session: { abort: () => void } | null = null
   return new Promise<string>((resolve, reject) => {
     void (async () => {
       try {
@@ -413,11 +415,9 @@ function generateOneScene(
           onDone: () => resolve(acc),
           onError: (m) => reject(new Error(m))
         })
-        session = null
       } catch (err) {
         reject(err instanceof Error ? err : new Error(String(err)))
       }
-      void session
     })()
   })
 }
@@ -463,13 +463,13 @@ async function startProseGen(): Promise<void> {
       .map((p) => `<p>${p.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>`)
       .join('')
     const plainWords = full.replace(/\s/g, '').length
-    const res = await window.api.chapters.update(chapterId, {
+    const res = await window.api.chapters.update(chapterId.value, {
       content: html,
       wordCount: plainWords
     })
     if (!res.ok) throw new Error(res.error)
     toast.success('正文已生成并写入本章')
-    void router.push(`/book/${bookId}/write`)
+    void router.push(`/book/${bookId.value}/write`)
   } catch (err) {
     toast.error(err instanceof Error ? err.message : '写入章节失败')
   }
@@ -480,6 +480,7 @@ function stopEverything(): void {
   isBusy.value = false
 }
 
+watch([bookId, chapterId], () => void loadAll())
 onMounted(() => void loadAll())
 </script>
 
