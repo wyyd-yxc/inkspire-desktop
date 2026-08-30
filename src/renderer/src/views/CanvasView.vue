@@ -315,7 +315,17 @@ async function startSceneGen(): Promise<void> {
 }
 
 async function acceptScenes(text: string): Promise<void> {
-  const parsed = parseSceneGen(text)
+  let parsed = parseSceneGen(text)
+  if (parsed.length === 0) {
+    // 救援兜底：宽松解析失败时按 title/summary 结构正则提取（LLM JSON 边界情况兜底）
+    const rescued: Array<{ title: string; summary: string; beat: string; tension: number; tags: string[] }> = []
+    const re = /"title"\s*:\s*"([^"]{1,40})"\s*,\s*"summary"\s*:\s*"([\s\S]*?)"\s*,\s*"beat"\s*:\s*"([^"]*)"\s*,\s*"tension"\s*:\s*(\d)/g
+    let m: RegExpExecArray | null
+    while ((m = re.exec(text))) {
+      rescued.push({ title: m[1], summary: m[2].slice(0, 300), beat: m[3], tension: Number(m[4]), tags: [] })
+    }
+    parsed = rescued
+  }
   if (parsed.length === 0) {
     toast.error('AI 输出格式异常，无法解析为场景')
     return
