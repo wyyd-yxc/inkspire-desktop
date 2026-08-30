@@ -56,6 +56,13 @@ function toScene(r: SceneRow): Scene {
   }
 }
 
+/** 张力归一化：非有限值回退 3，并钳制 1-5（防 NaN 落库违例，M7 静态审查） */
+function normalizeTension(v: unknown): number {
+  const n = Number(v)
+  if (!Number.isFinite(n)) return 3
+  return Math.min(5, Math.max(1, Math.round(n)))
+}
+
 /** 列出某章全部场景（按 sort_order 升序） */
 export function listScenes(chapterId: string): Scene[] {
   const d: Database = getDb()
@@ -87,7 +94,7 @@ export function createScene(input: CreateSceneInput): Scene {
     title: input.title?.trim() || `场景 ${count + 1}`,
     summary: input.summary ?? '',
     beat: input.beat ?? '',
-    tension: input.tension ?? 3,
+    tension: normalizeTension(input.tension),
     tags: JSON.stringify(input.tags ?? []),
     status: input.status ?? 'draft',
     sort_order: input.sortOrder ?? count + 1,
@@ -112,7 +119,7 @@ export function updateScene(id: string, input: UpdateSceneInput): Scene {
     ...(input.title !== undefined ? { title: input.title.trim() || existing.title } : {}),
     ...(input.summary !== undefined ? { summary: input.summary } : {}),
     ...(input.beat !== undefined ? { beat: input.beat } : {}),
-    ...(input.tension !== undefined ? { tension: Math.min(5, Math.max(1, input.tension)) } : {}),
+    ...(input.tension !== undefined ? { tension: normalizeTension(input.tension) } : {}),
     ...(input.tags !== undefined ? { tags: input.tags } : {}),
     ...(input.status !== undefined ? { status: input.status } : {}),
     ...(input.posX !== undefined ? { posX: input.posX } : {}),
