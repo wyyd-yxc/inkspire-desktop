@@ -222,7 +222,7 @@ async function savePanel(): Promise<void> {
       if (i >= 0) scenes.value[i] = res.data
     } else {
       const res = await window.api.scenes.create({
-        chapterId.value,
+        chapterId: chapterId.value,
         ...plain,
         posX: panelCreatePos.value.x,
         posY: panelCreatePos.value.y
@@ -355,7 +355,7 @@ async function acceptScenes(text: string): Promise<void> {
         sortOrder += 1
         maxX += 320
         const res = await window.api.scenes.create({
-          chapterId.value,
+          chapterId: chapterId.value,
           title: p.title,
           summary: p.summary,
           beat: p.beat,
@@ -504,6 +504,20 @@ onMounted(() => void loadAll())
           class="rounded-lg border border-ink-primary px-3 py-1.5 text-xs text-ink-primary transition-colors hover:bg-ink-primary-soft"
           @click="openAiDialog('append')"
         >+ 末尾续写</button>
+        <button
+          class="rounded-lg border px-3 py-1.5 text-xs transition-colors disabled:opacity-40"
+          :class="selectedScene ? 'border-ink-primary text-ink-primary hover:bg-ink-primary-soft' : 'border-ink-border text-ink-text-muted'"
+          :disabled="!selectedScene"
+          title="单击选中场景后可用：在其前插入过渡场景"
+          @click="openAiDialog('bridge')"
+        >⇋ 搭桥</button>
+        <button
+          class="rounded-lg border px-3 py-1.5 text-xs transition-colors disabled:opacity-40"
+          :class="selectedScene ? 'border-ink-primary text-ink-primary hover:bg-ink-primary-soft' : 'border-ink-border text-ink-text-muted'"
+          :disabled="!selectedScene"
+          title="单击选中场景后可用：融入设定充实该场景"
+          @click="openAiDialog('rewrite')"
+        >✎ 改写</button>
         <button
           class="rounded-lg border border-ink-primary px-3 py-1.5 text-xs text-ink-primary transition-colors hover:bg-ink-primary-soft"
           @click="openAiDialog('ending')"
