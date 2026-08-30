@@ -4,6 +4,7 @@
  * 重命名采用行内编辑（双击或按钮进入编辑态）。
  */
 import { computed, ref, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
 import type { Chapter } from '../../../shared/chapter.types'
 
 const props = defineProps<{
@@ -21,6 +22,8 @@ const emit = defineEmits<{
   remove: [chapter: Chapter]
   move: [id: string, dir: -1 | 1]
 }>()
+
+const router = useRouter()
 
 const editingId = ref('')
 const editingTitle = ref('')
@@ -119,6 +122,13 @@ const wordsLabel = computed(() => props.totalWords.toLocaleString('zh-CN'))
 
         <!-- hover 操作 -->
         <div v-if="editingId !== c.id" class="hidden shrink-0 items-center gap-0.5 group-hover:flex">
+          <button
+            class="rounded p-0.5 text-ink-text-muted hover:bg-paper hover:text-ink-primary"
+            title="章节画布"
+            @click.stop="router.push(`/book/${props.bookId}/canvas/${c.id}`)"
+          >
+            <svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+          </button>
           <button
             class="rounded p-0.5 text-ink-text-muted hover:bg-paper hover:text-ink-primary disabled:opacity-30"
             :disabled="i === 0"

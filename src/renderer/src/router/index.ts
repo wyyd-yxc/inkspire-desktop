@@ -32,6 +32,11 @@ const router = createRouter({
       path: '/book/:bookId/wiki',
       name: 'wiki',
       component: () => import('@/views/WikiView.vue')
+    },
+    {
+      path: '/book/:bookId/canvas/:chapterId',
+      name: 'canvas',
+      component: () => import('@/views/CanvasView.vue')
     }
   ]
 })

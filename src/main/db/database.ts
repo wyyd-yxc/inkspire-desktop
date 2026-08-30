@@ -89,6 +89,27 @@ const MIGRATIONS: Array<{ version: number; sql: string }> = [
         updated_at  TEXT NOT NULL
       );
       CREATE INDEX IF NOT EXISTS idx_wiki_book ON wiki_entries(book_id, type);`
+  },
+  {
+    version: 6,
+    sql: `
+      CREATE TABLE IF NOT EXISTS scenes (
+        id         TEXT PRIMARY KEY,
+        chapter_id TEXT NOT NULL REFERENCES chapters(id) ON DELETE CASCADE,
+        title      TEXT NOT NULL DEFAULT '',
+        summary    TEXT NOT NULL DEFAULT '',
+        beat       TEXT NOT NULL DEFAULT '',
+        tension    INTEGER NOT NULL DEFAULT 3,
+        tags       TEXT NOT NULL DEFAULT '[]',
+        status     TEXT NOT NULL DEFAULT 'draft',
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        pos_x      REAL NOT NULL DEFAULT 0,
+        pos_y      REAL NOT NULL DEFAULT 0,
+        wiki_refs  TEXT NOT NULL DEFAULT '[]',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_scenes_chapter ON scenes(chapter_id, sort_order);`
   }
 ]
 

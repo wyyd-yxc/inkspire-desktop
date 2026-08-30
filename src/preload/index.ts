@@ -29,6 +29,11 @@ import type {
   UpdateWikiInput,
   WikiEntry
 } from '../shared/wiki.types'
+import type {
+  CreateSceneInput,
+  Scene,
+  UpdateSceneInput
+} from '../shared/canvas.types'
 
 const api = {
   /** IPC 通路自检：正常返回 { ok: true, data: 'pong' } */
@@ -84,6 +89,20 @@ const api = {
       ipcRenderer.invoke('wiki:update', id, input),
     remove: (id: string): Promise<IpcResult<boolean>> =>
       ipcRenderer.invoke('wiki:remove', id)
+  },
+
+  /** 章节画布场景 */
+  scenes: {
+    list: (chapterId: string): Promise<IpcResult<Scene[]>> =>
+      ipcRenderer.invoke('scenes:list', chapterId),
+    create: (input: CreateSceneInput): Promise<IpcResult<Scene>> =>
+      ipcRenderer.invoke('scenes:create', input),
+    update: (id: string, input: UpdateSceneInput): Promise<IpcResult<Scene>> =>
+      ipcRenderer.invoke('scenes:update', id, input),
+    remove: (id: string): Promise<IpcResult<boolean>> =>
+      ipcRenderer.invoke('scenes:remove', id),
+    reorder: (chapterId: string, orderedIds: string[]): Promise<IpcResult<boolean>> =>
+      ipcRenderer.invoke('scenes:reorder', chapterId, orderedIds)
   },
 
   /** AI 接口档案（设置中心） */
