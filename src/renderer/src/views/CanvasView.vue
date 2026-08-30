@@ -136,6 +136,15 @@ async function loadAll(): Promise<void> {
   }
 }
 
+/** 按 x 坐标重排 sort_order 并落库（拖动结束/搭桥插入/删除后共用） */
+async function reorderByX(): Promise<void> {
+  const sorted = [...scenes.value].sort((a, b) => a.posX - b.posX)
+  const orderedIds = sorted.map((x) => x.id)
+  scenes.value = sorted.map((x, i) => ({ ...x, sortOrder: i + 1 }))
+  const res = await window.api.scenes.reorder(chapterId.value, orderedIds)
+  if (!res.ok) toast.error(res.error)
+}
+
 /** 拖动结束：从内部节点读回位置 → 落库 → 按 x 重排。
  *  注意 @vue-flow/core 组件事件为单参数载荷 {event, node}（黑盒验收实锤：双参数签名致 node undefined） */
 async function onNodeDragStop(payload: { event: unknown; node: Node }): Promise<void> {
@@ -144,11 +153,7 @@ async function onNodeDragStop(payload: { event: unknown; node: Node }): Promise<
   if (!s) return
   s.posX = Math.round(node.position.x)
   s.posY = Math.round(node.position.y)
-  const sorted = [...scenes.value].sort((a, b) => a.posX - b.posX)
-  const orderedIds = sorted.map((x) => x.id)
-  scenes.value = sorted.map((x, i) => ({ ...x, sortOrder: i + 1 }))
-  const res = await window.api.scenes.reorder(chapterId.value, orderedIds)
-  if (!res.ok) toast.error(res.error)
+  await reorderByX()
   await window.api.scenes.update(s.id, { posX: s.posX, posY: s.posY })
 }
 
@@ -247,6 +252,7 @@ async function doDelete(): Promise<void> {
     toast.error(res.error)
   } else {
     scenes.value = scenes.value.filter((s) => s.id !== target.id)
+    await reorderByX() // 本地序号即时同步（修复删除后节点序号不刷新，M7 复验问题 7）
     if (panelScene.value?.id === target.id) panelVisible.value = false
     toast.success('场景已删除')
   }
@@ -348,6 +354,36 @@ async function acceptScenes(text: string): Promise<void> {
       const i = scenes.value.findIndex((s) => s.id === res.data.id)
       if (i >= 0) scenes.value[i] = res.data
       toast.success(`场景「${first.title}」已改写`)
+    } else if (aiMode.value === 'bridge' && selectedScene.value) {
+      // 搭桥：锚点前插——锚点及其右侧场景右移腾位，新场景落在锚点前一格，随后按 x 重排
+      const anchor = selectedScene.value
+      const created: Scene[] = []
+      for (let k = 0; k < parsed.length; k++) {
+        const p = parsed[k]
+        const res = await window.api.scenes.create({
+          chapterId: chapterId.value,
+          title: p.title,
+          summary: p.summary,
+          beat: p.beat,
+          tension: p.tension,
+          tags: p.tags,
+          posX: anchor.posX + k * 320,
+          posY: anchor.posY,
+          sortOrder: 0 // 稍后统一按 x 重排
+        })
+        if (!res.ok) throw new Error(res.error)
+        created.push(res.data)
+      }
+      // 锚点及其右侧场景右移 parsed.length 格
+      for (const s of scenes.value) {
+        if (s.posX >= anchor.posX) {
+          s.posX += parsed.length * 320
+          await window.api.scenes.update(s.id, { posX: s.posX })
+        }
+      }
+      scenes.value.push(...created)
+      await onNodeDragStopReorder()
+      toast.success(`已插入 ${parsed.length} 个过渡场景`)
     } else {
       let sortOrder = ordered.value.length
       let maxX = Math.max(0, ...scenes.value.map((s) => s.posX))
