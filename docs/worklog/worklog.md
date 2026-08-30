@@ -441,3 +441,16 @@
 - **整改**：wiki DAO parseJson 加 console.warn；loadWiki relations 查找改 Map（去 O(N²)）；onBeforeUnmount 作废未完成加载。
 - **M6 状态：待用户确认 → tag v0.7.0-m6-wiki**。
 - **下一步**：M7 章节画布（@vue-flow 引入、场景节点、5 种 AI 场景生成、按场景生成正文）。
+
+---
+
+## [2026-08-30 20:00] 会话 25：M7 章节画布（三轮复验闭环）
+
+- **交付**：migration v6 scenes 表；scenes 五通道 IPC；scenePrompts（5 模式场景生成 JSON+宽容解析+正则救援+逐场景正文提示词）；CanvasView（Vue Flow 自定义节点/拖拽落库按x重排/详情面板词条挂接/AI 面板/生成正文循环→写入章节→自动跳工作台）；侧栏章节 hover 画布入口。
+- **验收拉锯（三轮+遗留专项，报告 2026-08-30-M7-canvas.md）**：
+  - R1 黑盒不通过：**Vue Flow 事件单参数载荷**（{event,node} 而非双参数）致节点交互全废——阻断修复
+  - R2 复验不通过：整改 commit 自身引入**对象简写语法错**（批量 .value 替换误伤）且 typecheck 盲区放行——修语法+补搭桥/改写入口+治理盲区（vue-tsc 与 TS7 不兼容→electron-vite build 作 SFC 编译闸门并入 typecheck）
+  - R3 有条件通过+遗留专项再抓：抽取函数改名后**残留旧调用**（onNodeDragStopReorder）致搭桥采纳崩溃+脏数据——修+搭桥实机自测通过（过渡场景落锚点前、sortOrder 连续无 #0、无崩溃）
+- **流程教训（第三次同类）**：修复必须实机运行自测后再提交；函数改名后全文件引用自查；tsc 不解析 SFC，语法错误靠 electron-vite build 闸门
+- **M7 状态：自测+验收全闭环，待用户确认 → tag v0.8.0-m7-canvas**
+- **下一步**：M8 作品记忆 → M9 墨灵助手 → M10 剧情画布（逐个交付节奏不变）。
