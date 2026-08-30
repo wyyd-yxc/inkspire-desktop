@@ -417,5 +417,5 @@
   - 静态审查（GMI MiniMax M3，三轮迭代）：首轮 diff 为空（脚本缺陷——tag 恰为 HEAD，已修脚本支持 --base；注意 tag 全名是 v0.6.0-m5-genesis 不存在裸 v0.5.0）；二轮给补正清单；三轮「有条件通过」，必须项（显式 asarUnpack）已整改并重建+回归烟测通过
   - 黑盒验收：**通过**（12/12）——静默安装 /S 退出码 0、卸载入口齐全、安装版 CDP 全链路验证、设置中心两档案完好、安装版内 AI 流式成功
 - **重要发现**：安装版与开发版共享 userData（%APPDATA%/inkspire-desktop，app.getName 取自 package.json name）→ 本机安装后 AI 档案即席可用
-- **应用已安装**：C:/Users/Administrator.DESKTOP-GRPRATA/AppData/Local/Programs/InkSpire/InkSpire.exe（黑盒安装并保留；显式 asarUnpack 重建版功能等同，可用新 Setup 覆盖安装，静默覆盖安装器会卡住——记录为已知怪癖）
+- **应用已安装**：C:/Users/Administrator.DESKTOP-GRPRATA/AppData/Local/Programs/InkSpire/InkSpire.exe（黑盒安装并保留；显式 asarUnpack 重建版已通过静默覆盖安装同步至本机——外壳进程会挂起但 NSIS 子进程正常完成，杀掉外壳即可，安装版 mtime 已对齐最终产物并启动验证通过）
 - **待办**：用户确认 M16 → tag v0.7.0-m16-package；后续 M6 万物百科 / 代码签名 / 自动更新
