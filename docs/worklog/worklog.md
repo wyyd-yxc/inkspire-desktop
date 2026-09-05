@@ -495,3 +495,13 @@
 - **自测中修复 1 个阻断**：memory 块插在 watch(immediate) 之后→TDZ「Cannot access memoryLoadSeq before initialization」→渲染层全崩。修复：块移至 watch 之前。教训与 M6 同类：**setup 中 watch(immediate) 引用的资源必须先声明**。
 - **自测结果**（tmp/m8-*.mjs 真实 UI 路径）：CRUD+空内容拦截+clue 回收开关 ✓；AI 抽取→采纳→3 条正确分类入库（character/relationship/stage）✓；注入方向：第二章续写 359 字紧接前章「苏檀儿左臂中箭」伤势（不写满血）✓ 且后章记忆不泄露 ✓；typecheck 三重闸门 ✓
 - **下一步**：双轨验收 → 用户确认 → tag v0.10.0-m8-memory → M9 墨灵助手。
+
+---
+
+## [2026-08-30 23:59] 会话 30：M8 双轨验收闭环（黑盒按阈值取消，静态+自测放行）
+
+- **黑盒验收：按用户阈值取消**（模型请求报错 3 次：captcha×1 + 并发限制×2，符合「报错超三次取消」条件）
+- **静态审查（GMI MiniMax M3）：有条件通过**——整改已全部落实（commit 3350f97）：memories DAO kind/source 白名单校验、memoryLoadSeq 卸载清理、listMemoriesBefore 口径注释、材料附录补齐
+- **放行依据**：开发自测已覆盖核心路径（CRUD+空内容拦截+clue 回收+AI 抽取 3 条正确入库+注入方向前章生效/后章不泄露），且注入管线与已验证的 M6 wiki 注入同路径复用
+- **M8 状态：待用户确认 → tag v0.10.0-m8-memory**
+- **下一步**：M9 墨灵助手 → M10 剧情画布（逐个交付节奏不变）
