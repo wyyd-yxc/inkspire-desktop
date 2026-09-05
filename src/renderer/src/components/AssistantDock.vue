@@ -130,16 +130,20 @@ function buildMessages(userText: string) {
     content: m.content
   }))
 
-  // 本轮用户消息（附加选区/词条上下文）
+  // 本轮用户消息（附加选区/词条上下文，两者可叠加）
   let turn = userText
+  const contextParts: string[] = []
   if (pendingAttachments.value.length) {
     const entryTexts = pendingAttachments.value
       .map((w) => `【设定·${w.name}】${w.summary}${w.content ? '：' + w.content.slice(0, 300) : ''}`)
       .join('\n')
-    turn = `（参考以下设定回答）\n${entryTexts}\n\n${userText}`
+    contextParts.push(`（参考以下设定回答）\n${entryTexts}`)
   }
   if (props.selectionText.trim()) {
-    turn = `（针对以下选中文字）\n「${props.selectionText.slice(0, 500)}」\n\n${userText}`
+    contextParts.push(`（针对以下选中文字）\n「${props.selectionText.slice(0, 500)}」`)
+  }
+  if (contextParts.length) {
+    turn = contextParts.join('\n\n') + '\n\n' + userText
   }
 
   return [
