@@ -184,15 +184,18 @@ async function onConnect(params: { source: string; target: string }): Promise<vo
     })
     if (!res.ok) throw new Error(res.error)
     if (!sceneEdges.value.some((x) => x.id === res.data.id)) sceneEdges.value.push(res.data)
-    toast.success('连线已创建')
+    // 连线默认 main：创建后自动选中打开编辑器，便于立即切换类型/加标签
+    selectedEdge.value = res.data
+    edgeForm.value = { type: res.data.type, label: res.data.label }
+    toast.success('连线已创建（可在上方编辑器调整类型与标签）')
   } catch (err) {
     toast.error(err instanceof Error ? err.message : '连线失败')
   }
 }
 
-/** 单击选中连线 → 工具栏编辑器 */
-function onEdgeClick(_e: unknown, edge: { id: string }): void {
-  const e = sceneEdges.value.find((x) => x.id === edge.id)
+/** 单击选中连线 → 工具栏编辑器（Vue Flow 边事件同为单参数载荷 {event, edge}，与节点事件同坑） */
+function onEdgeClick(payload: { edge: { id: string } }): void {
+  const e = sceneEdges.value.find((x) => x.id === payload.edge.id)
   if (!e) return
   selectedEdge.value = e
   edgeForm.value = { type: e.type, label: e.label }
