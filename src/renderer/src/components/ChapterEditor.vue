@@ -123,21 +123,6 @@ async function ensureWikiLoaded(): Promise<void> {
   await wikiLoadingPromise
 }
 
-watch(
-  () => props.bookId,
-  (id) => {
-    if (id) {
-      wikiLoadingPromise = loadWiki(id)
-      memoryLoadingPromise = loadMemory(id)
-    }
-  },
-  { immediate: true }
-)
-
-onBeforeUnmount(() => {
-  wikiLoadSeq++ // 组件销毁后到达的加载结果直接作废
-})
-
 // ---------------- 作品记忆注入（M8，与 genesisCache 同款三件套） ----------------
 
 /** 记忆注入预算（字符） */
@@ -164,6 +149,21 @@ async function loadMemory(bookId: string): Promise<void> {
 async function ensureMemoryLoaded(): Promise<void> {
   await memoryLoadingPromise
 }
+
+watch(
+  () => props.bookId,
+  (id) => {
+    if (id) {
+      wikiLoadingPromise = loadWiki(id)
+      memoryLoadingPromise = loadMemory(id)
+    }
+  },
+  { immediate: true }
+)
+
+onBeforeUnmount(() => {
+  wikiLoadSeq++ // 组件销毁后到达的加载结果直接作废
+})
 
 /** 按当前章过滤拼装注入文本 */
 const memoryCache = computed<{ facts: string }>(() => {
