@@ -163,6 +163,7 @@ watch(
 
 onBeforeUnmount(() => {
   wikiLoadSeq++ // 组件销毁后到达的加载结果直接作废
+  memoryLoadSeq++
 })
 
 /** 按当前章过滤拼装注入文本 */

@@ -12,6 +12,21 @@ import type {
   UpdateMemoryInput
 } from '../../shared/memory.types'
 
+const VALID_KINDS = new Set(['plot', 'stage', 'character', 'relationship', 'clue'])
+const VALID_SOURCES = new Set(['manual', 'ai'])
+
+/** 类型/来源白名单校验（防脏数据穿透，M8 静态审查建议） */
+function normalizeMemoryKind(v: unknown): MemoryKind {
+  const s = String(v ?? '')
+  if (!VALID_KINDS.has(s)) throw new Error('非法记忆类型: ' + s.slice(0, 20))
+  return s as MemoryKind
+}
+
+function normalizeSource(v: unknown): MemorySource {
+  const s = String(v ?? 'manual')
+  return VALID_SOURCES.has(s) ? (s as MemorySource) : 'manual'
+}
+
 interface MemoryRow {
   id: string
   book_id: string
@@ -50,7 +65,7 @@ export function listMemories(bookId: string): Memory[] {
   ).map(toMemory)
 }
 
-/** 列出第 N 章之前（不含 N）的记忆——AI 生成第 N 章时的注入集（单向可见防剧透） */
+/** 列出第 N 章之前（不含 N）的记忆——服务端权威过滤接口（预留；当前注入实际走渲染层 computed 按当前章过滤，见 ChapterEditor.memoryCache） */
 export function listMemoriesBefore(bookId: string, chapterNo: number): Memory[] {
   const d: Database = getDb()
   return (
@@ -72,10 +87,10 @@ export function createMemory(input: CreateMemoryInput): Memory {
   const row: MemoryRow = {
     id: randomUUID(),
     book_id: input.bookId,
-    kind: input.kind,
+    kind: normalizeMemoryKind(input.kind),
     content,
     chapter_no: Math.round(input.chapterNo),
-    source: input.source ?? 'manual',
+    source: normalizeSource(input.source ?? 'manual'),
     is_resolved: input.isResolved ? 1 : 0,
     created_at: now,
     updated_at: now
@@ -95,7 +110,7 @@ export function updateMemory(id: string, input: UpdateMemoryInput): Memory {
 
   const next = {
     ...row,
-    kind: (input.kind ?? (row.kind as MemoryKind)) as string,
+    kind: input.kind !== undefined ? normalizeMemoryKind(input.kind) : (row.kind as MemoryKind),
     content: input.content !== undefined ? input.content.trim() : row.content,
     chapter_no:
       input.chapterNo !== undefined
