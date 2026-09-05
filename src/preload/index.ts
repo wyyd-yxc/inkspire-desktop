@@ -34,6 +34,11 @@ import type {
   Scene,
   UpdateSceneInput
 } from '../shared/canvas.types'
+import type {
+  CreateSceneEdgeInput,
+  SceneEdge,
+  UpdateSceneEdgeInput
+} from '../shared/canvas.types'
 
 const api = {
   /** IPC 通路自检：正常返回 { ok: true, data: 'pong' } */
@@ -103,6 +108,18 @@ const api = {
       ipcRenderer.invoke('scenes:remove', id),
     reorder: (chapterId: string, orderedIds: string[]): Promise<IpcResult<boolean>> =>
       ipcRenderer.invoke('scenes:reorder', chapterId, orderedIds)
+  },
+
+  /** 章节画布场景连线 */
+  sceneEdges: {
+    list: (chapterId: string): Promise<IpcResult<SceneEdge[]>> =>
+      ipcRenderer.invoke('scene-edges:list', chapterId),
+    create: (input: CreateSceneEdgeInput): Promise<IpcResult<SceneEdge>> =>
+      ipcRenderer.invoke('scene-edges:create', input),
+    update: (id: string, input: UpdateSceneEdgeInput): Promise<IpcResult<SceneEdge>> =>
+      ipcRenderer.invoke('scene-edges:update', id, input),
+    remove: (id: string): Promise<IpcResult<boolean>> =>
+      ipcRenderer.invoke('scene-edges:remove', id)
   },
 
   /** AI 接口档案（设置中心） */

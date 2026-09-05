@@ -5,13 +5,13 @@
  */
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { VueFlow, useVueFlow, type Node } from '@vue-flow/core'
+import { VueFlow, useVueFlow, Handle, Position, type Node, type Edge } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import '@vue-flow/core/dist/style.css'
 import '@vue-flow/core/dist/theme-default.css'
 import type { Book } from '../../../shared/book.types'
 import type { Chapter } from '../../../shared/chapter.types'
-import type { Scene, SceneGenMode, SceneStatus } from '../../../shared/canvas.types'
+import type { Scene, SceneGenMode, SceneStatus, SceneEdge, SceneEdgeType } from '../../../shared/canvas.types'
 import type { WikiEntry } from '../../../shared/wiki.types'
 import { isElectron } from '../services/books'
 import { useToast } from '@/composables/useToast'
@@ -114,26 +114,134 @@ async function loadAll(): Promise<void> {
     return
   }
   try {
-    const [booksRes, chaptersRes, scenesRes, wikiRes] = await Promise.all([
+    const [booksRes, chaptersRes, scenesRes, wikiRes, edgeRes] = await Promise.all([
       window.api.books.list(),
       window.api.chapters.list(bookId.value),
       window.api.scenes.list(chapterId.value),
-      window.api.wiki.list(bookId.value)
+      window.api.wiki.list(bookId.value),
+      window.api.sceneEdges.list(chapterId.value)
     ])
     if (!booksRes.ok) throw new Error(booksRes.error)
     if (!chaptersRes.ok) throw new Error(chaptersRes.error)
     if (!scenesRes.ok) throw new Error(scenesRes.error)
     if (!wikiRes.ok) throw new Error(wikiRes.error)
+    if (!edgeRes.ok) throw new Error(edgeRes.error)
     book.value = booksRes.data.find((b) => b.id === bookId.value) ?? null
     chapter.value = chaptersRes.data.find((c) => c.id === chapterId.value) ?? null
     scenes.value = scenesRes.data
     wikiEntries.value = wikiRes.data
+    sceneEdges.value = edgeRes.data
     setTimeout(() => void fitView({ padding: 0.2, maxZoom: 1 }), 120)
   } catch (err) {
     toast.error(err instanceof Error ? err.message : '加载失败')
   } finally {
     loading.value = false
   }
+}
+
+// ---- 场景连线（关系表达：main 主线/logic 因果/relation 关联） ----
+
+const sceneEdges = ref<SceneEdge[]>([])
+const selectedEdge = ref<SceneEdge | null>(null)
+const edgeForm = ref({ type: 'main' as SceneEdgeType, label: '' })
+
+/** 连线类型样式（颜色/虚线/labelBg） */
+const edgeTypeStyle: Record<SceneEdgeType, { stroke: string; dash: string; label: string }> = {
+  main: { stroke: '#c9a227', dash: '0', label: '主线' },
+  logic: { stroke: '#5b9bd1', dash: '6 4', label: '因果' },
+  relation: { stroke: '#9d97b5', dash: '2 4', label: '关联' }
+}
+
+/** DB 连线 → Vue Flow Edge（样式按类型，label 上边） */
+const flowEdges = computed<Edge[]>(() =>
+  sceneEdges.value.map((e) => {
+    const st = edgeTypeStyle[e.type] ?? edgeTypeStyle.relation
+    return {
+      id: e.id,
+      source: e.sourceId,
+      target: e.targetId,
+      type: 'smoothstep',
+      label: e.label || st.label,
+      labelBgStyle: { fill: '#f5f3fa' },
+      labelBgPadding: [4, 2],
+      labelBgBorderRadius: 4,
+      style: { stroke: st.stroke, strokeWidth: 2, strokeDasharray: st.dash }
+    }
+  })
+)
+
+/** 拖线连接完成：校验 + 落库（踩坑 #11：连接参数含句柄对象，仅取 id） */
+async function onConnect(params: { source: string; target: string }): Promise<void> {
+  if (params.source === params.target) {
+    toast.error('不能连接场景到自身')
+    return
+  }
+  try {
+    const res = await window.api.sceneEdges.create({
+      chapterId: chapterId.value,
+      sourceId: params.source,
+      targetId: params.target
+    })
+    if (!res.ok) throw new Error(res.error)
+    sceneEdges.value.push(res.data)
+    toast.success('连线已创建')
+  } catch (err) {
+    toast.error(err instanceof Error ? err.message : '连线失败')
+  }
+}
+
+/** 单击选中连线 → 工具栏编辑器 */
+function onEdgeClick(_e: unknown, edge: { id: string }): void {
+  const e = sceneEdges.value.find((x) => x.id === edge.id)
+  if (!e) return
+  selectedEdge.value = e
+  edgeForm.value = { type: e.type, label: e.label }
+}
+
+/** 保存连线编辑（类型/标签） */
+async function saveEdgeEdit(): Promise<void> {
+  const target = selectedEdge.value
+  if (!target) return
+  try {
+    const plain = JSON.parse(JSON.stringify({ type: edgeForm.value.type, label: edgeForm.value.label }))
+    const res = await window.api.sceneEdges.update(target.id, plain)
+    if (!res.ok) throw new Error(res.error)
+    const i = sceneEdges.value.findIndex((x) => x.id === res.data.id)
+    if (i >= 0) sceneEdges.value[i] = res.data
+    selectedEdge.value = res.data
+    toast.success('连线已更新')
+  } catch (err) {
+    toast.error(err instanceof Error ? err.message : '更新失败')
+  }
+}
+
+/** 删除选中连线 */
+async function removeSelectedEdge(): Promise<void> {
+  const target = selectedEdge.value
+  if (!target) return
+  const res = await window.api.sceneEdges.remove(target.id)
+  if (!res.ok) {
+    toast.error(res.error)
+    return
+  }
+  sceneEdges.value = sceneEdges.value.filter((x) => x.id !== target.id)
+  selectedEdge.value = null
+  toast.success('连线已删除')
+}
+
+/** 场景的出入关系描述（生成正文时注入，防因果写反） */
+function relationTextFor(scene: Scene): string {
+  const lines: string[] = []
+  for (const e of sceneEdges.value) {
+    if (e.sourceId === scene.id) {
+      const t = scenes.value.find((x) => x.id === e.targetId)
+      if (t) lines.push(`本场景${e.type === 'logic' ? '因果指向' : e.type === 'main' ? '顺承接续' : '关联'}「${t.title}」`)
+    } else if (e.targetId === scene.id) {
+      const s = scenes.value.find((x) => x.id === e.sourceId)
+      if (s) lines.push(`承接自「${s.title}」${e.label ? '（' + e.label + '）' : ''}`)
+    }
+  }
+  return lines.join('；')
 }
 
 /** 按 x 坐标重排 sort_order 并落库（拖动结束/搭桥插入/删除后共用） */
@@ -252,6 +360,8 @@ async function doDelete(): Promise<void> {
     toast.error(res.error)
   } else {
     scenes.value = scenes.value.filter((s) => s.id !== target.id)
+    // 连线经 FK 级联删除（DB），本地同步清理
+    sceneEdges.value = sceneEdges.value.filter((e) => e.sourceId !== target.id && e.targetId !== target.id)
     await reorderByX() // 本地序号即时同步（修复删除后节点序号不刷新，M7 复验问题 7）
     if (panelScene.value?.id === target.id) panelVisible.value = false
     toast.success('场景已删除')
@@ -437,7 +547,8 @@ function generateOneScene(
     precedingText,
     isLast,
     wikiText,
-    proseTargetWords.value
+    proseTargetWords.value,
+    relationTextFor(scene)
   )
   return new Promise<string>((resolve, reject) => {
     void (async () => {
@@ -528,6 +639,32 @@ onMounted(() => void loadAll())
       <h1 class="text-base font-bold text-ink-primary">章节画布</h1>
       <span class="truncate text-sm text-ink-text-muted">{{ chapter?.title ?? '…' }}</span>
       <div class="ml-auto flex items-center gap-2">
+        <!-- 连线编辑器（单击边选中后出现） -->
+        <div
+          v-if="selectedEdge"
+          class="flex items-center gap-1.5 rounded-lg border border-ink-primary/50 bg-ink-primary-soft/50 px-2.5 py-1"
+        >
+          <span class="text-xs text-ink-text-muted">连线:</span>
+          <select
+            v-model="edgeForm.type"
+            class="rounded border border-ink-border bg-surface px-1.5 py-0.5 text-xs outline-none"
+            @change="saveEdgeEdit"
+          >
+            <option value="main">主线</option>
+            <option value="logic">因果</option>
+            <option value="relation">关联</option>
+          </select>
+          <input
+            v-model="edgeForm.label"
+            placeholder="标签（如 伏笔）"
+            maxlength="12"
+            class="w-24 rounded border border-ink-border px-1.5 py-0.5 text-xs outline-none focus:border-ink-primary"
+            @keyup.enter="saveEdgeEdit"
+          />
+          <button class="text-xs text-ink-danger hover:underline" @click="removeSelectedEdge">删除</button>
+          <button class="text-xs text-ink-text-muted hover:text-ink-text" @click="selectedEdge = null" title="收起">✕</button>
+        </div>
+        <span v-else class="hidden text-xs text-ink-text-muted lg:inline">拖动节点左右手柄可连线</span>
         <button
           class="rounded-lg border border-ink-border px-3 py-1.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
           @click="openCreate"
@@ -570,9 +707,12 @@ onMounted(() => void loadAll())
     <div class="relative min-h-0 flex-1">
       <VueFlow
         :nodes="nodes"
+        :edges="flowEdges"
         @node-drag-stop="onNodeDragStop"
         @node-click="onNodeClick"
         @node-double-click="onNodeDoubleClick"
+        @connect="onConnect"
+        @edge-click="onEdgeClick"
       >
         <Background />
         <template #node-scene="props">
@@ -580,6 +720,9 @@ onMounted(() => void loadAll())
             class="w-[280px] cursor-pointer rounded-xl border-2 bg-surface p-3 shadow-card transition-shadow hover:shadow-lg"
             :class="selectedScene?.id === props.id ? 'border-ink-primary' : 'border-ink-border/70'"
           >
+            <!-- 连线手柄：左入右出（拖动边缘连线表达场景关系） -->
+            <Handle type="target" :position="Position.Left" class="!h-3 !w-3 !border-2 !border-surface !bg-ink-primary" />
+            <Handle type="source" :position="Position.Right" class="!h-3 !w-3 !border-2 !border-surface !bg-ink-primary" />
             <div class="flex items-center gap-2">
               <span
                 class="h-2 w-2 shrink-0 rounded-full"

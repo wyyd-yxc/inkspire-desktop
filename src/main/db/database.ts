@@ -110,6 +110,20 @@ const MIGRATIONS: Array<{ version: number; sql: string }> = [
         updated_at TEXT NOT NULL
       );
       CREATE INDEX IF NOT EXISTS idx_scenes_chapter ON scenes(chapter_id, sort_order);`
+  },
+  {
+    version: 7,
+    sql: `
+      CREATE TABLE IF NOT EXISTS scene_edges (
+        id         TEXT PRIMARY KEY,
+        chapter_id TEXT NOT NULL REFERENCES chapters(id) ON DELETE CASCADE,
+        source_id  TEXT NOT NULL REFERENCES scenes(id) ON DELETE CASCADE,
+        target_id  TEXT NOT NULL REFERENCES scenes(id) ON DELETE CASCADE,
+        type       TEXT NOT NULL DEFAULT 'main',
+        label      TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_scene_edges_chapter ON scene_edges(chapter_id);`
   }
 ]
 
