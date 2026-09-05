@@ -486,3 +486,12 @@
 - **静态审查（MiniMax M3）：有条件通过**——双向去重/UUID 校验/自动选中/箭头提示全部采纳落实。
 - **连线状态：双轨闭环，待用户确认 → tag v0.9.0-edges**。
 - **下一步**：M8 作品记忆。
+
+---
+
+## [2026-08-30 23:59] 会话 29：M8 作品记忆（开发+自测完成）
+
+- **交付**：migration v8 memories（五类/章节绑定/来源/线索回收）；memories 四通道 IPC；memoryPrompts（AI 抽取候选 JSON+白名单过滤+宽容解析）；MemoryView（五类计数/当前剧情视图/卡片列表/线索回收开关/手动录入/AI 从章节抽取）；注入（ChapterEditor memoryCache computed 按当前章过滤 chapterNo<当前，1200 字预算→systemPrompt「当前故事状态必须遵守」）；侧栏「记忆」入口。
+- **自测中修复 1 个阻断**：memory 块插在 watch(immediate) 之后→TDZ「Cannot access memoryLoadSeq before initialization」→渲染层全崩。修复：块移至 watch 之前。教训与 M6 同类：**setup 中 watch(immediate) 引用的资源必须先声明**。
+- **自测结果**（tmp/m8-*.mjs 真实 UI 路径）：CRUD+空内容拦截+clue 回收开关 ✓；AI 抽取→采纳→3 条正确分类入库（character/relationship/stage）✓；注入方向：第二章续写 359 字紧接前章「苏檀儿左臂中箭」伤势（不写满血）✓ 且后章记忆不泄露 ✓；typecheck 三重闸门 ✓
+- **下一步**：双轨验收 → 用户确认 → tag v0.10.0-m8-memory → M9 墨灵助手。
