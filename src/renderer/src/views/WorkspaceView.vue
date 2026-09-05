@@ -11,6 +11,7 @@ import { isElectron } from '../services/books'
 import { useToast } from '@/composables/useToast'
 import ChapterSidebar from '@/components/ChapterSidebar.vue'
 import ChapterEditor from '@/components/ChapterEditor.vue'
+import AssistantDock from '@/components/AssistantDock.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 
 const route = useRoute()
@@ -30,6 +31,13 @@ const editorRef = ref<InstanceType<typeof ChapterEditor> | null>(null)
 const pendingContent = ref<{ html: string; wordCount: number } | null>(null)
 let saveTimer: ReturnType<typeof setTimeout> | null = null
 let isSwitching = false
+
+/** 编辑器选区文字（M9 助手上下文感知） */
+const editorSelection = ref('')
+
+function onSelectionChange(text: string): void {
+  editorSelection.value = text
+}
 
 const totalWords = computed(() => chapters.value.reduce((s, c) => s + c.wordCount, 0))
 
@@ -205,8 +213,17 @@ onBeforeUnmount(() => {
       :book="book"
       :book-id="bookId"
       @content-change="onContentChange"
+      @selection-change="onSelectionChange"
       @title-change="(t) => activeChapter && renameChapter(activeChapter.id, t)"
       @save-now="flushSave"
+    />
+
+    <AssistantDock
+      :book-id="bookId"
+      :book="book"
+      :chapter-title="activeChapter?.title ?? ''"
+      :chapter-content="activeChapter?.content?.replace(/<[^>]+>/g, '') ?? ''"
+      :selection-text="editorSelection"
     />
 
     <ConfirmDialog

@@ -44,6 +44,7 @@ import type {
   Memory,
   UpdateMemoryInput
 } from '../shared/memory.types'
+import type { AssistantMessage, AssistantRole } from '../shared/assistant.types'
 
 const api = {
   /** IPC 通路自检：正常返回 { ok: true, data: 'pong' } */
@@ -137,6 +138,20 @@ const api = {
       ipcRenderer.invoke('memories:update', id, input),
     remove: (id: string): Promise<IpcResult<boolean>> =>
       ipcRenderer.invoke('memories:remove', id)
+  },
+
+  /** 墨灵助手对话历史 */
+  assistant: {
+    list: (bookId: string): Promise<IpcResult<AssistantMessage[]>> =>
+      ipcRenderer.invoke('assistant:list', bookId),
+    create: (
+      bookId: string,
+      role: AssistantRole,
+      content: string
+    ): Promise<IpcResult<AssistantMessage>> =>
+      ipcRenderer.invoke('assistant:create', bookId, role, content),
+    clear: (bookId: string): Promise<IpcResult<boolean>> =>
+      ipcRenderer.invoke('assistant:clear', bookId)
   },
 
   /** AI 接口档案（设置中心） */

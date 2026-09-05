@@ -140,6 +140,18 @@ const MIGRATIONS: Array<{ version: number; sql: string }> = [
         updated_at TEXT NOT NULL
       );
       CREATE INDEX IF NOT EXISTS idx_memories_book ON memories(book_id, chapter_no);`
+  },
+  {
+    version: 9,
+    sql: `
+      CREATE TABLE IF NOT EXISTS assistant_messages (
+        id         TEXT PRIMARY KEY,
+        book_id    TEXT NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+        role       TEXT NOT NULL,
+        content    TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_assistant_book ON assistant_messages(book_id, created_at);`
   }
 ]
 

@@ -33,6 +33,7 @@ const emit = defineEmits<{
   'content-change': [html: string, wordCount: number]
   'title-change': [title: string]
   'save-now': []
+  'selection-change': [text: string]
 }>()
 
 const toast = useToast()
@@ -403,13 +404,16 @@ function updateSelectionBar(ed: NonNullable<ReturnType<typeof useEditor>['value'
   const { from, to, empty } = ed.state.selection
   if (empty || to - from < 2) {
     selectionBar.visible = false
+    emit('selection-change', '')
     return
   }
   const text = ed.state.doc.textBetween(from, to, '\n')
   if (!text.trim()) {
     selectionBar.visible = false
+    emit('selection-change', '')
     return
   }
+  emit('selection-change', text)
   // 选区视口坐标 → rootEl 内容坐标：差值需叠加滚动容器的已滚动距离
   //（absolute 元素不随内容滚动，而 coordsAtPos 给的是当前视口位置）
   const start = ed.view.coordsAtPos(from)
