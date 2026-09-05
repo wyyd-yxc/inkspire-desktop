@@ -14,6 +14,7 @@ import { registerGenesisIpc } from './ipc/genesis'
 import { registerWikiIpc } from './ipc/wiki'
 import { registerSceneIpc } from './ipc/scenes'
 import { registerSceneEdgeIpc } from './ipc/sceneEdges'
+import { registerMemoryIpc } from './ipc/memories'
 
 /** 创建应用主窗口（1280x800，中文标题「墨灵」）。 */
 function createWindow(): void {
@@ -91,6 +92,7 @@ registerGenesisIpc()
 registerWikiIpc()
 registerSceneIpc()
 registerSceneEdgeIpc()
+registerMemoryIpc()
 
 app.whenReady().then(() => {
   createWindow()

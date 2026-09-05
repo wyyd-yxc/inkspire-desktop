@@ -25,6 +25,10 @@ export interface WritingContext {
   wiki?: {
     entries: string
   }
+  /** 作品记忆（当前章之前的事实，M8）：防穿帮注入文本 */
+  memory?: {
+    facts: string
+  }
 }
 
 /** 前文注入上限（字符）：过长会挤占生成预算且多数模型难以利用 */
@@ -64,6 +68,10 @@ function systemPrompt(ctx: WritingContext): string {
   // 百科词条注入（M6）：injection=always 的设定，AI 必须遵守不得写错
   if (ctx.wiki?.entries) {
     parts.push(`本书设定（必须严格遵守，不得写错名称与属性）：\n${ctx.wiki.entries}`)
+  }
+  // 作品记忆注入（M8）：当前章之前的事实（单向可见防剧透），AI 不得违背
+  if (ctx.memory?.facts) {
+    parts.push(`当前故事状态（此前章节已确立的事实，必须遵守不得矛盾）：\n${ctx.memory.facts}`)
   }
   parts.push('要求：直接输出小说正文本身；不要任何解释、前言、标题、编号或引号包裹；保持与前文一致的文风、人称与时态；中文书写，段落自然分段。')
   return parts.filter(Boolean).join('')

@@ -16,6 +16,8 @@ import type { SelectionAction, SelectionContext } from '../services/aiWriting'
 import { buildChapterPolishMessages, buildContinueMessages, buildSelectionMessages, generateWriting } from '../services/aiWriting'
 import type { GenesisStepRecord, Step2Soul, Step4Layout, Step1Style } from '../../../shared/genesis.types'
 import { WIKI_TYPE_LABELS } from '../../../shared/wiki.types'
+import { MEMORY_KIND_LABELS } from '../../../shared/memory.types'
+import type { Memory } from '../../../shared/memory.types'
 import { getPresetStyle } from '../../../shared/presetStyles'
 import { isElectron } from '../services/books'
 import { useToast } from '@/composables/useToast'
@@ -124,13 +126,61 @@ async function ensureWikiLoaded(): Promise<void> {
 watch(
   () => props.bookId,
   (id) => {
-    if (id) wikiLoadingPromise = loadWiki(id)
+    if (id) {
+      wikiLoadingPromise = loadWiki(id)
+      memoryLoadingPromise = loadMemory(id)
+    }
   },
   { immediate: true }
 )
 
 onBeforeUnmount(() => {
   wikiLoadSeq++ // 组件销毁后到达的加载结果直接作废
+})
+
+// ---------------- 作品记忆注入（M8，与 genesisCache 同款三件套） ----------------
+
+/** 记忆注入预算（字符） */
+const MEMORY_INJECT_LIMIT = 1200
+
+const memoryAll = ref<Memory[]>([])
+let memoryLoadingPromise: Promise<void> = Promise.resolve()
+let memoryLoadSeq = 0
+
+/** 加载该书记忆全量；注入时按当前章过滤（chapterNo < 当前章，单向可见防剧透） */
+async function loadMemory(bookId: string): Promise<void> {
+  if (!isElectron) return
+  const mySeq = ++memoryLoadSeq
+  memoryAll.value = []
+  try {
+    const res = await window.api.memories.list(bookId)
+    if (mySeq !== memoryLoadSeq) return
+    if (res.ok) memoryAll.value = res.data
+  } catch (err) {
+    console.warn('[ChapterEditor] 作品记忆加载失败:', err)
+  }
+}
+
+async function ensureMemoryLoaded(): Promise<void> {
+  await memoryLoadingPromise
+}
+
+/** 按当前章过滤拼装注入文本 */
+const memoryCache = computed<{ facts: string }>(() => {
+  const sortOrder = props.chapter?.sortOrder ?? 0
+  if (!sortOrder) return { facts: '' }
+  const blocks: string[] = []
+  let budget = MEMORY_INJECT_LIMIT
+  const sorted = [...memoryAll.value].sort((a, b) => a.chapterNo - b.chapterNo)
+  for (const m of sorted) {
+    if (m.chapterNo >= sortOrder) continue
+    const clueTag = m.kind === 'clue' && !m.isResolved ? '（未回收）' : ''
+    const block = `第${m.chapterNo}章起：${MEMORY_KIND_LABELS[m.kind]}——${m.content}${clueTag}`
+    if (block.length > budget) break
+    blocks.push(block)
+    budget -= block.length
+  }
+  return { facts: blocks.join('\n') }
 })
 
 /** 纯文本字数（去所有空白字符，符合网文计数习惯） */
@@ -198,7 +248,8 @@ function writingContext() {
     chapterTitle: props.chapter?.title ?? '',
     contextTail: editor.value?.getText() ?? '',
     genesis: genesisCache.value,
-    wiki: wikiCache.value.entries ? wikiCache.value : undefined
+    wiki: wikiCache.value.entries ? wikiCache.value : undefined,
+    memory: memoryCache.value.facts ? memoryCache.value : undefined
   }
 }
 
@@ -213,6 +264,7 @@ async function runGeneration(kind: PanelKind): Promise<void> {
   // 确保 genesis 设定已加载完成（防「进工作台秒点续写」时 genesisCache 仍空）
   await ensureGenesisLoaded()
   await ensureWikiLoaded()
+  await ensureMemoryLoaded()
   const mySeq = ++generationSeq
   panelKind.value = kind
   panelVisible.value = true

@@ -39,6 +39,11 @@ import type {
   SceneEdge,
   UpdateSceneEdgeInput
 } from '../shared/canvas.types'
+import type {
+  CreateMemoryInput,
+  Memory,
+  UpdateMemoryInput
+} from '../shared/memory.types'
 
 const api = {
   /** IPC 通路自检：正常返回 { ok: true, data: 'pong' } */
@@ -120,6 +125,18 @@ const api = {
       ipcRenderer.invoke('scene-edges:update', id, input),
     remove: (id: string): Promise<IpcResult<boolean>> =>
       ipcRenderer.invoke('scene-edges:remove', id)
+  },
+
+  /** 作品记忆（事实层） */
+  memories: {
+    list: (bookId: string): Promise<IpcResult<Memory[]>> =>
+      ipcRenderer.invoke('memories:list', bookId),
+    create: (input: CreateMemoryInput): Promise<IpcResult<Memory>> =>
+      ipcRenderer.invoke('memories:create', input),
+    update: (id: string, input: UpdateMemoryInput): Promise<IpcResult<Memory>> =>
+      ipcRenderer.invoke('memories:update', id, input),
+    remove: (id: string): Promise<IpcResult<boolean>> =>
+      ipcRenderer.invoke('memories:remove', id)
   },
 
   /** AI 接口档案（设置中心） */

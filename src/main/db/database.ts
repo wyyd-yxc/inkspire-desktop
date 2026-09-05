@@ -124,6 +124,22 @@ const MIGRATIONS: Array<{ version: number; sql: string }> = [
         created_at TEXT NOT NULL
       );
       CREATE INDEX IF NOT EXISTS idx_scene_edges_chapter ON scene_edges(chapter_id);`
+  },
+  {
+    version: 8,
+    sql: `
+      CREATE TABLE IF NOT EXISTS memories (
+        id         TEXT PRIMARY KEY,
+        book_id    TEXT NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+        kind       TEXT NOT NULL DEFAULT 'plot',
+        content    TEXT NOT NULL,
+        chapter_no INTEGER NOT NULL DEFAULT 1,
+        source     TEXT NOT NULL DEFAULT 'manual',
+        is_resolved INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_memories_book ON memories(book_id, chapter_no);`
   }
 ]
 
