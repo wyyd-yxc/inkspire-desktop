@@ -505,3 +505,12 @@
 - **放行依据**：开发自测已覆盖核心路径（CRUD+空内容拦截+clue 回收+AI 抽取 3 条正确入库+注入方向前章生效/后章不泄露），且注入管线与已验证的 M6 wiki 注入同路径复用
 - **M8 状态：待用户确认 → tag v0.10.0-m8-memory**
 - **下一步**：M9 墨灵助手 → M10 剧情画布（逐个交付节奏不变）
+
+---
+
+## [2026-08-30 23:59] 会话 31：M9 墨灵助手（开发+自测完成）
+
+- **交付**：migration v9 assistant_messages（FK 级联+时间索引）；assistant 三通道 IPC（最近50/创建/清空）；AssistantDock（浮球→右侧面板 400px；消息流式 busy 锁+停止；@ 召唤百科选择器+chips；选区上下文自动附加；对话历史持久化最近 50 条；清空按钮）；ChapterEditor emit selection-change → WorkspaceView → AssistantDock。
+- **自测**（tmp/m9-verify.mjs，CDP 真实 UI）：浮球→面板展开→流式回复 1117 字→@ 选择器弹出→DB 持久化 2 条→清空归零 全过 ✓；typecheck 三重闸门 ✓
+- **已知边界（v1 设计）**：无联网搜索/工具调用/思考模式档位/多会话切换/全局浮球（后续版本）；对话历史最近 50 条
+- **下一步**：双轨验收 → 用户确认 → tag v0.11.0-m9-assistant → M10 剧情画布。
