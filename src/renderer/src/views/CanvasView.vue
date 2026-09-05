@@ -183,7 +183,7 @@ async function onConnect(params: { source: string; target: string }): Promise<vo
       targetId: params.target
     })
     if (!res.ok) throw new Error(res.error)
-    sceneEdges.value.push(res.data)
+    if (!sceneEdges.value.some((x) => x.id === res.data.id)) sceneEdges.value.push(res.data)
     toast.success('连线已创建')
   } catch (err) {
     toast.error(err instanceof Error ? err.message : '连线失败')
@@ -664,7 +664,7 @@ onMounted(() => void loadAll())
           <button class="text-xs text-ink-danger hover:underline" @click="removeSelectedEdge">删除</button>
           <button class="text-xs text-ink-text-muted hover:text-ink-text" @click="selectedEdge = null" title="收起">✕</button>
         </div>
-        <span v-else class="hidden text-xs text-ink-text-muted lg:inline">拖动节点左右手柄可连线</span>
+        <span v-else class="hidden text-xs text-ink-text-muted lg:inline">拖动节点左右手柄连线（箭头由因指向果）</span>
         <button
           class="rounded-lg border border-ink-border px-3 py-1.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
           @click="openCreate"

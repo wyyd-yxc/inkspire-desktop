@@ -51,12 +51,15 @@ export function createSceneEdge(input: CreateSceneEdgeInput): SceneEdge {
   if (input.sourceId === input.targetId) throw new Error('不能连接场景到自身')
 
   const d: Database = getDb()
+  // 任意方向已存在连线即拒绝（方向承载因果语义，反向边视为矛盾；类型/标签可在连线编辑器修改）
   const dup = d
     .prepare(
-      'SELECT id FROM scene_edges WHERE chapter_id = ? AND source_id = ? AND target_id = ? AND type = ?'
+      `SELECT id FROM scene_edges WHERE chapter_id = ? AND (
+        (source_id = ? AND target_id = ?) OR (source_id = ? AND target_id = ?)
+      )`
     )
-    .get(input.chapterId, input.sourceId, input.targetId, input.type ?? 'main')
-  if (dup) throw new Error('两个场景间已存在同类型连线')
+    .get(input.chapterId, input.sourceId, input.targetId, input.targetId, input.sourceId)
+  if (dup) throw new Error('两个场景间已存在连线（单击选中连线可修改类型与标签）')
 
   const now = new Date().toISOString()
   const row: SceneEdgeRow = {
