@@ -79,6 +79,11 @@ const wordsLabel = computed(() => props.totalWords.toLocaleString('zh-CN'))
             title="万物百科"
           >百科</router-link>
           <router-link
+            :to="`/book/${bookId}/plot`"
+            class="rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
+            title="剧情画布"
+          >剧情</router-link>
+          <router-link
             :to="`/book/${bookId}/memory`"
             class="rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
             title="作品记忆"

@@ -39,6 +39,11 @@ const router = createRouter({
       component: () => import('@/views/CanvasView.vue')
     },
     {
+      path: '/book/:bookId/plot',
+      name: 'plot',
+      component: () => import('@/views/PlotCanvasView.vue')
+    },
+    {
       path: '/book/:bookId/memory',
       name: 'memory',
       component: () => import('@/views/MemoryView.vue')
