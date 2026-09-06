@@ -11,8 +11,14 @@ export const PLOT_EDGE_STYLES: Record<PlotEdgeType, { stroke: string; dash: stri
   reference: { stroke: '#58a27a', dash: '1 4', label: '引用' }
 }
 
-/** 标签色板：事件节点左侧色条按首个标签取色（同一标签恒同色，标签决定节点视觉色，照原站文档） */
-const TAG_PALETTE = ['#6c5ce7', '#c9a227', '#5b9bd1', '#3fa66a', '#e07b54', '#8b5fbf', '#d16a8a', '#4aa8a2']
+/** 标签色板：事件节点左侧色条按首个标签取色（同一标签恒同色，标签决定节点视觉色，照原站文档）。
+ *  16 色降低不同语义标签哈希撞色概率（M10 三轮静态审查 P3） */
+const TAG_PALETTE = [
+  '#6c5ce7', '#c9a227', '#5b9bd1', '#3fa66a',
+  '#e07b54', '#8b5fbf', '#d16a8a', '#4aa8a2',
+  '#b0713f', '#5a7d2f', '#a3495f', '#3f7d99',
+  '#9466a8', '#c2884e', '#6a9c89', '#7a6ff0'
+]
 
 export function tagColor(tag: string): string {
   let h = 0

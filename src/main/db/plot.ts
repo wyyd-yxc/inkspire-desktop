@@ -79,19 +79,28 @@ export function getPlotEvent(id: string): PlotEvent | undefined {
 export function createPlotEvent(input: CreatePlotEventInput): PlotEvent {
   if (!input.bookId) throw new Error('缺少书籍 id')
   const d: Database = getDb()
-  const count = (
-    d.prepare('SELECT COUNT(*) AS c FROM plot_events WHERE book_id = ?').get(input.bookId) as {
-      c: number
-    }
-  ).c
+  // 词条归属校验（M10 三轮静态审查 P1）：挂接词条必须存在且属于本书，防跨书词条错乱注入
+  for (const rid of input.wikiRefs ?? []) {
+    const w = d.prepare('SELECT book_id FROM wiki_entries WHERE id = ?').get(rid) as
+      | { book_id: string }
+      | undefined
+    if (!w) throw new Error('挂接的百科词条不存在')
+    if (w.book_id !== input.bookId) throw new Error('挂接的百科词条必须属于本书')
+  }
+  // 默认落位取本书最大 x 右移一格（防删事件后 COUNT 回退导致坐标重叠，三轮静态审查 P2）
+  const maxX = (
+    d
+      .prepare('SELECT COALESCE(MAX(pos_x), 0) AS m FROM plot_events WHERE book_id = ?')
+      .get(input.bookId) as { m: number }
+  ).m
   const now = new Date().toISOString()
   const row: PlotEventRow = {
     id: randomUUID(),
     book_id: input.bookId,
-    title: input.title?.trim() || `事件 ${count + 1}`,
+    title: input.title?.trim() || `新事件`,
     description: input.description ?? '',
     tags: JSON.stringify(input.tags ?? []),
-    pos_x: input.posX ?? (count + 1) * 340,
+    pos_x: input.posX ?? maxX + 340,
     pos_y: input.posY ?? 240,
     parent_id: null, // 子画布预留字段，M10 恒不写值
     wiki_refs: JSON.stringify(input.wikiRefs ?? []),

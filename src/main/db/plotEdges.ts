@@ -51,6 +51,14 @@ export function createPlotEdge(input: CreatePlotEdgeInput): PlotEdge {
   if (input.sourceId === input.targetId) throw new Error('不能连接事件到自身')
 
   const d: Database = getDb()
+  // 归属校验（M10 三轮静态审查 P1）：连线两端必须是本书的既有事件，防跨书"借边"悬挂行
+  for (const eid of [input.sourceId, input.targetId]) {
+    const ev = d.prepare('SELECT book_id FROM plot_events WHERE id = ?').get(eid) as
+      | { book_id: string }
+      | undefined
+    if (!ev) throw new Error('连线两端必须是已存在的剧情事件')
+    if (ev.book_id !== input.bookId) throw new Error('连线两端事件必须属于同一本书')
+  }
   // 任意方向已存在连线即拒绝（方向承载因果语义，反向边视为矛盾；类型/标签可在连线编辑器修改）
   const dup = d
     .prepare(
