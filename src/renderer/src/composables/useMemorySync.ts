@@ -382,6 +382,7 @@ export function useMemorySync(deps: {
     extractChapterId,
     extractScope,
     unextracted,
+    refreshWatermark,
     aiPanel,
     aiPanelVisible,
     isBusy,

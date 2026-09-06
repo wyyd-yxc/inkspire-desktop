@@ -20,12 +20,14 @@ import { PRESET_STYLES } from '../../../shared/presetStyles'
 import { isElectron } from '../services/books'
 import { useToast } from '@/composables/useToast'
 import { generateWriting } from '../services/aiWriting'
+import { genesisToWorldEntries } from '../services/wikiPrompts'
 import {
   buildSoulAssistMessages,
   buildWorldColdStartMessages,
   parseSoulAssist,
   parseWorldColdStart
 } from '../services/genesisPrompts'
+import { normText } from '../services/syncService'
 import AiWritingPanel from '@/components/AiWritingPanel.vue'
 
 const route = useRoute()
@@ -245,6 +247,32 @@ async function acceptWorldColdStart(text: string): Promise<void> {
   }
 }
 
+// ---- 推送设定到百科（M10.5 管道 E；与百科页「从创世台导入」同一映射，按 name 幂等） ----
+const pushingWiki = ref(false)
+
+async function pushWorldToWiki(): Promise<void> {
+  if (!step3.value || pushingWiki.value) return
+  pushingWiki.value = true
+  try {
+    const wikiRes = await window.api.wiki.list(bookId.value)
+    if (!wikiRes.ok) throw new Error(wikiRes.error)
+    const existing = new Set(wikiRes.data.map((w) => normText(w.name)))
+    let created = 0
+    for (const entry of genesisToWorldEntries(step3.value)) {
+      if (existing.has(normText(entry.name))) continue
+      const res = await window.api.wiki.create({ bookId: bookId.value, ...entry })
+      if (!res.ok) throw new Error(res.error)
+      existing.add(normText(entry.name))
+      created++
+    }
+    toast.success(created > 0 ? `已推送 ${created} 个设定词条到百科` : '设定词条已存在，无需推送')
+  } catch (err) {
+    toast.error(err instanceof Error ? err.message : '推送失败')
+  } finally {
+    pushingWiki.value = false
+  }
+}
+
 // ---- 第 4 步 布局 ----
 function addVolume(): void {
   step4.value.volumes.push({ name: `第 ${step4.value.volumes.length + 1} 卷`, chapters: [] })
@@ -409,6 +437,14 @@ onMounted(() => void loadAll())
         </div>
 
         <div v-if="step3" class="flex flex-col gap-4">
+          <div class="flex justify-end">
+            <button
+              class="rounded-full border border-ink-primary px-4 py-1.5 text-sm text-ink-primary transition-colors hover:bg-ink-primary-soft disabled:opacity-50"
+              :disabled="pushingWiki"
+              title="把主角设定与世界法则作为词条推送到百科（已推送过的自动跳过）"
+              @click="pushWorldToWiki"
+            >{{ pushingWiki ? '推送中…' : '⇨ 推送设定到百科' }}</button>
+          </div>
           <div v-for="item in [
             { label: '全书大纲', text: step3.bookOutline },
             { label: '第一卷大纲', text: step3.volumeOutline },

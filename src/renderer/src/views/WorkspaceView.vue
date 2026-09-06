@@ -7,12 +7,18 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import type { Book } from '../../../shared/book.types'
 import type { Chapter } from '../../../shared/chapter.types'
+import type { WikiEntry } from '../../../shared/wiki.types'
+import type { Memory } from '../../../shared/memory.types'
 import { isElectron } from '../services/books'
 import { useToast } from '@/composables/useToast'
+import { useMemorySync } from '@/composables/useMemorySync'
+import { useWikiSync } from '@/composables/useWikiSync'
 import ChapterSidebar from '@/components/ChapterSidebar.vue'
 import ChapterEditor from '@/components/ChapterEditor.vue'
 import AssistantDock from '@/components/AssistantDock.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import SyncDialog from '@/components/sync/SyncDialog.vue'
+import SyncCandidateDialog from '@/components/sync/SyncCandidateDialog.vue'
 
 const route = useRoute()
 const toast = useToast()
@@ -22,8 +28,42 @@ const bookId = computed(() => route.params.bookId as string)
 const book = ref<Book | null>(null)
 const chapters = ref<Chapter[]>([])
 const activeChapter = ref<Chapter | null>(null)
+const wikiEntries = ref<WikiEntry[]>([])
+const memories = ref<Memory[]>([])
 const pendingDelete = ref<Chapter | null>(null)
 const loading = ref(true)
+
+// ---- 联动同步（M10.5）：把正文改动推送到百科/记忆；编排细节在两个 composable ----
+const memorySync = useMemorySync({ bookId: bookId.value, book, chapters, memories, toast })
+const wikiSync = useWikiSync({ bookId, book, chapters, wikiEntries, toast })
+const syncDialogVisible = ref(false)
+/** 自动同步提醒红点（useAutoSync 提醒档置位；step6 接全局状态） */
+const syncAlert = ref(false)
+
+async function openSyncDialog(): Promise<void> {
+  await Promise.all([memorySync.refreshWatermark(), wikiSync.refreshWatermark()])
+  syncDialogVisible.value = true
+}
+
+function startSync(opts: { wiki: boolean; memory: boolean; scope: 'changed' | 'current' }): void {
+  syncDialogVisible.value = false
+  if (opts.memory) {
+    memorySync.extractScope.value = opts.scope === 'current' ? 'single' : 'unextracted'
+    if (opts.scope === 'current' && activeChapter.value) {
+      memorySync.extractChapterId.value = activeChapter.value.id
+    }
+    void memorySync.startExtract()
+  }
+  if (opts.wiki) {
+    wikiSync.extractScope.value = opts.scope
+    if (opts.scope === 'current' && activeChapter.value) {
+      wikiSync.extractChapterId.value = activeChapter.value.id
+    }
+    void wikiSync.startWikiExtract()
+  }
+}
+
+const syncBusy = computed(() => memorySync.isBusy.value || wikiSync.isBusy.value)
 
 const editorRef = ref<InstanceType<typeof ChapterEditor> | null>(null)
 
@@ -47,14 +87,20 @@ async function loadAll(): Promise<void> {
     return
   }
   try {
-    const [booksRes, chaptersRes] = await Promise.all([
+    const [booksRes, chaptersRes, wikiRes, memRes] = await Promise.all([
       window.api.books.list(),
-      window.api.chapters.list(bookId.value)
+      window.api.chapters.list(bookId.value),
+      window.api.wiki.list(bookId.value),
+      window.api.memories.list(bookId.value)
     ])
     if (!booksRes.ok) throw new Error(booksRes.error)
     if (!chaptersRes.ok) throw new Error(chaptersRes.error)
+    if (!wikiRes.ok) throw new Error(wikiRes.error)
+    if (!memRes.ok) throw new Error(memRes.error)
     book.value = booksRes.data.find((b) => b.id === bookId.value) ?? null
     chapters.value = chaptersRes.data
+    wikiEntries.value = wikiRes.data
+    memories.value = memRes.data
     activeChapter.value = chapters.value[0] ?? null
   } catch (err) {
     toast.error(err instanceof Error ? err.message : '加载失败')
@@ -199,11 +245,13 @@ onBeforeUnmount(() => {
       :total-words="totalWords"
       :book-title="book?.title ?? '…'"
       :book-id="bookId"
+      :sync-alert="syncAlert"
       @create="createChapter"
       @select="selectChapter"
       @rename="renameChapter"
       @remove="pendingDelete = $event"
       @move="moveChapter"
+      @sync="openSyncDialog"
     />
 
     <ChapterEditor
@@ -232,6 +280,35 @@ onBeforeUnmount(() => {
       :title="`删除「${pendingDelete?.title ?? ''}」？`"
       description="章节正文将一并删除且不可恢复。"
       @confirm="doDelete"
+    />
+
+    <!-- 联动同步（M10.5）：配置弹窗 + 两条候选确认面板 -->
+    <SyncDialog
+      :visible="syncDialogVisible"
+      :busy="syncBusy"
+      :changed-wiki-count="wikiSync.unextracted.value.length"
+      :changed-memory-count="memorySync.unextracted.value.length"
+      :can-sync-current="!!(activeChapter && activeChapter.wordCount > 0)"
+      @start="startSync"
+      @close="syncDialogVisible = false"
+    />
+    <SyncCandidateDialog
+      :visible="wikiSync.candidateDialogVisible.value"
+      :title="wikiSync.candidateTitle.value"
+      :description="wikiSync.candidateDescription.value"
+      :items="wikiSync.candidateItems.value"
+      confirm-text="入库所选项"
+      @confirm="wikiSync.onCandidatesConfirm"
+      @close="wikiSync.candidateDialogVisible.value = false"
+    />
+    <SyncCandidateDialog
+      :visible="memorySync.candidateDialogVisible.value"
+      :title="memorySync.candidateTitle.value"
+      :description="memorySync.candidateDescription.value"
+      :items="memorySync.candidateItems.value"
+      :confirm-text="memorySync.candidateTitle.value.includes('合并') ? '合并所选项' : '入库所选项'"
+      @confirm="memorySync.onCandidatesConfirm"
+      @close="memorySync.candidateDialogVisible.value = false"
     />
 
     <div v-if="loading" class="fixed inset-0 z-30 flex items-center justify-center bg-paper/60">

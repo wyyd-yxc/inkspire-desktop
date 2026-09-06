@@ -241,6 +241,7 @@ export function useWikiSync(deps: {
     extractScope,
     extractChapterId,
     unextracted,
+    refreshWatermark,
     runProgress,
     isBusy,
     candidateDialogVisible,

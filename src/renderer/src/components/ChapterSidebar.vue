@@ -13,6 +13,8 @@ const props = defineProps<{
   totalWords: number
   bookTitle: string
   bookId: string
+  /** 联动同步提醒：有待同步变更时按钮显红点（M10.5 自动同步提醒档） */
+  syncAlert?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -21,6 +23,7 @@ const emit = defineEmits<{
   rename: [id: string, title: string]
   remove: [chapter: Chapter]
   move: [id: string, dir: -1 | 1]
+  sync: []
 }>()
 
 const router = useRouter()
@@ -88,6 +91,14 @@ const wordsLabel = computed(() => props.totalWords.toLocaleString('zh-CN'))
             class="rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
             title="作品记忆"
           >记忆</router-link>
+          <button
+            class="relative rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
+            title="同步：把正文改动推送到百科与作品记忆"
+            @click="emit('sync')"
+          >⟳<span
+            v-if="props.syncAlert"
+            class="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-ink-danger"
+          /></button>
           <button
             class="rounded-full bg-ink-primary px-3 py-1 text-xs text-white transition-colors hover:bg-ink-primary-hover"
             @click="emit('create')"
