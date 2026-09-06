@@ -29,14 +29,16 @@ export async function getWatermark(key: string): Promise<SyncWatermark> {
   return res.ok && res.data && typeof res.data === 'object' ? res.data : {}
 }
 
-/** 写入某章水位 */
+/** 写入某章水位。以 DB 最新值为基合并（current 参数仅兼容旧签名）：
+ *  「全重复章节自动推水」与「确认面板采纳推水」可能并发，基于过期快照会互相覆盖（T1 自测实锤） */
 export async function setWatermarkChapter(
   key: string,
-  watermark: SyncWatermark,
+  _current: SyncWatermark,
   chapterId: string,
   wordCount: number
 ): Promise<SyncWatermark> {
-  const next = { ...watermark, [chapterId]: wordCount }
+  const latest = isElectron ? await getWatermark(key) : _current
+  const next = { ...latest, [chapterId]: wordCount }
   if (isElectron) {
     const res = await window.api.settings.set(key, next)
     if (!res.ok) throw new Error(res.error)

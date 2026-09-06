@@ -180,6 +180,10 @@ export function useWikiSync(deps: {
       if (chapterIds.length > 0) void advanceWatermark(new Set(chapterIds))
       return
     }
+    // 混合场景：全部候选都是重复的章节视为已提取完成，立即推水位（防下轮重抽白耗额度）
+    const chapterWithUnique = new Set(unique.map((c) => c.chapterId))
+    const allDupChapters = [...new Set(list.map((c) => c.chapterId))].filter((id) => !chapterWithUnique.has(id))
+    if (allDupChapters.length > 0) void advanceWatermark(new Set(allDupChapters))
     pendingCreates = new Map(unique.map((c, i) => [`${c.chapterNo}:${i}`, c] as const))
     candidateTitle.value = '采纳新词条候选'
     candidateItems.value = unique.map((c, i) => ({
