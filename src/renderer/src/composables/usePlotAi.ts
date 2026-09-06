@@ -4,7 +4,7 @@
  * 从 PlotCanvasView 抽出以保单文件 ≤400 行（编码规范 §6）。
  * 锁纪律（踩坑 #14）：isBusy 覆盖到 onDone/onError（generateWriting resolve 后 finally 释放）。
  */
-import { computed, ref, type ComputedRef, type Ref } from 'vue'
+import { computed, ref, toRaw, type ComputedRef, type Ref } from 'vue'
 import type { Book } from '../../../shared/book.types'
 import type { Step2Soul, Step4Layout } from '../../../shared/genesis.types'
 import type { PlotEdgeType, PlotEdge, PlotEvent, PlotGenMode } from '../../../shared/plot.types'
@@ -283,8 +283,10 @@ export function usePlotAi(deps: {
     }
   }
 
-  /** 分歧弹窗「采纳此方向」：该方向事件自锚点右下分支铺开，源→首事件连逻辑边（标签=方向名） */
-  async function adoptDirection(dir: PlotDirectionDraft): Promise<void> {
+  /** 分歧弹窗「采纳此方向」：该方向事件自锚点右下分支铺开，源→首事件连逻辑边（标签=方向名）。
+   *  dir 来自 pendingDirections（响应式数组），必须先深拷贝去 Proxy 过 IPC（踩坑 #11） */
+  async function adoptDirection(dirRaw: PlotDirectionDraft): Promise<void> {
+    const dir = JSON.parse(JSON.stringify(toRaw(dirRaw))) as PlotDirectionDraft
     const anchor = genAnchor.value
     if (!anchor) {
       toast.error('找不到分歧点事件，请重新选中后再试')
@@ -292,7 +294,19 @@ export function usePlotAi(deps: {
       return
     }
     try {
-      const baseY = anchor.posY + 220
+      // 落位避让：目标行右侧区间已被占则逐行下移（最多 5 行）
+      const spanEnd = anchor.posX + (dir.events.length + 1) * 340
+      let baseY = anchor.posY + 220
+      for (let tries = 0; tries < 5; tries++) {
+        const occupied = events.value.some(
+          (e) =>
+            Math.abs(e.posY - baseY) < 120 &&
+            e.posX > anchor.posX &&
+            e.posX <= spanEnd + 200
+        )
+        if (!occupied) break
+        baseY += 220
+      }
       const created: PlotEvent[] = []
       for (let i = 0; i < dir.events.length; i++) {
         created.push(await createEvent(dir.events[i], anchor.posX + (i + 1) * 340, baseY))
