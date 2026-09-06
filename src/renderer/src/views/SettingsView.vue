@@ -7,6 +7,7 @@ import { onBeforeUnmount, onMounted, ref } from 'vue'
 import type { ApiProfile } from '../../../shared/ai.types'
 import { isElectron } from '../services/books'
 import { useToast } from '@/composables/useToast'
+import { checkOnce, loadAutoSyncSettings, type AutoSyncSettings } from '@/composables/useAutoSync'
 import ApiProfileDialog from '@/components/ApiProfileDialog.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 
@@ -125,7 +126,47 @@ async function quickTest(p: ApiProfile): Promise<void> {
 let quickSession: { abort: () => void } | null = null
 onBeforeUnmount(() => quickSession?.abort())
 
-onMounted(refresh)
+// ---- 自动同步分区（M10.5）：即改即存；调度器每分钟重读设置，无需通知 ----
+const syncCfg = ref<AutoSyncSettings | null>(null)
+const checkingNow = ref(false)
+
+async function loadSyncCfg(): Promise<void> {
+  syncCfg.value = await loadAutoSyncSettings()
+}
+
+/** 单项写库（开关/间隔/档位/目标共用） */
+async function saveSync<K extends keyof AutoSyncSettings>(key: K, value: AutoSyncSettings[K]): Promise<void> {
+  const cfg = syncCfg.value
+  if (!cfg) return
+  cfg[key] = value
+  const map: Record<keyof AutoSyncSettings, string> = {
+    enabled: 'sync.auto_enabled',
+    intervalMin: 'sync.auto_interval_min',
+    mode: 'sync.auto_mode',
+    targets: 'sync.auto_targets'
+  }
+  const res = await window.api.settings.set(map[key], value)
+  if (!res.ok) toast.error(res.error)
+}
+
+/** 立即检测一次（零 AI 消耗；提醒/静默分派由调度器决定，静默档会入库） */
+async function checkNow(): Promise<void> {
+  if (checkingNow.value || !syncCfg.value) return
+  checkingNow.value = true
+  try {
+    const n = await checkOnce(syncCfg.value)
+    toast.success(n > 0 ? `检测完成：${n} 章有变更` : '检测完成：没有待同步的变更')
+  } catch (err) {
+    toast.error(err instanceof Error ? err.message : '检测失败')
+  } finally {
+    checkingNow.value = false
+  }
+}
+
+onMounted(() => {
+  void refresh()
+  void loadSyncCfg()
+})
 </script>
 
 <template>
@@ -153,6 +194,85 @@ onMounted(refresh)
         >
           + 新建档案
         </button>
+      </section>
+
+      <!-- 自动同步（M10.5） -->
+      <section v-if="syncCfg" class="mb-6 rounded-card bg-surface p-5 shadow-card">
+        <h2 class="mb-1 font-semibold">自动同步</h2>
+        <p class="mb-4 text-sm leading-relaxed text-ink-text-secondary">
+          定期检测正文改动，把新设定与新事实同步到百科与作品记忆。只新增、绝不改写已有内容；
+          提取结果默认「仅手动引用」，不会自动进入写作上下文。
+        </p>
+        <div class="flex flex-col gap-3 text-sm">
+          <label class="flex cursor-pointer items-center gap-2">
+            <input
+              type="checkbox"
+              :checked="syncCfg.enabled"
+              @change="saveSync('enabled', ($event.target as HTMLInputElement).checked)"
+            />
+            <span class="flex-1">启用自动同步</span>
+            <span class="text-xs text-ink-text-muted">默认关闭</span>
+          </label>
+          <div class="flex items-center gap-2">
+            <span class="text-ink-text-secondary">检测间隔</span>
+            <select
+              class="rounded border border-ink-border bg-surface px-2 py-1 text-xs outline-none"
+              :value="syncCfg.intervalMin"
+              @change="saveSync('intervalMin', Number(($event.target as HTMLSelectElement).value))"
+            >
+              <option :value="5">5 分钟</option>
+              <option :value="10">10 分钟</option>
+              <option :value="30">30 分钟</option>
+            </select>
+          </div>
+          <div class="flex items-center gap-4">
+            <span class="text-ink-text-secondary">同步目标</span>
+            <label class="flex cursor-pointer items-center gap-1.5">
+              <input
+                type="checkbox"
+                :checked="syncCfg.targets.wiki"
+                @change="saveSync('targets', { ...syncCfg.targets, wiki: ($event.target as HTMLInputElement).checked })"
+              />设定词条
+            </label>
+            <label class="flex cursor-pointer items-center gap-1.5">
+              <input
+                type="checkbox"
+                :checked="syncCfg.targets.memory"
+                @change="saveSync('targets', { ...syncCfg.targets, memory: ($event.target as HTMLInputElement).checked })"
+              />作品记忆
+            </label>
+          </div>
+          <div class="flex items-center gap-4">
+            <span class="text-ink-text-secondary">提醒方式</span>
+            <label class="flex cursor-pointer items-center gap-1.5">
+              <input
+                type="radio"
+                name="sync-mode"
+                value="remind"
+                :checked="syncCfg.mode === 'remind'"
+                @change="saveSync('mode', 'remind')"
+              />提醒我<span class="text-xs text-ink-text-muted">（不消耗 AI）</span>
+            </label>
+            <label class="flex cursor-pointer items-center gap-1.5">
+              <input
+                type="radio"
+                name="sync-mode"
+                value="silent"
+                :checked="syncCfg.mode === 'silent'"
+                @change="saveSync('mode', 'silent')"
+              />自动入库<span class="text-xs text-ink-text-muted">（每轮最多 3 章，消耗 AI 额度）</span>
+            </label>
+          </div>
+          <div class="flex items-center gap-3">
+            <button
+              class="rounded-full border border-ink-border px-3 py-1.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary disabled:opacity-50"
+              :disabled="checkingNow || !syncCfg.enabled"
+              :title="syncCfg.enabled ? '立即检测章节变更' : '先启用自动同步'"
+              @click="checkNow"
+            >{{ checkingNow ? '检测中…' : '立即检测一次' }}</button>
+            <span class="text-xs text-ink-text-muted">改动即时生效，无需保存</span>
+          </div>
+        </div>
       </section>
 
       <div v-if="loading" class="py-16 text-center text-ink-text-muted">加载中…</div>

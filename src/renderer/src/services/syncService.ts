@@ -3,7 +3,7 @@
  * 职责：文本规范化去重、抽取水位（settings）、已有上下文清单构建。
  * 约定：静默入库只增不改；一切清理/覆盖必须走候选确认面板。
  */
-import type { Chapter, ChapterMeta } from '../../../shared/chapter.types'
+import type { ChapterMeta } from '../../../shared/chapter.types'
 import type { Memory } from '../../../shared/memory.types'
 import type { PlotEvent } from '../../../shared/plot.types'
 import { isElectron } from './books'
@@ -44,8 +44,12 @@ export async function setWatermarkChapter(
   return next
 }
 
-/** 找出「有内容且水位不符」的章节（从未抽取=水位缺失，抽取后改过字数=水位过期） */
-export function changedChapters(chapters: Chapter[], watermark: SyncWatermark): Chapter[] {
+/** 找出「有内容且水位不符」的章节（从未抽取=水位缺失，抽取后改过字数=水位过期）。
+ *  泛型：传 Chapter[] 返回 Chapter[]（视图级），传 {id,wordCount} 轻量 meta 返回轻量（App 级自动同步） */
+export function changedChapters<T extends { id: string; wordCount: number }>(
+  chapters: T[],
+  watermark: SyncWatermark
+): T[] {
   return chapters.filter((c) => c.wordCount > 0 && watermark[c.id] !== c.wordCount)
 }
 

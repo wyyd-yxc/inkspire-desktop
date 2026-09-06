@@ -29,8 +29,8 @@ import type { useToast } from './useToast'
 /** 单轮提取章节上限（手动触发；自动同步另有 3 章上限） */
 const MAX_CHAPTERS_PER_RUN = 20
 
-/** 已有词条清单文本（注入提取 prompt 防同名/同义） */
-function buildExistingWikiText(entries: WikiEntry[], limit = 800): string {
+/** 已有词条清单文本（注入提取 prompt 防同名/同义；useAutoSync 静默档复用） */
+export function buildExistingWikiText(entries: WikiEntry[], limit = 800): string {
   const lines = entries.map((w) => `- ${WIKI_TYPE_LABELS[w.type]}｜${w.name}`)
   const out: string[] = []
   let used = 0

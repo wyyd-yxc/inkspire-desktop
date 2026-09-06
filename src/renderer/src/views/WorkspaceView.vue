@@ -13,6 +13,7 @@ import { isElectron } from '../services/books'
 import { useToast } from '@/composables/useToast'
 import { useMemorySync } from '@/composables/useMemorySync'
 import { useWikiSync } from '@/composables/useWikiSync'
+import { useAutoSync } from '@/composables/useAutoSync'
 import ChapterSidebar from '@/components/ChapterSidebar.vue'
 import ChapterEditor from '@/components/ChapterEditor.vue'
 import AssistantDock from '@/components/AssistantDock.vue'
@@ -34,14 +35,15 @@ const pendingDelete = ref<Chapter | null>(null)
 const loading = ref(true)
 
 // ---- 联动同步（M10.5）：把正文改动推送到百科/记忆；编排细节在两个 composable ----
-const memorySync = useMemorySync({ bookId: bookId.value, book, chapters, memories, toast })
+const memorySync = useMemorySync({ bookId, book, chapters, memories, toast })
 const wikiSync = useWikiSync({ bookId, book, chapters, wikiEntries, toast })
 const syncDialogVisible = ref(false)
-/** 自动同步提醒红点（useAutoSync 提醒档置位；step6 接全局状态） */
-const syncAlert = ref(false)
+// 自动同步提醒红点（useAutoSync 提醒档置位；打开同步弹窗即清除）
+const { syncAlert, clearAlert } = useAutoSync()
 
 async function openSyncDialog(): Promise<void> {
   await Promise.all([memorySync.refreshWatermark(), wikiSync.refreshWatermark()])
+  clearAlert()
   syncDialogVisible.value = true
 }
 

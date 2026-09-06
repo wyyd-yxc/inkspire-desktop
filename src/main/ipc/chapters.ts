@@ -6,6 +6,7 @@ import { wrap } from './wrap'
 import {
   createChapter,
   deleteChapter,
+  getChapter,
   listChapterMetas,
   listChapters,
   moveChapter,
@@ -17,6 +18,8 @@ export function registerChapterIpc(): void {
   ipcMain.handle('chapters:list', (_e, bookId: string) => wrap(() => listChapters(bookId)))
 
   ipcMain.handle('chapters:list-meta', (_e, bookId: string) => wrap(() => listChapterMetas(bookId)))
+
+  ipcMain.handle('chapters:get', (_e, id: string) => wrap(() => getChapter(id)))
 
   ipcMain.handle('chapters:create', (_e, input: CreateChapterInput) =>
     wrap(() => createChapter(input))

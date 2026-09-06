@@ -19,6 +19,7 @@ const ALLOWED_SETTING_KEYS = new Set([
   'sync.wiki_watermark',
   'sync.auto_enabled',
   'sync.auto_interval_min',
+  'sync.auto_mode',
   'sync.auto_targets'
 ])
 

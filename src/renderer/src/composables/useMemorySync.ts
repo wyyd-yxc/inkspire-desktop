@@ -2,7 +2,7 @@
  * 作品记忆 AI 抽取与去重编排（M10.5）：单章/未抽取批量抽取 → 候选确认面板勾选采纳 → 入库 + 水位推进。
  * 去重双保险：prompt 注入已有记忆（AI 级防同义）+ 入库前规范化比对（本地级）。
  */
-import { computed, ref, type Ref } from 'vue'
+import { computed, ref, toValue, type MaybeRefOrGetter, type Ref } from 'vue'
 import type { Book } from '../../../shared/book.types'
 import type { Chapter } from '../../../shared/chapter.types'
 import type { Memory, MemoryKind } from '../../../shared/memory.types'
@@ -37,13 +37,15 @@ export const MEMORY_KIND_TAG_COLORS: Record<MemoryKind, string> = {
 }
 
 export function useMemorySync(deps: {
-  bookId: string
+  /** 支持 ComputedRef（WorkspaceView 的 bookId 为响应式路由参数，防跨书导航拿旧 id——与 useWikiSync 同款） */
+  bookId: string | MaybeRefOrGetter<string>
   book: Ref<Pick<Book, 'title' | 'genre' | 'description'> | null>
   chapters: Ref<Chapter[]>
   memories: Ref<Memory[]>
   toast: ReturnType<typeof useToast>
 }) {
-  const { bookId, book, chapters, memories, toast } = deps
+  const { book, chapters, memories, toast } = deps
+  const bookId = () => toValue(deps.bookId)
 
   // ---- 抽取状态 ----
   const extractDialogVisible = ref(false)
@@ -218,7 +220,7 @@ export function useMemorySync(deps: {
         const c = pendingCreates.get(item.key)
         if (!c) continue
         const res = await window.api.memories.create({
-          bookId,
+          bookId: bookId(),
           kind: c.kind as MemoryKind,
           content: c.content,
           chapterNo: c.chapterNo,
@@ -347,7 +349,7 @@ export function useMemorySync(deps: {
         const s = pendingMerges[Number(item.key.split(':')[1])]
         if (!s) continue
         const createRes = await window.api.memories.create({
-          bookId,
+          bookId: bookId(),
           kind: s.kind,
           content: s.content,
           chapterNo: s.chapterNo,

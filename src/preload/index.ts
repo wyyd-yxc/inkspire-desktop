@@ -76,6 +76,7 @@ const api = {
       ipcRenderer.invoke('chapters:list', bookId),
     listMeta: (bookId: string): Promise<IpcResult<ChapterMeta[]>> =>
       ipcRenderer.invoke('chapters:list-meta', bookId),
+    get: (id: string): Promise<IpcResult<Chapter>> => ipcRenderer.invoke('chapters:get', id),
     create: (input: CreateChapterInput): Promise<IpcResult<Chapter>> =>
       ipcRenderer.invoke('chapters:create', input),
     update: (id: string, input: UpdateChapterInput): Promise<IpcResult<Chapter>> =>
