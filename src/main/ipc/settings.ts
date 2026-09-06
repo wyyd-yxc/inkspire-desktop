@@ -12,11 +12,11 @@ import {
 import { getSetting, setSetting } from '../db/settings'
 import type { CreateApiProfileInput, UpdateApiProfileInput } from '../../shared/ai.types'
 
-/** 设置键白名单（防止渲染层任意读写 settings 表；sync.* 为 M10.5 联动同步） */
+/** 设置键白名单（防止渲染层任意读写 settings 表；sync.auto_* 为 M10.5 联动同步设置）。
+ *  注意两个水位键（sync.memory_watermark/sync.wiki_watermark）**不在**此白名单：
+ *  它们只经 sync:watermark-merge 专用通道原子合并写入，防止渲染层整键覆盖绕过合并语义（四轮审查 #4） */
 const ALLOWED_SETTING_KEYS = new Set([
   'ai.default_profile_id',
-  'sync.memory_watermark',
-  'sync.wiki_watermark',
   'sync.auto_enabled',
   'sync.auto_interval_min',
   'sync.auto_mode',

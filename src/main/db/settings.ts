@@ -34,11 +34,15 @@ const WATERMARK_KEYS = new Set(['sync.memory_watermark', 'sync.wiki_watermark'])
 
 /** 水位单章合并（M10.5 静态审查 §1）：在主进程内同步完成 读→合并→写，
  *  消除渲染层两步 IPC（get→set）之间的交错丢更新窗口；非白名单键拒绝。
- *  transaction 包裹明确原子意图（三轮审查中危-1：防后续重构破坏串行假设） */
+ *  transaction 包裹 + SQL 内联（四轮审查 #1：不依赖嵌套函数的事务语义） */
 export function mergeWatermarkChapter(key: string, chapterId: string, wordCount: number): void {
   if (!WATERMARK_KEYS.has(key)) throw new Error('非法的水位键')
   if (!Number.isFinite(wordCount)) throw new Error('水位字数非法')
   const d: Database = getDb()
+  const upsert = d.prepare(
+    `INSERT INTO settings (key, value) VALUES (?, ?)
+     ON CONFLICT(key) DO UPDATE SET value = excluded.value`
+  )
   const tx = d.transaction(() => {
     const row = d.prepare('SELECT value FROM settings WHERE key = ?').get(key) as
       | { value: string }
@@ -53,7 +57,7 @@ export function mergeWatermarkChapter(key: string, chapterId: string, wordCount:
       }
     }
     map[chapterId] = wordCount
-    setSetting(key, map)
+    upsert.run(key, JSON.stringify(map))
   })
   tx()
 }

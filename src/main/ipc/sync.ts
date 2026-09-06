@@ -13,6 +13,7 @@ export function registerSyncIpc(): void {
   ipcMain.handle('sync:watermark-merge', (_e, key: string, chapterId: string, wordCount: number) =>
     wrap(() => {
       if (typeof key !== 'string' || !UUID_RE.test(chapterId)) throw new Error('参数格式非法')
+      if (typeof wordCount !== 'number') throw new Error('水位字数类型非法')
       mergeWatermarkChapter(key, chapterId, wordCount)
       return true
     })
