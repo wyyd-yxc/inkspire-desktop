@@ -12,8 +12,8 @@ import {
 import { getSetting, setSetting } from '../db/settings'
 import type { CreateApiProfileInput, UpdateApiProfileInput } from '../../shared/ai.types'
 
-/** 设置键白名单（防止渲染层任意读写 settings 表；sync.auto_* 为 M10.5 联动同步设置）。
- *  注意两个水位键（sync.memory_watermark/sync.wiki_watermark）**不在**此白名单：
+/** 设置键写白名单（防止渲染层任意写 settings 表；sync.auto_* 为 M10.5 联动同步设置）。
+ *  两个水位键（sync.memory_watermark/sync.wiki_watermark）**不在**写白名单：
  *  它们只经 sync:watermark-merge 专用通道原子合并写入，防止渲染层整键覆盖绕过合并语义（四轮审查 #4） */
 const ALLOWED_SETTING_KEYS = new Set([
   'ai.default_profile_id',
@@ -21,6 +21,13 @@ const ALLOWED_SETTING_KEYS = new Set([
   'sync.auto_interval_min',
   'sync.auto_mode',
   'sync.auto_targets'
+])
+
+/** 读白名单 = 写白名单 + 水位键（只读开放：UI 需要读水位计算「待提取 N 章」，写仍走专用通道） */
+const READABLE_SETTING_KEYS = new Set([
+  ...ALLOWED_SETTING_KEYS,
+  'sync.memory_watermark',
+  'sync.wiki_watermark'
 ])
 
 export function registerSettingsIpc(): void {
@@ -40,7 +47,7 @@ export function registerSettingsIpc(): void {
 
   ipcMain.handle('settings:get', (_e, key: string, fallback: unknown) =>
     wrap(() => {
-      if (!ALLOWED_SETTING_KEYS.has(key)) throw new Error(`不允许访问的设置键: ${key}`)
+      if (!READABLE_SETTING_KEYS.has(key)) throw new Error(`不允许访问的设置键: ${key}`)
       return getSetting(key, fallback)
     })
   )
