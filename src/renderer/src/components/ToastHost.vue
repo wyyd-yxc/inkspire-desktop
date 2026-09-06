@@ -19,7 +19,7 @@ const kindClass: Record<string, string> = {
       <div
         v-for="t in toast.items.value"
         :key="t.id"
-        class="pointer-events-auto rounded-lg border bg-surface px-4 py-2 text-sm shadow-card"
+        class="rounded-lg border bg-surface px-4 py-2 text-sm shadow-card"
         :class="kindClass[t.kind]"
       >
         {{ t.text }}

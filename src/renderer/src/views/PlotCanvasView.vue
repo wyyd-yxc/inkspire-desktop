@@ -47,7 +47,7 @@ const loading = ref(true)
 const { fitView } = useVueFlow()
 
 // ---- 连线编辑逻辑（创建/选中/编辑/删除 + 样式映射） ----
-const { selectedEdge, edgeForm, flowEdges, onConnect, onEdgeClick, saveEdgeEdit, removeSelectedEdge } =
+const { selectedEdge, edgeForm, flowEdges, onConnect, onEdgeClick, saveEdgeEdit, removeSelectedEdge, isValidConnection } =
   usePlotEdges({ bookId, plotEdges, toast })
 
 // ---- 搜索高亮（照原站：匹配节点高亮描边、不匹配变暗） ----
@@ -309,6 +309,7 @@ onMounted(() => void loadAll())
       <VueFlow
         :nodes="nodes"
         :edges="flowEdges"
+        :is-valid-connection="isValidConnection"
         @node-drag-stop="onNodeDragStop"
         @node-click="onNodeClick"
         @node-double-click="onNodeDoubleClick"

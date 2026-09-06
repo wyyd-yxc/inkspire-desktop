@@ -99,5 +99,28 @@ export function usePlotEdges(deps: {
     toast.success('连线已删除')
   }
 
-  return { selectedEdge, edgeForm, flowEdges, onConnect, onEdgeClick, saveEdgeEdit, removeSelectedEdge }
+  let lastSelfLoopTipAt = 0
+  /** 连线校验：同节点直接拒绝并提示（Vue Flow 会在 connect 事件前静默丢弃自环，M10 黑盒问题 2） */
+  function isValidConnection(params: { source: string; target: string }): boolean {
+    if (params.source === params.target) {
+      const now = Date.now()
+      if (now - lastSelfLoopTipAt > 1500) {
+        lastSelfLoopTipAt = now
+        toast.error('不能连接事件到自身')
+      }
+      return false
+    }
+    return true
+  }
+
+  return {
+    selectedEdge,
+    edgeForm,
+    flowEdges,
+    onConnect,
+    onEdgeClick,
+    saveEdgeEdit,
+    removeSelectedEdge,
+    isValidConnection
+  }
 }
