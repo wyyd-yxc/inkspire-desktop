@@ -1,28 +1,21 @@
 <script setup lang="ts">
 /**
  * 作品记忆页：长篇创作的「事实层」（防穿帮）。
- * 五类事实卡片 + 当前剧情视图 + AI 抽取候选确认 + 章节绑定与线索回收。
+ * 五类事实卡片 + 当前剧情视图 + AI 抽取（候选确认面板）+ 未抽取章节批量 + 清理重复。
+ * 抽取/去重编排逻辑在 composables/useMemorySync（M10.5）。
  */
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import type { Book } from '../../../shared/book.types'
 import type { Chapter } from '../../../shared/chapter.types'
-import type {
-  Memory,
-  MemoryCandidate,
-  MemoryKind,
-  MemorySource
-} from '../../../shared/memory.types'
-import {
-  MEMORY_KINDS,
-  MEMORY_KIND_LABELS
-} from '../../../shared/memory.types'
+import type { Memory, MemoryKind } from '../../../shared/memory.types'
+import { MEMORY_KINDS, MEMORY_KIND_LABELS } from '../../../shared/memory.types'
 import { isElectron } from '../services/books'
 import { useToast } from '@/composables/useToast'
-import { buildMemoryExtractMessages, parseMemoryExtract } from '../services/memoryPrompts'
-import { generateWriting } from '../services/aiWriting'
+import { useMemorySync, MEMORY_KIND_TAG_COLORS } from '@/composables/useMemorySync'
 import AiWritingPanel from '@/components/AiWritingPanel.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import SyncCandidateDialog from '@/components/sync/SyncCandidateDialog.vue'
 
 const route = useRoute()
 const toast = useToast()
@@ -41,21 +34,29 @@ const form = reactive({ kind: 'plot' as MemoryKind, content: '', chapterNo: 1 })
 const saving = ref(false)
 const pendingDelete = ref<Memory | null>(null)
 
-// AI 抽取
-const extractDialogVisible = ref(false)
-const extractChapterId = ref('')
-const aiPanel = ref<InstanceType<typeof AiWritingPanel> | null>(null)
-const aiPanelVisible = ref(false)
-const isBusy = ref(false)
-const candidates = ref<Array<MemoryCandidate & { checked: boolean }>>([])
+// AI 抽取/去重（编排逻辑在 useMemorySync）
+const {
+  extractDialogVisible,
+  extractChapterId,
+  extractScope,
+  unextracted,
+  aiPanel,
+  aiPanelVisible,
+  isBusy,
+  dedupRunning,
+  candidateDialogVisible,
+  candidateTitle,
+  candidateItems,
+  candidateDescription,
+  openExtractDialog,
+  startExtract,
+  retryLast,
+  stopEverything,
+  runCleanup,
+  onCandidatesConfirm
+} = useMemorySync({ bookId, book, chapters, memories, toast })
 
-const kindColors: Record<MemoryKind, string> = {
-  plot: '#6c5ce7',
-  stage: '#2e7d74',
-  character: '#b06f2a',
-  relationship: '#9d3f63',
-  clue: '#3a6fa8'
-}
+const kindColors = MEMORY_KIND_TAG_COLORS
 
 const kindCounts = computed(() => {
   const map = {} as Record<MemoryKind, number>
@@ -76,11 +77,6 @@ const filtered = computed(() => {
     : [...memories.value]
   return list.sort((a, b) => b.chapterNo - a.chapterNo || a.createdAt.localeCompare(b.createdAt))
 })
-
-function chapterTitleOf(no: number): string {
-  const ch = chapters.value.find((c) => c.sortOrder === no)
-  return ch ? ch.title : `第 ${no} 章`
-}
 
 async function loadAll(): Promise<void> {
   if (!isElectron) {
@@ -173,83 +169,6 @@ async function toggleResolved(m: Memory): Promise<void> {
   }
 }
 
-// ---- AI 抽取 ----
-function openExtractDialog(): void {
-  if (chapters.value.length === 0) {
-    toast.error('请先在正文中撰写章节内容')
-    return
-  }
-  extractChapterId.value = chapters.value[chapters.value.length - 1].id
-  candidates.value = []
-  extractDialogVisible.value = true
-}
-
-async function startExtract(): Promise<void> {
-  if (isBusy.value || !book.value) return
-  const ch = chapters.value.find((c) => c.id === extractChapterId.value)
-  if (!ch) return
-  const text = ch.content.replace(/<[^>]+>/g, '').trim()
-  if (!text) {
-    toast.error('该章节还没有正文')
-    return
-  }
-  extractDialogVisible.value = false
-  isBusy.value = true
-  aiPanelKind.value = 'chapter-polish'
-  aiPanelVisible.value = true
-  aiPanel.value?.reset()
-  try {
-    const messages = buildMemoryExtractMessages(book.value, ch.title, ch.sortOrder, text)
-    await generateWriting(messages, {
-      onChunk: (t) => aiPanel.value?.append(t),
-      onDone: () => aiPanel.value?.finish(),
-      onError: (m) => {
-        aiPanel.value?.fail()
-        toast.error(m)
-      }
-    })
-  } catch (err) {
-    aiPanel.value?.fail()
-    toast.error(err instanceof Error ? err.message : '抽取失败')
-  } finally {
-    isBusy.value = false
-  }
-}
-
-/** 采纳抽取结果：逐条确认入库 */
-async function acceptExtract(text: string): Promise<void> {
-  const parsed = parseMemoryExtract(text)
-  if (parsed.length === 0) {
-    toast.error('AI 输出格式异常，无法解析。可手动添加')
-    return
-  }
-  const chapterNo = chapters.value.find((c) => c.id === extractChapterId.value)?.sortOrder ?? 1
-  candidates.value = parsed.map((c) => ({ ...c, checked: true }))
-  aiPanelVisible.value = false
-  // 候选确认：简单起见直接批量入库（勾选式确认面板挂后续）
-  let created = 0
-  try {
-    for (const c of candidates.value) {
-      const res = await window.api.memories.create({
-        bookId,
-        kind: c.kind,
-        content: c.content,
-        chapterNo,
-        source: 'ai'
-      })
-      if (res.ok) {
-        memories.value.push(res.data)
-        created++
-      }
-    }
-    toast.success(`AI 抽取完成，已入库 ${created} 条记忆`)
-  } catch (err) {
-    toast.error(err instanceof Error ? err.message : '入库失败')
-  }
-}
-
-const aiPanelKind = ref<'chapter-polish'>('chapter-polish')
-
 onMounted(loadAll)
 </script>
 
@@ -293,6 +212,12 @@ onMounted(loadAll)
           class="rounded-lg border border-ink-primary px-3 py-1.5 text-xs text-ink-primary transition-colors hover:bg-ink-primary-soft"
           @click="openExtractDialog"
         >✦ AI 从章节抽取</button>
+        <button
+          class="rounded-lg border border-ink-border px-3 py-1.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary disabled:opacity-50"
+          :disabled="dedupRunning"
+          title="清理完全重复与近似重复的记忆"
+          @click="runCleanup"
+        >{{ dedupRunning ? '清理中…' : '🧹 清理重复' }}</button>
       </div>
     </aside>
 
@@ -402,13 +327,25 @@ onMounted(loadAll)
       </div>
     </teleport>
 
-    <!-- AI 抽取设置弹窗 -->
+    <!-- AI 抽取设置弹窗（范围：单章 / 未抽取章节批量） -->
     <teleport to="body">
       <div v-if="extractDialogVisible" class="fixed inset-0 z-40 flex items-center justify-center bg-black/30" @click.self="extractDialogVisible = false">
         <div class="w-[420px] rounded-2xl bg-surface p-6 shadow-card">
           <h2 class="mb-2 text-lg font-semibold">✦ AI 从章节抽取记忆</h2>
-          <p class="mb-4 text-sm text-ink-text-secondary">AI 扫描所选章节正文，提取影响后续剧情的事实变化</p>
-          <label class="flex flex-col gap-1.5">
+          <p class="mb-4 text-sm text-ink-text-secondary">AI 扫描章节正文，提取影响后续剧情的事实；已有记忆不会重复提取</p>
+          <div class="mb-3 flex gap-1.5">
+            <button
+              class="rounded-full border px-3 py-1 text-xs transition-colors"
+              :class="extractScope === 'single' ? 'border-ink-primary bg-ink-primary-soft text-ink-primary' : 'border-ink-border text-ink-text-secondary'"
+              @click="extractScope = 'single'"
+            >单章</button>
+            <button
+              class="rounded-full border px-3 py-1 text-xs transition-colors"
+              :class="extractScope === 'unextracted' ? 'border-ink-primary bg-ink-primary-soft text-ink-primary' : 'border-ink-border text-ink-text-secondary'"
+              @click="extractScope = 'unextracted'"
+            >未抽取的章节（{{ unextracted.length }}）</button>
+          </div>
+          <label v-if="extractScope === 'single'" class="flex flex-col gap-1.5">
             <span class="text-sm text-ink-text-secondary">选择章节</span>
             <select v-model="extractChapterId" class="rounded-lg border border-ink-border bg-surface px-3 py-2 text-sm outline-none focus:border-ink-primary">
               <option v-for="c in chapters" :key="c.id" :value="c.id">
@@ -416,9 +353,16 @@ onMounted(loadAll)
               </option>
             </select>
           </label>
+          <p v-else class="rounded-lg bg-paper px-3 py-2 text-xs leading-5 text-ink-text-secondary">
+            将依次扫描 {{ unextracted.length }} 个未抽取（或抽取后又有改动）的章节，完成后统一勾选采纳。
+          </p>
           <div class="mt-5 flex justify-end gap-3">
             <button class="rounded-lg px-4 py-2 text-sm text-ink-text-secondary hover:bg-ink-primary-soft" @click="extractDialogVisible = false">取消</button>
-            <button class="rounded-lg bg-ink-primary px-5 py-2 text-sm text-white hover:bg-ink-primary-hover" @click="startExtract">开始抽取</button>
+            <button
+              class="rounded-lg bg-ink-primary px-5 py-2 text-sm text-white hover:bg-ink-primary-hover disabled:opacity-50"
+              :disabled="isBusy || (extractScope === 'unextracted' && unextracted.length === 0)"
+              @click="startExtract"
+            >{{ isBusy ? '抽取中…' : '开始抽取' }}</button>
           </div>
         </div>
       </div>
@@ -427,11 +371,22 @@ onMounted(loadAll)
     <AiWritingPanel
       ref="aiPanel"
       :visible="aiPanelVisible"
-      :kind="aiPanelKind"
-      @accept="acceptExtract"
-      @retry="startExtract"
-      @stop="aiPanelVisible = false; isBusy = false"
-      @close="aiPanelVisible = false; isBusy = false"
+      kind="chapter-polish"
+      @accept="aiPanelVisible = false"
+      @retry="retryLast"
+      @stop="stopEverything"
+      @close="aiPanelVisible = false"
+    />
+
+    <!-- 候选确认面板（新记忆入库 / 近似合并共用） -->
+    <SyncCandidateDialog
+      :visible="candidateDialogVisible"
+      :title="candidateTitle"
+      :description="candidateDescription"
+      :items="candidateItems"
+      :confirm-text="candidateTitle.includes('合并') ? '合并所选项' : '入库所选项'"
+      @confirm="onCandidatesConfirm"
+      @close="candidateDialogVisible = false"
     />
 
     <ConfirmDialog

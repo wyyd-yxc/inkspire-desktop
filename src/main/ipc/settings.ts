@@ -12,8 +12,15 @@ import {
 import { getSetting, setSetting } from '../db/settings'
 import type { CreateApiProfileInput, UpdateApiProfileInput } from '../../shared/ai.types'
 
-/** 设置键白名单（防止渲染层任意读写 settings 表） */
-const ALLOWED_SETTING_KEYS = new Set(['ai.default_profile_id'])
+/** 设置键白名单（防止渲染层任意读写 settings 表；sync.* 为 M10.5 联动同步） */
+const ALLOWED_SETTING_KEYS = new Set([
+  'ai.default_profile_id',
+  'sync.memory_watermark',
+  'sync.wiki_watermark',
+  'sync.auto_enabled',
+  'sync.auto_interval_min',
+  'sync.auto_targets'
+])
 
 export function registerSettingsIpc(): void {
   ipcMain.handle('api-profiles:list', () => wrap(() => listProfiles()))
