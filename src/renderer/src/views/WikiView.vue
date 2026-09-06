@@ -6,6 +6,7 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import type { Book } from '../../../shared/book.types'
+import type { Chapter } from '../../../shared/chapter.types'
 import type {
   WikiAttribute,
   WikiEntry,
@@ -20,10 +21,13 @@ import {
 } from '../../../shared/wiki.types'
 import { isElectron } from '../services/books'
 import { useToast } from '@/composables/useToast'
+import { useWikiSync } from '@/composables/useWikiSync'
 import { buildWikiGenerateMessages, genesisToWorldEntries, parseWikiGenerate } from '../services/wikiPrompts'
 import { generateWriting } from '../services/aiWriting'
 import AiWritingPanel from '@/components/AiWritingPanel.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import SyncCandidateDialog from '@/components/sync/SyncCandidateDialog.vue'
+import WikiExtractDialog from '@/components/sync/WikiExtractDialog.vue'
 
 const route = useRoute()
 const toast = useToast()
@@ -32,6 +36,7 @@ const bookId = computed(() => route.params.bookId as string)
 
 const book = ref<Pick<Book, 'title' | 'genre' | 'description'> | null>(null)
 const entries = ref<WikiEntry[]>([])
+const chapters = ref<Chapter[]>([])
 const loading = ref(true)
 const filterType = ref<WikiType | ''>('')
 const keyword = ref('')
@@ -93,20 +98,41 @@ const typeCounts = computed(() => {
   return map
 })
 
+// 正文→百科提取（M10.5，编排逻辑在 useWikiSync）
+const {
+  extractDialogVisible,
+  extractScope,
+  extractChapterId,
+  unextracted,
+  runProgress,
+  isBusy: extractBusy,
+  candidateDialogVisible,
+  candidateTitle,
+  candidateItems,
+  candidateDescription,
+  openExtractDialog,
+  startWikiExtract,
+  stopEverything,
+  onCandidatesConfirm
+} = useWikiSync({ bookId, book, chapters, wikiEntries: entries, toast })
+
 async function loadAll(): Promise<void> {
   if (!isElectron) {
     loading.value = false
     return
   }
   try {
-    const [booksRes, wikiRes] = await Promise.all([
+    const [booksRes, wikiRes, chaptersRes] = await Promise.all([
       window.api.books.list(),
-      window.api.wiki.list(bookId.value)
+      window.api.wiki.list(bookId.value),
+      window.api.chapters.list(bookId.value)
     ])
     if (!booksRes.ok) throw new Error(booksRes.error)
     if (!wikiRes.ok) throw new Error(wikiRes.error)
+    if (!chaptersRes.ok) throw new Error(chaptersRes.error)
     book.value = booksRes.data.find((b) => b.id === bookId.value) ?? null
     entries.value = wikiRes.data
+    chapters.value = chaptersRes.data
   } catch (err) {
     toast.error(err instanceof Error ? err.message : '加载失败')
   } finally {
@@ -341,6 +367,10 @@ onMounted(() => void loadAll())
         >{{ importing ? '导入中…' : '从创世台导入' }}</button>
         <button
           class="rounded-lg border border-ink-primary px-3 py-1.5 text-xs text-ink-primary transition-colors hover:bg-ink-primary-soft"
+          @click="openExtractDialog"
+        >⇦ 从正文提取</button>
+        <button
+          class="rounded-lg border border-ink-primary px-3 py-1.5 text-xs text-ink-primary transition-colors hover:bg-ink-primary-soft"
           @click="openAiDialog"
         >✦ AI 生成词条</button>
       </div>
@@ -531,6 +561,28 @@ onMounted(() => void loadAll())
       :title="`删除词条「${pendingDelete?.name ?? ''}」？`"
       description="删除后 AI 写作将不再携带该设定。"
       @confirm="doDelete"
+    />
+
+    <!-- 正文提取词条（M10.5） -->
+    <WikiExtractDialog
+      v-model:scope="extractScope"
+      v-model:chapter-id="extractChapterId"
+      :visible="extractDialogVisible"
+      :busy="extractBusy"
+      :progress="runProgress"
+      :unextracted-count="unextracted.length"
+      :chapters="chapters"
+      @start="startWikiExtract"
+      @close="extractDialogVisible = false"
+    />
+    <SyncCandidateDialog
+      :visible="candidateDialogVisible"
+      :title="candidateTitle"
+      :description="candidateDescription"
+      :items="candidateItems"
+      confirm-text="入库所选项"
+      @confirm="onCandidatesConfirm"
+      @close="candidateDialogVisible = false"
     />
   </div>
 </template>

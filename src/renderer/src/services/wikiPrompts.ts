@@ -11,7 +11,7 @@ import type {
   WikiSystemRole,
   WikiType
 } from '../../../shared/wiki.types'
-import { WIKI_TYPE_LABELS } from '../../../shared/wiki.types'
+import { WIKI_TYPE_LABELS, WIKI_TYPES } from '../../../shared/wiki.types'
 import type { Step3World } from '../../../shared/genesis.types'
 import { lenientParse } from './jsonRepair'
 
@@ -140,3 +140,81 @@ export function genesisToWorldEntries(
   }
   return entries
 }
+
+// ---- 正文提取词条候选（M10.5 联动同步：正文→百科） ----
+
+/** 提取候选结构 */
+export interface WikiExtractCandidate {
+  type: WikiType
+  name: string
+  summary: string
+}
+
+/** 正文提取词条的 system 提示 */
+function wikiExtractSystemPrompt(book: Pick<Book, 'title' | 'genre' | 'description'>): string {
+  const meta: string[] = []
+  if (book.title) meta.push(`书名《${book.title}》`)
+  if (book.genre) meta.push(`题材：${book.genre}`)
+  return [
+    '你是一位网文设定编辑，擅长从正文中识别值得收入「万物百科」的设定元素：',
+    '有名字的人物、地点、物品、势力组织、功法技能，以及影响后续剧情的世界规则。',
+    '一笔带过、无名字的路人不收；与已有词条同名或同义的不收。中文书写。'
+  ]
+    .filter(Boolean)
+    .join('')
+}
+
+/** 正文提取：扫描章节正文 → 词条候选数组（existingText 为已有词条清单，防重复） */
+export function buildWikiExtractMessages(
+  book: Pick<Book, 'title' | 'genre' | 'description'>,
+  chapterTitle: string,
+  chapterNo: number,
+  contentText: string,
+  existingText = ''
+): ChatMessage[] {
+  const existingBlock = existingText
+    ? `\n【已有词条（不要重复输出；同名或同义的也算重复）】\n${existingText}\n`
+    : ''
+  return [
+    { role: 'system', content: wikiExtractSystemPrompt(book) },
+    {
+      role: 'user',
+      content: `请从以下章节正文提取值得入库的设定元素。章节：第 ${chapterNo} 章「${chapterTitle}」。${existingBlock}
+
+严格输出如下 JSON 数组（不要任何额外文字、不要 markdown 代码块）：
+[
+  {
+    "type": "character|location|item|faction|skill|lore",
+    "name": "名称（20 字内，与正文写法一致）",
+    "summary": "正文已确立的关键设定（60 字内：身份/特征/能力/归属等）"
+  }
+]
+type 六选一：character=人物 / location=地点 / item=物品 / faction=势力 / skill=功法技能 / lore=世界规则。
+只收正文明确出现的元素，最多 8 条，宁缺毋滥；不要脑补正文没有的设定。字段值内禁止使用英文双引号。
+
+正文：
+${contentText.slice(0, 6000)}`
+    }
+  ]
+}
+
+/** 解析提取输出（宽容 JSON + 类型白名单过滤） */
+export function parseWikiExtract(text: string): WikiExtractCandidate[] {
+  const first = text.indexOf('[')
+  const last = text.lastIndexOf(']')
+  if (first < 0 || last <= first) return []
+  const obj = lenientParse<Array<{ type?: string; name?: string; summary?: string }>>(
+    text.slice(first, last + 1)
+  )
+  if (!Array.isArray(obj)) return []
+  return obj
+    .filter((c) => c?.name?.trim() && c?.summary?.trim() && VALID_WIKI_TYPES.includes(String(c.type)))
+    .slice(0, 10)
+    .map((c) => ({
+      type: String(c.type) as WikiType,
+      name: String(c.name).trim().slice(0, 40),
+      summary: String(c.summary).trim().slice(0, 120)
+    }))
+}
+
+const VALID_WIKI_TYPES: readonly string[] = [...WIKI_TYPES]
