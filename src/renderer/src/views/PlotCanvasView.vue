@@ -1,22 +1,27 @@
 <script setup lang="ts">
 /**
  * 剧情画布：Vue Flow 跨章节剧情事件编排（M10）。
- * 事件节点拖拽持久化；四类连线（主线/逻辑/关联/引用）；双击详情面板；搜索高亮。
+ * 事件节点拖拽持久化；四类连线（主线/逻辑/关联/引用）；双击详情面板；搜索高亮；
+ * AI 三模式（初始化事件链/向后延伸/分歧推演）。编辑逻辑在 composables/usePlotEdges、usePlotAi。
  */
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { VueFlow, useVueFlow, type Node, type Edge } from '@vue-flow/core'
+import { VueFlow, useVueFlow, type Node } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import '@vue-flow/core/dist/style.css'
 import '@vue-flow/core/dist/theme-default.css'
 import type { Book } from '../../../shared/book.types'
-import type { PlotEdge, PlotEdgeType, PlotEvent } from '../../../shared/plot.types'
+import type { PlotEdge, PlotEvent } from '../../../shared/plot.types'
 import type { WikiEntry } from '../../../shared/wiki.types'
 import { isElectron } from '../services/books'
 import { useToast } from '@/composables/useToast'
-import { PLOT_EDGE_STYLES } from '../services/plotStyle'
+import { usePlotEdges } from '@/composables/usePlotEdges'
+import { usePlotAi } from '@/composables/usePlotAi'
 import PlotEventNode from '@/components/plot/PlotEventNode.vue'
 import PlotDetailPanel from '@/components/plot/PlotDetailPanel.vue'
+import PlotAiDialog from '@/components/plot/PlotAiDialog.vue'
+import PlotDivergeDialog from '@/components/plot/PlotDivergeDialog.vue'
+import AiWritingPanel from '@/components/AiWritingPanel.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 
 /** 节点插槽 data 形态 */
@@ -41,6 +46,10 @@ const loading = ref(true)
 
 const { fitView } = useVueFlow()
 
+// ---- 连线编辑逻辑（创建/选中/编辑/删除 + 样式映射） ----
+const { selectedEdge, edgeForm, flowEdges, onConnect, onEdgeClick, saveEdgeEdit, removeSelectedEdge } =
+  usePlotEdges({ bookId, plotEdges, toast })
+
 // ---- 搜索高亮（照原站：匹配节点高亮描边、不匹配变暗） ----
 const searchKeyword = ref('')
 function isHit(e: PlotEvent): boolean {
@@ -54,10 +63,25 @@ function isHit(e: PlotEvent): boolean {
 }
 const hitCount = computed(() => events.value.filter((e) => isHit(e)).length)
 
-// ---- 选中态 ----
 const selectedEvent = ref<PlotEvent | null>(null)
-const selectedEdge = ref<PlotEdge | null>(null)
-const edgeForm = ref({ type: 'main' as PlotEdgeType, label: '' })
+
+// ---- AI 三模式（初始化/延伸/分歧推演） ----
+const {
+  aiPanel,
+  aiPanelVisible,
+  isBusy,
+  aiMode,
+  aiDialogVisible,
+  pendingDirections,
+  genAnchor,
+  aiModeLabel,
+  aiModeHint,
+  openAiDialog,
+  startPlotGen,
+  stopEverything,
+  acceptPlot,
+  adoptDirection
+} = usePlotAi({ bookId, book, events, plotEdges, wikiEntries, selectedEvent, toast, fitView })
 
 /** Vue Flow 节点派生（含搜索命中态；交互事件均为单参数载荷，踩坑 #17） */
 const nodes = computed<Node[]>(() =>
@@ -73,24 +97,6 @@ const nodes = computed<Node[]>(() =>
       dim: !!searchKeyword.value.trim() && !isHit(e)
     } satisfies EventNodeData
   }))
-)
-
-/** DB 连线 → Vue Flow Edge（样式按类型，label 上边） */
-const flowEdges = computed<Edge[]>(() =>
-  plotEdges.value.map((e) => {
-    const st = PLOT_EDGE_STYLES[e.type] ?? PLOT_EDGE_STYLES.relation
-    return {
-      id: e.id,
-      source: e.sourceId,
-      target: e.targetId,
-      type: 'smoothstep',
-      label: e.label || st.label,
-      labelBgStyle: { fill: '#f5f3fa' },
-      labelBgPadding: [4, 2],
-      labelBgBorderRadius: 4,
-      style: { stroke: st.stroke, strokeWidth: 2, strokeDasharray: st.dash }
-    }
-  })
 )
 
 async function loadAll(): Promise<void> {
@@ -139,67 +145,6 @@ function onNodeClick(payload: { node: Node }): void {
 function onNodeDoubleClick(payload: { node: Node }): void {
   const e = events.value.find((x) => x.id === payload.node.id)
   if (e) openPanel(e)
-}
-
-// ---- 连线（单参数载荷 {event, edge}，与节点事件同坑 #17） ----
-async function onConnect(params: { source: string; target: string }): Promise<void> {
-  if (params.source === params.target) {
-    toast.error('不能连接事件到自身')
-    return
-  }
-  try {
-    const res = await window.api.plotEdges.create({
-      bookId: bookId.value,
-      sourceId: params.source,
-      targetId: params.target
-    })
-    if (!res.ok) throw new Error(res.error)
-    if (!plotEdges.value.some((x) => x.id === res.data.id)) plotEdges.value.push(res.data)
-    // 连线默认主线：创建后自动选中打开编辑器，便于立即切换类型/加标签
-    selectedEdge.value = res.data
-    edgeForm.value = { type: res.data.type, label: res.data.label }
-    toast.success('连线已创建（可在上方编辑器调整类型与标签）')
-  } catch (err) {
-    toast.error(err instanceof Error ? err.message : '连线失败')
-  }
-}
-
-function onEdgeClick(payload: { edge: { id: string } }): void {
-  const e = plotEdges.value.find((x) => x.id === payload.edge.id)
-  if (!e) return
-  selectedEdge.value = e
-  edgeForm.value = { type: e.type, label: e.label }
-}
-
-/** 保存连线编辑（类型/标签） */
-async function saveEdgeEdit(): Promise<void> {
-  const target = selectedEdge.value
-  if (!target) return
-  try {
-    const plain = JSON.parse(JSON.stringify({ type: edgeForm.value.type, label: edgeForm.value.label }))
-    const res = await window.api.plotEdges.update(target.id, plain)
-    if (!res.ok) throw new Error(res.error)
-    const i = plotEdges.value.findIndex((x) => x.id === res.data.id)
-    if (i >= 0) plotEdges.value[i] = res.data
-    selectedEdge.value = res.data
-    toast.success('连线已更新')
-  } catch (err) {
-    toast.error(err instanceof Error ? err.message : '更新失败')
-  }
-}
-
-/** 删除选中连线 */
-async function removeSelectedEdge(): Promise<void> {
-  const target = selectedEdge.value
-  if (!target) return
-  const res = await window.api.plotEdges.remove(target.id)
-  if (!res.ok) {
-    toast.error(res.error)
-    return
-  }
-  plotEdges.value = plotEdges.value.filter((x) => x.id !== target.id)
-  selectedEdge.value = null
-  toast.success('连线已删除')
 }
 
 // ---- 详情面板 ----
@@ -301,9 +246,9 @@ onMounted(() => void loadAll())
           <input
             v-model="searchKeyword"
             placeholder="搜索事件（标题/描述/标签）"
-            class="w-48 rounded-lg border border-ink-border px-2.5 py-1.5 text-xs outline-none focus:border-ink-primary"
+            class="w-44 rounded-lg border border-ink-border px-2.5 py-1.5 text-xs outline-none focus:border-ink-primary"
           />
-          <span v-if="searchKeyword.trim()" class="whitespace-nowrap text-xs text-ink-text-muted">{{ hitCount }} 个命中</span>
+          <span v-if="searchKeyword.trim()" class="whitespace-nowrap text-xs text-ink-text-muted">{{ hitCount }} 命中</span>
         </div>
         <!-- 连线编辑器（单击边选中后出现） -->
         <div
@@ -332,6 +277,26 @@ onMounted(() => void loadAll())
           <button class="text-xs text-ink-text-muted hover:text-ink-text" @click="selectedEdge = null" title="收起">✕</button>
         </div>
         <span v-else class="hidden text-xs text-ink-text-muted lg:inline">拖动节点左右手柄连线（箭头由因指向果）</span>
+        <!-- AI 三模式 -->
+        <button
+          class="rounded-lg border border-ink-primary px-3 py-1.5 text-xs text-ink-primary transition-colors hover:bg-ink-primary-soft"
+          title="空画布：按故事核心设定生成分卷大纲主干事件链"
+          @click="openAiDialog('init')"
+        >✦ 初始化</button>
+        <button
+          class="rounded-lg border px-3 py-1.5 text-xs transition-colors disabled:opacity-40"
+          :class="selectedEvent ? 'border-ink-primary text-ink-primary hover:bg-ink-primary-soft' : 'border-ink-border text-ink-text-muted'"
+          :disabled="!selectedEvent"
+          title="单击选中事件后可用：向后延伸生成后续事件"
+          @click="openAiDialog('extend')"
+        >→ 向后延伸</button>
+        <button
+          class="rounded-lg border px-3 py-1.5 text-xs transition-colors disabled:opacity-40"
+          :class="selectedEvent ? 'border-ink-primary text-ink-primary hover:bg-ink-primary-soft' : 'border-ink-border text-ink-text-muted'"
+          :disabled="!selectedEvent"
+          title="单击选中事件后可用：推演多条分歧走向，择一采纳"
+          @click="openAiDialog('diverge')"
+        >⑃ 分歧推演</button>
         <button
           class="rounded-lg border border-ink-border px-3 py-1.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
           @click="openCreate"
@@ -366,13 +331,43 @@ onMounted(() => void loadAll())
         class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
       >
         <p class="rounded-xl bg-surface/90 px-6 py-4 text-sm text-ink-text-muted shadow-card">
-          画布还是空的：点右上「+ 手动加事件」开始，或用 AI 生成初始事件链
+          画布还是空的：点「✦ 初始化」让 AI 生成初始事件链，或「+ 手动加事件」
         </p>
       </div>
       <div v-if="loading" class="absolute inset-0 z-10 flex items-center justify-center bg-paper/70">
         <p class="text-ink-text-muted">加载画布…</p>
       </div>
     </div>
+
+    <!-- AI 流式面板 -->
+    <AiWritingPanel
+      ref="aiPanel"
+      :visible="aiPanelVisible"
+      kind="continue"
+      @accept="acceptPlot"
+      @retry="startPlotGen()"
+      @stop="stopEverything"
+      @close="aiPanelVisible = false; isBusy = false"
+    />
+
+    <!-- AI 生成配置弹窗 -->
+    <PlotAiDialog
+      :visible="aiDialogVisible"
+      :mode="aiMode"
+      :mode-label="aiModeLabel"
+      :hint="aiModeHint"
+      :busy="isBusy"
+      @start="startPlotGen"
+      @close="aiDialogVisible = false"
+    />
+
+    <!-- 分歧推演方向选择弹窗 -->
+    <PlotDivergeDialog
+      :directions="pendingDirections"
+      :anchor-title="genAnchor?.title ?? ''"
+      @adopt="adoptDirection"
+      @close="pendingDirections = []"
+    />
 
     <!-- 事件详情/新建面板 -->
     <PlotDetailPanel
