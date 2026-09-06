@@ -170,10 +170,11 @@ export function usePlotAi(deps: {
     return events.value.filter((e) => ids.has(e.id)).slice(0, 8)
   }
 
-  /** 面板停止：中止当前流（中止会走 onError → 面板标记结束，不算错误路径） */
+  /** 面板停止：中止当前流（中止会走 onError → 面板标记结束，不算错误路径）。
+   *  不在此处释放 isBusy——由 startPlotGen 的 finally 在流真正终结后统一释放，
+   *  避免中止动画期间 isBusy 提前可入导致新旧流交叠（M10 静态审查 P2）。 */
   function stopEverything(): void {
     activeSession?.abort()
-    isBusy.value = false
   }
 
   // ---- 采纳落库（AI 草稿为纯对象，字段逐一平铺过 IPC，踩坑 #11） ----
@@ -222,17 +223,22 @@ export function usePlotAi(deps: {
     }
   }
 
-  /** 延伸落位：锚点右侧一排；若右侧同排已被占则下移一行避让 */
+  /** 延伸落位：锚点右侧找空排（逐行下移最多 5 行，与分歧落位同一避让策略） */
   function freeRowYAfter(anchor: PlotEvent, count: number): number {
     const spanEnd = anchor.posX + (count + 1) * 340
-    const occupied = events.value.some(
-      (e) =>
-        e.id !== anchor.id &&
-        Math.abs(e.posY - anchor.posY) < 120 &&
-        e.posX > anchor.posX &&
-        e.posX <= spanEnd + 200
-    )
-    return occupied ? anchor.posY + 220 : anchor.posY
+    let rowY = anchor.posY
+    for (let tries = 0; tries < 5; tries++) {
+      const occupied = events.value.some(
+        (e) =>
+          e.id !== anchor.id &&
+          Math.abs(e.posY - rowY) < 120 &&
+          e.posX > anchor.posX &&
+          e.posX <= spanEnd + 200
+      )
+      if (!occupied) break
+      rowY += 220
+    }
+    return rowY
   }
 
   /** 面板「采纳」：按模式解析 AI 输出并落库 */

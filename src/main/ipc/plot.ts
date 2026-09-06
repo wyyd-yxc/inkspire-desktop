@@ -31,7 +31,10 @@ function assertUuid(...ids: string[]): void {
   }
 }
 
-/** 校验输入里的词条引用数组（防污染 id 触发下游 wiki 查询异常，M10 静态审查建议） */
+/** 校验输入里的词条引用数组（防污染 id 触发下游 wiki 查询异常，M10 静态审查建议）。
+ *  设计登记（M10 静态审查 P1）：只验格式不验「词条属于该书」/ 连线两端是否属书——
+ *  UUID 随机不可枚举 + 单机单用户信任边界（与 M7 scenes/sceneEdges、apiKey 明文同一边际模型），
+ *  若后续做多档/协同再以 migration + DAO 归属校验补齐。 */
 function assertWikiRefs(input: { wikiRefs?: string[] }): void {
   for (const rid of input.wikiRefs ?? []) {
     if (!UUID_RE.test(rid)) throw new Error('词条引用格式非法')
