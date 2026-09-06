@@ -14,6 +14,7 @@ import type { Chapter } from '../../../shared/chapter.types'
 import type { StreamSession } from '../services/ai'
 import type { SelectionAction, SelectionContext } from '../services/aiWriting'
 import { buildChapterPolishMessages, buildContinueMessages, buildSelectionMessages, generateWriting } from '../services/aiWriting'
+import { buildPlotChainText } from '../services/syncService'
 import type { GenesisStepRecord, Step2Soul, Step4Layout, Step1Style } from '../../../shared/genesis.types'
 import { WIKI_TYPE_LABELS } from '../../../shared/wiki.types'
 import { MEMORY_KIND_LABELS } from '../../../shared/memory.types'
@@ -169,17 +170,8 @@ async function loadPlot(bookId: string): Promise<void> {
     const res = await window.api.plot.list(bookId)
     if (mySeq !== plotLoadSeq) return
     if (!res.ok) return
-    const lines = [...res.data]
-      .sort((a, b) => a.posX - b.posX)
-      .map((e) => `- ${e.title}：${e.description.slice(0, 60) || '（无描述）'}`)
-    const out: string[] = []
-    let budget = PLOT_INJECT_LIMIT
-    for (const line of lines) {
-      if (line.length > budget) break
-      out.push(line)
-      budget -= line.length
-    }
-    plotCache.value = { events: out.join('\n') }
+    // 事件链拼装统一走 syncService（与场景/剧情侧同源，M10.5 静态审查 §5 收敛）
+    plotCache.value = { events: buildPlotChainText(res.data, PLOT_INJECT_LIMIT) }
   } catch (err) {
     console.warn('[ChapterEditor] 剧情事件加载失败:', err)
   }

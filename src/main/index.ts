@@ -17,6 +17,7 @@ import { registerSceneEdgeIpc } from './ipc/sceneEdges'
 import { registerPlotIpc } from './ipc/plot'
 import { registerMemoryIpc } from './ipc/memories'
 import { registerAssistantIpc } from './ipc/assistant'
+import { registerSyncIpc } from './ipc/sync'
 
 /** 创建应用主窗口（1280x800，中文标题「墨灵」）。 */
 function createWindow(): void {
@@ -97,6 +98,7 @@ registerSceneEdgeIpc()
 registerPlotIpc()
 registerMemoryIpc()
 registerAssistantIpc()
+registerSyncIpc()
 
 app.whenReady().then(() => {
   createWindow()

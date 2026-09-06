@@ -87,6 +87,12 @@ const api = {
       ipcRenderer.invoke('chapters:move', id, dir)
   },
 
+  /** 联动同步（M10.5）：抽取水位原子合并（主进程内读改写，防并发丢更新） */
+  sync: {
+    mergeWatermark: (key: string, chapterId: string, wordCount: number): Promise<IpcResult<boolean>> =>
+      ipcRenderer.invoke('sync:watermark-merge', key, chapterId, wordCount)
+  },
+
   /** 创世台五步设定 */
   genesis: {
     get: (bookId: string): Promise<IpcResult<GenesisStepRecord[]>> =>

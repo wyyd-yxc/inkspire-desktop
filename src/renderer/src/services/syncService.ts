@@ -29,21 +29,19 @@ export async function getWatermark(key: string): Promise<SyncWatermark> {
   return res.ok && res.data && typeof res.data === 'object' ? res.data : {}
 }
 
-/** 写入某章水位。以 DB 最新值为基合并（current 参数仅兼容旧签名）：
- *  「全重复章节自动推水」与「确认面板采纳推水」可能并发，基于过期快照会互相覆盖（T1 自测实锤） */
+/** 写入某章水位：走主进程原子合并 IPC（M10.5 静态审查 §1：渲染层两步 get→set 有交错丢更新窗口，
+ *  合并下沉主进程单线程内即天然原子）。current 参数仅兼容旧签名，不再作为合并基 */
 export async function setWatermarkChapter(
   key: string,
   _current: SyncWatermark,
   chapterId: string,
   wordCount: number
 ): Promise<SyncWatermark> {
-  const latest = isElectron ? await getWatermark(key) : _current
-  const next = { ...latest, [chapterId]: wordCount }
   if (isElectron) {
-    const res = await window.api.settings.set(key, next)
+    const res = await window.api.sync.mergeWatermark(key, chapterId, wordCount)
     if (!res.ok) throw new Error(res.error)
   }
-  return next
+  return { ..._current, [chapterId]: wordCount }
 }
 
 /** 找出「有内容且水位不符」的章节（从未抽取=水位缺失，抽取后改过字数=水位过期）。
