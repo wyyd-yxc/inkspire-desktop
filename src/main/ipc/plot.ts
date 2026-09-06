@@ -31,6 +31,13 @@ function assertUuid(...ids: string[]): void {
   }
 }
 
+/** 校验输入里的词条引用数组（防污染 id 触发下游 wiki 查询异常，M10 静态审查建议） */
+function assertWikiRefs(input: { wikiRefs?: string[] }): void {
+  for (const rid of input.wikiRefs ?? []) {
+    if (!UUID_RE.test(rid)) throw new Error('词条引用格式非法')
+  }
+}
+
 export function registerPlotIpc(): void {
   ipcMain.handle('plot:list', (_e, bookId: string, parentId?: string) => {
     assertUuid(bookId)
@@ -41,6 +48,7 @@ export function registerPlotIpc(): void {
   ipcMain.handle('plot:create', (_e, input: CreatePlotEventInput) =>
     wrap(() => {
       assertUuid(input.bookId)
+      assertWikiRefs(input)
       return createPlotEvent(input)
     })
   )
@@ -48,6 +56,7 @@ export function registerPlotIpc(): void {
   ipcMain.handle('plot:update', (_e, id: string, input: UpdatePlotEventInput) =>
     wrap(() => {
       assertUuid(id)
+      assertWikiRefs(input)
       return updatePlotEvent(id, input)
     })
   )

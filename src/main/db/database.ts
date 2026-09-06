@@ -154,6 +154,8 @@ const MIGRATIONS: Array<{ version: number; sql: string }> = [
       CREATE INDEX IF NOT EXISTS idx_assistant_book ON assistant_messages(book_id, created_at);`
   },
   {
+    // v10 剧情画布。注意 plot_events.parent_id 为子画布（M11+）预留列，故意不加 FK 约束：
+    // 现阶段恒为 null，待子画布需求落地时再以 migration v11+ 补 FOREIGN KEY ... ON DELETE SET NULL。
     version: 10,
     sql: `
       CREATE TABLE IF NOT EXISTS plot_events (
