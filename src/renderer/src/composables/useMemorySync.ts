@@ -1,8 +1,6 @@
 /**
- * 作品记忆 AI 抽取与去重编排（M10.5）。
- * 单章/未抽取章节批量抽取 → 候选确认面板（SyncCandidateDialog）勾选采纳 → 入库 + 水位推进。
- * 去重双保险：抽取 prompt 注入已有记忆（AI 级防同义）+ 入库前规范化比对（本地级）。
- * 从 MemoryView 抽出以保单文件 ≤400 行（编码规范 §6）。
+ * 作品记忆 AI 抽取与去重编排（M10.5）：单章/未抽取批量抽取 → 候选确认面板勾选采纳 → 入库 + 水位推进。
+ * 去重双保险：prompt 注入已有记忆（AI 级防同义）+ 入库前规范化比对（本地级）。
  */
 import { computed, ref, type Ref } from 'vue'
 import type { Book } from '../../../shared/book.types'
@@ -29,16 +27,13 @@ import {
   type MemCandidateWithSource,
   type SyncWatermark
 } from '../services/syncService'
+
 import type { SyncCandidateItem } from '../../../shared/sync.types'
 import type { useToast } from './useToast'
 
 /** 记忆类型角标色（与 MemoryView 列表色点一致，单一来源） */
 export const MEMORY_KIND_TAG_COLORS: Record<MemoryKind, string> = {
-  plot: '#6c5ce7',
-  stage: '#2e7d74',
-  character: '#b06f2a',
-  relationship: '#9d3f63',
-  clue: '#3a6fa8'
+  plot: '#6c5ce7', stage: '#2e7d74', character: '#b06f2a', relationship: '#9d3f63', clue: '#3a6fa8'
 }
 
 export function useMemorySync(deps: {
@@ -87,7 +82,7 @@ export function useMemorySync(deps: {
     extractDialogVisible.value = true
   }
 
-  /** 单章流式抽取（面板可见），返回解析后候选；中止抛错 */
+  /** 单章流式抽取，返回解析后候选；中止抛错 */
   async function extractOnce(ch: Chapter): Promise<MemoryCandidate[]> {
     const text = ch.content.replace(/<[^>]+>/g, '').trim()
     if (!text) throw new Error(`「${ch.title}」还没有正文`)
@@ -115,7 +110,7 @@ export function useMemorySync(deps: {
     return parseMemoryExtract(await promise)
   }
 
-  /** 开始抽取（单章走面板流式；批量静默收集，面板仅显示进度行） */
+  /** 开始抽取（单章流式；批量静默收集，面板仅显示进度行） */
   async function startExtract(): Promise<void> {
     if (isBusy.value) return
     const scope = extractScope.value
@@ -210,8 +205,7 @@ export function useMemorySync(deps: {
       checked: true
     }))
     candidateDescription.value =
-      `共 ${unique.length} 条新候选${dupCount > 0 ? `，已自动跳过 ${dupCount} 条与现有记忆重复的候选` : ''}。` +
-      '取消勾选的章节不会推进「已抽取」水位，下次仍会检出。'
+      `共 ${unique.length} 条新候选${dupCount > 0 ? `，已自动跳过 ${dupCount} 条重复候选` : ''}；取消勾选的章节不推进「已抽取」水位。`
     candidateDialogVisible.value = true
   }
 
@@ -264,7 +258,6 @@ export function useMemorySync(deps: {
 
   // ---- 存量清理重复 ----
   const dedupRunning = ref(false)
-
   async function runCleanup(): Promise<void> {
     if (dedupRunning.value || memories.value.length < 2) {
       if (memories.value.length < 2) toast.info('记忆不足 2 条，无需清理')
@@ -330,7 +323,6 @@ export function useMemorySync(deps: {
   }
 
   let pendingMerges: MemoryMergeSuggestion[] = []
-
   function openMergeDialog(suggestions: MemoryMergeSuggestion[]): void {
     pendingMerges = suggestions
     candidateTitle.value = '合并近似重复记忆'
