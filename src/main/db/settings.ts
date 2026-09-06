@@ -33,23 +33,27 @@ export function setSetting<T>(key: string, value: T): void {
 const WATERMARK_KEYS = new Set(['sync.memory_watermark', 'sync.wiki_watermark'])
 
 /** 水位单章合并（M10.5 静态审查 §1）：在主进程内同步完成 读→合并→写，
- *  消除渲染层两步 IPC（get→set）之间的交错丢更新窗口；非白名单键拒绝 */
+ *  消除渲染层两步 IPC（get→set）之间的交错丢更新窗口；非白名单键拒绝。
+ *  transaction 包裹明确原子意图（三轮审查中危-1：防后续重构破坏串行假设） */
 export function mergeWatermarkChapter(key: string, chapterId: string, wordCount: number): void {
   if (!WATERMARK_KEYS.has(key)) throw new Error('非法的水位键')
   if (!Number.isFinite(wordCount)) throw new Error('水位字数非法')
   const d: Database = getDb()
-  const row = d.prepare('SELECT value FROM settings WHERE key = ?').get(key) as
-    | { value: string }
-    | undefined
-  let map: Record<string, number> = {}
-  if (row) {
-    try {
-      const parsed: unknown = JSON.parse(row.value)
-      if (parsed && typeof parsed === 'object') map = parsed as Record<string, number>
-    } catch {
-      map = {}
+  const tx = d.transaction(() => {
+    const row = d.prepare('SELECT value FROM settings WHERE key = ?').get(key) as
+      | { value: string }
+      | undefined
+    let map: Record<string, number> = {}
+    if (row) {
+      try {
+        const parsed: unknown = JSON.parse(row.value)
+        if (parsed && typeof parsed === 'object') map = parsed as Record<string, number>
+      } catch {
+        map = {}
+      }
     }
-  }
-  map[chapterId] = wordCount
-  setSetting(key, map)
+    map[chapterId] = wordCount
+    setSetting(key, map)
+  })
+  tx()
 }

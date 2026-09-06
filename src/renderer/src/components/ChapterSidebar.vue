@@ -94,6 +94,7 @@ const wordsLabel = computed(() => props.totalWords.toLocaleString('zh-CN'))
           <button
             class="relative rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
             title="同步：把正文改动推送到百科与作品记忆"
+            aria-label="同步正文到百科与记忆"
             @click="emit('sync')"
           >⟳<span
             v-if="props.syncAlert"
