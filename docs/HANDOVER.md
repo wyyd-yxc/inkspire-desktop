@@ -1,14 +1,15 @@
 # 项目交接文档（HANDOVER）
 
 > **新会话/新模型开工第一入口**。本文件始终保持「随时可交接」状态，每次里程碑收尾后更新。
-> 最后更新：2026-09-06 · 会话 35 · **M9 已确认打 tag v0.11.0-m9-assistant；M10 剧情画布进行中**
+> 最后更新：2026-09-06 · 会话 35 · **M10 剧情画布双轨验收通过，待用户确认打 tag v0.12.0**
 
 ## 0. 移交摘要（新模型 60 秒读完）
 
-- **M0-M9 + 画布连线全部完成并通过双轨验收**，11 个版本 tag（v0.1.0-m0-scaffold ~ v0.11.0-m9-assistant + v0.9.0-edges）
+- **M0-M10 + 画布连线全部完成并通过双轨验收**，11 个版本 tag（v0.1.0-m0-scaffold ~ v0.11.0-m9-assistant + v0.9.0-edges）
 - M16 打包已完成（InkSpire-Setup-0.6.0.exe 已安装本机），但版本号 0.6.0 后有大量变更，**需要重打包**
-- **下一步**：M10 剧情画布（任务卡见第 9 节，进行中）；完成后按 HANDOVER 第 2 节进入 M16 重打包（版本升 0.10.0+）
-- git：11 tag、工作区 clean
+- **下一步**：① 等用户亲手验证 M10 → 确认后打 tag v0.12.0；② M16 重打包（版本升 0.12.0，优先）；③ M11 灵感墙
+- git 干净：11 tag、工作区 clean
+- 你能跑 `npm run dev` 验证环境；测试方法见第 5 节；所有坑见第 6 节（**18 条，必读**）
 - 你能跑 `npm run dev` 验证环境；测试方法见第 5 节；所有坑见第 6 节（**18 条，必读**）
 
 ## 1. 项目是什么
@@ -29,12 +30,12 @@
 | M7 | 章节画布 | ✅ tag v0.8.0 |
 | M7.5 | 画布连线 | ✅ tag v0.9.0 |
 | M8 | 作品记忆 | ✅ tag v0.10.0 |
-| M9 | 墨灵助手（浮球+聊天+流式+@召唤） | ✅ 双轨验收闭环，tag v0.11.0-m9-assistant |
-| M10 | 剧情画布 | ⬜ **下一个** |
+| M9 | 墨灵助手（浮球+聊天+流式+@召唤） | ✅ tag v0.11.0-m9-assistant |
+| M10 | 剧情画布（事件+四类连线+AI 三模式+搜索高亮） | ✅ 静态四轮整改闭环+黑盒 14/14 通过，**待用户确认打 tag v0.12.0** |
 | M11-M15 | 灵感墙/风格/统计/拆书/Agent偏好 | ⬜ |
 | M16 | 重打包（版本升 0.10.0+） | ⬜ **M10 后优先** |
 
-**数据库 migration 当前版本 = 9**（books/api_profiles+settings/chapters/genesis_steps/wiki_entries/scenes/scene_edges/memories/assistant_messages）。
+**数据库 migration 当前版本 = 10**（books/api_profiles+settings/chapters/genesis_steps/wiki_entries/scenes/scene_edges/memories/assistant_messages/plot_events+plot_edges）。
 
 ## 3. 新会话开工 SOP（按序执行）
 
@@ -101,26 +102,24 @@ Electron(main: db/ ai/ ipc/) ←IPC(preload 白名单桥)→ Vue3 渲染层(view
 
 ## 9. 下一步任务卡
 
-### M10 剧情画布（下一个，对照原站 doc.inkspires.cn/features/plot-canvas.html）
+### ~~M10 剧情画布~~（✅ 已完成，待用户确认 tag v0.12.0）
 
-**数据**：migration v10 两表 `plot_events`（id/book_id FK/title/description/tags JSON/pos_x/pos_y/parent_id 预留/wiki_refs JSON/时间戳）+ `plot_edges`（id/book_id/source_id/target_id/type main|logic|relation|reference/label）
+交付概要：migration v10 两表 + IPC 八通道 + `/book/:bookId/plot`（PlotCanvasView + 4 个 plot 组件 + 2 个 composable）。
+事件 CRUD/拖拽持久化/四类连线（main 金实线/logic 蓝虚 6 4/relation 灰虚 2 4/reference 绿点 1 4）/双击详情面板/搜索高亮/
+AI 三模式（初始化链 5-8 事件、向后延伸多行避让、分歧推演 2-4 方向择一采纳+逻辑边标签=方向名）。
+验收：静态审查四轮（GMI MiniMax M3，条件项全整改，报告 llm-review-2026-09-06-*.md ×4）+ 黑盒 14/14 通过
+（2026-09-06-M10-plot-canvas.md；含重启持久化逐像素比对、删书四表级联、跨书越权拒绝）。
+遗留：黑盒 2 条轻微 UX 债已挂 roadmap 技术债区；分歧项（update/remove 归属校验）留用户裁决（建议维持现状）。
 
-**IPC**：plot:list(parentId)/create/update/remove + plot-edges:create/remove
+### M16 重打包（下一个，M10 用户确认后立即做）
 
-**UI**（/book/:id/plot，PlotCanvasView.vue，Vue Flow）：
-- 事件节点（毛玻璃卡片+标签色条+标题/描述/镶嵌词条图标）
-- 连线四类（main/logic/relation/reference）+ 标签——复用 scene_edges 模式
-- 双击详情面板（标题/描述/标签/挂接词条）
-- AI 三模式：初始化事件链（按定魂+布局生成 5-8 事件）/扩展（基于选中向后延伸）/分歧推演（2-4 方向各一组候选）
-- 搜索高亮
-
-**入口**：工作台侧栏「剧情」链接
-
-**验收**：事件/连线 CRUD+拖拽持久化+AI 三模式真实出字+搜索高亮 → 双轨 → 用户确认 → tag v0.12.0
+- 版本号升 0.12.0（package.json + electron-builder.yml），`npm run dist` 出 NSIS 安装包
+- 验收：全新 Windows 安装即用（黑盒 12/12 口径不变，报告 2026-08-30-M16-package.md 可参考）
+- 注意：本机已装 0.6.0 版（%LOCALAPPDATA%/Programs/InkSpire/），与 dev 共享 userData
 
 ### 后续
-- M11 灵感墙 → M12 风格包 → M13 统计 → M14 拆书 → M15 Agent 偏好 → M16 重打包
-- 技术债：签名/自动更新/多尺寸图标/问答勾选确认面板
+- M11 灵感墙（plot_events.parent_id 子画布预留列届时以 migration v11+ 落 FK）→ M12 风格包 → M13 统计 → M14 拆书 → M15 Agent 偏好
+- 技术债：见 roadmap 技术债登记区（M10 新增 3 条：toast 拦截点击/自环无提示/update-remove 归属裁决）
 
 ## 10. 快速命令
 

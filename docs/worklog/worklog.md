@@ -543,3 +543,19 @@
 - **移交状态**：git 干净（53+ 提交、10 tag、133 受管文件）；M0-M9 + 连线 + M16 打包全完成；M9 待确认打 tag v0.11.0；连线功能开发中途暂停（~10%，types 已建）
 - **HANDOVER 全面更新**：状态表/踩坑 18 条/M10 任务卡/快速命令
 - **下一会话开工路径**：读 HANDOVER → 问用户确认 M9 打 tag v0.11.0 → M10 剧情画布 → M16 重打包
+
+---
+
+## [2026-09-06 08:00] 会话 35：M10 剧情画布全量交付（双轨验收通过，待用户确认 tag v0.12.0）
+
+- **M9 收尾**：用户确认，tag `v0.11.0-m9-assistant`（593b35b）。
+- **M10 实现**（5 个 feat/fix 提交）：
+  - 数据层：migration v10（plot_events + plot_edges，books FK 级联；parent_id 子画布预留列）+ DAO + IPC 八通道（plot:*/plot-edges:* 各 list/create/update/remove）+ preload 桥
+  - 画布：PlotCanvasView + PlotEventNode（毛玻璃+标签色条）/PlotDetailPanel/PlotAiDialog/PlotDivergeDialog，四类连线（新增 reference 绿点线）+ 边编辑器、拖拽持久化、搜索高亮、usePlotEdges/usePlotAi 拆分保单文件 ≤400 行
+  - AI 三模式：初始化事件链（空画布 5-8 事件链式落位）/向后延伸（多行避让）/分歧推演（2-4 方向候选→择一采纳，逻辑边标签=方向名）；流式可中止；lenientParse 宽容解析；提示词无内部术语
+  - 入口：侧栏「剧情」+ 路由 /book/:bookId/plot；architecture.md 路由表同步修正
+- **自测发现并修复 2 个真 bug**：① 节点卡片 overflow-hidden 裁剪右手柄致拖线失灵（手柄移出裁剪层）；② 分歧采纳响应式 Proxy 过 IPC 克隆失败 "An object could not be cloned"（toRaw+深拷贝，踩坑 #11 变体）。自测 T1 18/18、T2 初始化 7 事件/延伸避让全过、T2b 分歧 6/6、T2c 多行避让过。
+- **静态审查（GMI MiniMax M3，四轮）**：首轮 diff 截断（8 万字 diff 超 15k 上限）误判渲染层缺失→r2 附录全量源码复验；二/三/四轮条件项全部整改落地：wikiRefs+连线两端+词条归属 DAO 校验、延伸多行避让、stopEverything 交 finally 释放 isBusy、默认落位 MAX(pos_x)+340、色板 16 色、跨书归属信任边界注释登记。最终余一项分歧（update/remove 归属校验需改 IPC 形状，与任务卡契约/M7 惯例冲突）→ 按规范留用户裁决，建议维持现状。
+- **黑盒验收（独立子代理，CDP 真实鼠标/键盘）**：**通过 14/14**，含重启持久化逐像素坐标比对、删书四表级联终审计、跨书越权/自环/空标题拒绝。测试书已删零残留。**流程偏差如实记录**：脚手架错误 8 次（>阈值 3），均为测试脚本问题非应用缺陷，代理裁量继续且全部验收点以修复后真实输入判定——留用户裁量。
+- **黑盒发现 3 轻微问题**：① toast 实体 pointer-events-auto 拦截其覆盖区点击 2-3s；② UI 拖拽自环无提示（Vue Flow connect 前静默丢弃）；③ 材料「8 色板」已过时（实为 16 色，勘误追加）。前两条挂技术债。
+- **状态**：双轨通过；**M10 待用户亲手验证 → 确认后 tag v0.12.0**。
