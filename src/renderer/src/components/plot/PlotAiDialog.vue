@@ -12,6 +12,8 @@ interface Props {
   modeLabel: string
   hint: string
   busy: boolean
+  /** 联动信息行（如「已联动：3 章进度 · 5 条记忆 · 2 条常驻设定」） */
+  contextInfo: string
 }
 
 const props = defineProps<Props>()
@@ -56,6 +58,7 @@ function start(): void {
       <div class="w-[480px] rounded-2xl bg-surface p-5 shadow-2xl">
         <h2 class="font-semibold text-ink-primary">{{ modeLabel }}</h2>
         <p class="mt-1 text-xs text-ink-text-muted">{{ hint }}</p>
+        <p v-if="contextInfo" class="mt-1 text-[11px] text-ink-success">✓ {{ contextInfo }}</p>
         <textarea
           v-model="instruction"
           rows="3"

@@ -39,6 +39,10 @@ export interface PlotGenContext {
   layout: Step4Layout | null
   /** injection=always 的词条注入文本 */
   wikiText: string
+  /** 已写进度（章节清单，M10.5 联动：让事件链贴合已写内容） */
+  progressText?: string
+  /** 既定事实（记忆，M10.5 联动） */
+  factsText?: string
 }
 
 /** injection=always 词条的注入文本（复用章节画布的词条拼接） */
@@ -107,6 +111,8 @@ function contextBlocks(ctx: PlotGenContext): string[] {
   const layout = layoutText(ctx.layout)
   if (layout) blocks.push(`【分卷大纲】\n${layout}`)
   if (ctx.wikiText) blocks.push(`【本书设定（必须遵守，不得写错名称与属性）】\n${ctx.wikiText}`)
+  if (ctx.progressText) blocks.push(`【已写进度（事件走向须与之衔接，不得推翻已写内容）】\n${ctx.progressText}`)
+  if (ctx.factsText) blocks.push(`【既定事实（此前章节已确立，必须遵守不得矛盾）】\n${ctx.factsText}`)
   return blocks
 }
 

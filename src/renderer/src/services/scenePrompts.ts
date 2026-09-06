@@ -46,13 +46,15 @@ function sceneContextBlock(
   chapterTitle: string,
   chapterSummary: string,
   scenes: Scene[],
-  wikiText: string
+  wikiText: string,
+  plotText?: string
 ): string[] {
   const blocks: string[] = [`当前章节：${chapterTitle}`]
   if (chapterSummary.trim()) blocks.push(`章节概要：${chapterSummary}`)
   if (scenes.length)
     blocks.push(`已有场景（按叙事顺序）：\n${scenes.map(sceneLine).join('\n')}`)
   if (wikiText) blocks.push(`本章关联设定（必须遵守，不得写错）：\n${wikiText}`)
+  if (plotText) blocks.push(`全书剧情主线（场景安排须遵守其因果与顺序，不得跳过或推翻）：\n${plotText}`)
   return blocks
 }
 
@@ -76,11 +78,13 @@ export interface SceneGenParams {
   wikiText: string
   /** 用户补充指令 */
   instruction?: string
+  /** 全书剧情事件链（M10.5 联动，可选注入） */
+  plotText?: string
 }
 
 /** 按模式构造场景生成消息 */
 export function buildSceneGenMessages(mode: SceneGenMode, p: SceneGenParams): ChatMessage[] {
-  const ctx = sceneContextBlock(p.chapterTitle, p.chapterSummary, p.scenes, p.wikiText)
+  const ctx = sceneContextBlock(p.chapterTitle, p.chapterSummary, p.scenes, p.wikiText, p.plotText)
   const tail = `${p.instruction ? `补充要求：${p.instruction}` : ''}\n${SCENE_JSON_SPEC}`
   let task: string
   switch (mode) {

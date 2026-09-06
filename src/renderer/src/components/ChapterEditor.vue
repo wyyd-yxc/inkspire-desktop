@@ -151,12 +151,51 @@ async function ensureMemoryLoaded(): Promise<void> {
   await memoryLoadingPromise
 }
 
+// ---------------- 剧情事件链注入（M10.5 联动，与 wiki/memory 同款三件套） ----------------
+
+/** 剧情事件链注入预算（字符） */
+const PLOT_INJECT_LIMIT = 1000
+
+const plotCache = ref<{ events: string }>({})
+let plotLoadingPromise: Promise<void> = Promise.resolve()
+let plotLoadSeq = 0
+
+/** 加载该书剧情事件（按画布 x 排序拼链），写作走向遵守其因果顺序 */
+async function loadPlot(bookId: string): Promise<void> {
+  if (!isElectron) return
+  const mySeq = ++plotLoadSeq
+  plotCache.value = {}
+  try {
+    const res = await window.api.plot.list(bookId)
+    if (mySeq !== plotLoadSeq) return
+    if (!res.ok) return
+    const lines = [...res.data]
+      .sort((a, b) => a.posX - b.posX)
+      .map((e) => `- ${e.title}：${e.description.slice(0, 60) || '（无描述）'}`)
+    const out: string[] = []
+    let budget = PLOT_INJECT_LIMIT
+    for (const line of lines) {
+      if (line.length > budget) break
+      out.push(line)
+      budget -= line.length
+    }
+    plotCache.value = { events: out.join('\n') }
+  } catch (err) {
+    console.warn('[ChapterEditor] 剧情事件加载失败:', err)
+  }
+}
+
+async function ensurePlotLoaded(): Promise<void> {
+  await plotLoadingPromise
+}
+
 watch(
   () => props.bookId,
   (id) => {
     if (id) {
       wikiLoadingPromise = loadWiki(id)
       memoryLoadingPromise = loadMemory(id)
+      plotLoadingPromise = loadPlot(id)
     }
   },
   { immediate: true }
@@ -165,6 +204,7 @@ watch(
 onBeforeUnmount(() => {
   wikiLoadSeq++ // 组件销毁后到达的加载结果直接作废
   memoryLoadSeq++
+  plotLoadSeq++
 })
 
 /** 按当前章过滤拼装注入文本 */
@@ -243,7 +283,7 @@ function aiTextToHtml(text: string): string {
 /** 划词目标（发起划词操作时的选区快照，含前后文供 AI 无缝衔接） */
 let selectionTarget: (SelectionContext & { from: number; to: number }) | null = null
 
-/** 组装写作上下文（前文 = 当前正文纯文本；含创世台设定+百科词条注入 AI 提示词） */
+/** 组装写作上下文（前文 = 当前正文纯文本；含创世台设定+百科词条+记忆+剧情事件链注入 AI 提示词） */
 function writingContext() {
   return {
     book: props.book,
@@ -251,7 +291,8 @@ function writingContext() {
     contextTail: editor.value?.getText() ?? '',
     genesis: genesisCache.value,
     wiki: wikiCache.value.entries ? wikiCache.value : undefined,
-    memory: memoryCache.value.facts ? memoryCache.value : undefined
+    memory: memoryCache.value.facts ? memoryCache.value : undefined,
+    plot: plotCache.value.events ? plotCache.value : undefined
   }
 }
 
@@ -267,6 +308,7 @@ async function runGeneration(kind: PanelKind): Promise<void> {
   await ensureGenesisLoaded()
   await ensureWikiLoaded()
   await ensureMemoryLoaded()
+  await ensurePlotLoaded()
   const mySeq = ++generationSeq
   panelKind.value = kind
   panelVisible.value = true

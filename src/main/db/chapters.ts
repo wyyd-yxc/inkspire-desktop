@@ -5,7 +5,7 @@
 import { randomUUID } from 'node:crypto'
 import type { Database } from 'better-sqlite3'
 import { getDb } from './database'
-import type { Chapter, CreateChapterInput, UpdateChapterInput } from '../../shared/chapter.types'
+import type { Chapter, ChapterMeta, CreateChapterInput, UpdateChapterInput } from '../../shared/chapter.types'
 
 interface ChapterRow {
   id: string
@@ -41,6 +41,33 @@ export function listChapters(bookId: string): Chapter[] {
   return (
     d.prepare('SELECT * FROM chapters WHERE book_id = ? ORDER BY sort_order ASC').all(bookId) as ChapterRow[]
   ).map(toChapter)
+}
+
+/** 轻量章节列表（不含 content 全文；联动同步变更检测/剧情上下文用，M10.5） */
+export function listChapterMetas(bookId: string): ChapterMeta[] {
+  const d: Database = getDb()
+  return (
+    d
+      .prepare(
+        `SELECT id, title, summary, sort_order, word_count, updated_at
+         FROM chapters WHERE book_id = ? ORDER BY sort_order ASC`
+      )
+      .all(bookId) as Array<{
+      id: string
+      title: string
+      summary: string
+      sort_order: number
+      word_count: number
+      updated_at: string
+    }>
+  ).map((r) => ({
+    id: r.id,
+    title: r.title,
+    summary: r.summary,
+    sortOrder: r.sort_order,
+    wordCount: r.word_count,
+    updatedAt: r.updated_at
+  }))
 }
 
 export function getChapter(id: string): Chapter | undefined {

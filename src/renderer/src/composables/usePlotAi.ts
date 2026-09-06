@@ -21,6 +21,9 @@ import {
   type PlotDirectionDraft,
   type PlotGenStartPayload
 } from '../services/plotPrompts'
+import { buildFactsText, buildProgressText } from '../services/syncService'
+import type { ChapterMeta } from '../../../shared/chapter.types'
+import type { Memory } from '../../../shared/memory.types'
 import type { useToast } from './useToast'
 
 export type { PlotGenStartPayload }
@@ -60,6 +63,32 @@ export function usePlotAi(deps: {
   const genesisLayout = ref<Step4Layout | null>(null)
   let genesisLoaded = false
 
+  // ---- M10.5 联动：已写进度/既定事实（打开弹窗时刷新；生成时注入） ----
+  const syncInfo = ref('')
+  let progressText = ''
+  let factsText = ''
+
+  /** 拉取章节元数据与记忆，拼装联动上下文与弹窗信息行 */
+  async function refreshSyncContext(): Promise<void> {
+    if (!bookId.value) return
+    try {
+      const [metaRes, memRes] = await Promise.all([
+        window.api.chapters.listMeta(bookId.value),
+        window.api.memories.list(bookId.value)
+      ])
+      const metas: ChapterMeta[] = metaRes.ok ? metaRes.data : []
+      const memoList: Memory[] = memRes.ok ? memRes.data : []
+      progressText = buildProgressText(metas)
+      factsText = buildFactsText(memoList)
+      const written = metas.filter((m) => m.wordCount > 0).length
+      syncInfo.value = `已联动：${written} 章进度 · ${memoList.length} 条记忆 · ${
+        wikiEntries.value.filter((w) => w.injection === 'always').length
+      } 条常驻设定`
+    } catch {
+      syncInfo.value = ''
+    }
+  }
+
   const aiModeLabel = computed(
     () => ({ init: 'AI 初始化事件链', extend: 'AI 向后延伸', diverge: 'AI 分歧推演' })[aiMode.value]
   )
@@ -97,6 +126,7 @@ export function usePlotAi(deps: {
     }
     aiMode.value = mode
     void ensureGenesisLoaded()
+    void refreshSyncContext()
     aiDialogVisible.value = true
   }
 
@@ -123,7 +153,9 @@ export function usePlotAi(deps: {
         book: book.value ?? { title: '', genre: '', description: '' },
         soul: genesisSoul.value,
         layout: genesisLayout.value,
-        wikiText: wikiAlwaysText(alwaysIds, wikiEntries.value)
+        wikiText: wikiAlwaysText(alwaysIds, wikiEntries.value),
+        progressText,
+        factsText
       }
       const messages =
         mode === 'init'
@@ -338,6 +370,7 @@ export function usePlotAi(deps: {
     genAnchor,
     aiModeLabel,
     aiModeHint,
+    syncInfo,
     openAiDialog,
     startPlotGen,
     stopEverything,

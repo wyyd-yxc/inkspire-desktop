@@ -21,6 +21,16 @@ export interface Chapter {
   updatedAt: string
 }
 
+/** 章节轻量元数据（不含 content 全文；联动同步/上下文检测用，M10.5） */
+export interface ChapterMeta {
+  id: string
+  title: string
+  summary: string
+  sortOrder: number
+  wordCount: number
+  updatedAt: string
+}
+
 export interface CreateChapterInput {
   bookId: string
   title?: string

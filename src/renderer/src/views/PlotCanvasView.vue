@@ -76,6 +76,7 @@ const {
   genAnchor,
   aiModeLabel,
   aiModeHint,
+  syncInfo,
   openAiDialog,
   startPlotGen,
   stopEverything,
@@ -358,6 +359,7 @@ onMounted(() => void loadAll())
       :mode-label="aiModeLabel"
       :hint="aiModeHint"
       :busy="isBusy"
+      :context-info="syncInfo"
       @start="startPlotGen"
       @close="aiDialogVisible = false"
     />

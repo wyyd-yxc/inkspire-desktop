@@ -12,8 +12,10 @@ import '@vue-flow/core/dist/theme-default.css'
 import type { Book } from '../../../shared/book.types'
 import type { Chapter } from '../../../shared/chapter.types'
 import type { Scene, SceneGenMode, SceneStatus, SceneEdge, SceneEdgeType } from '../../../shared/canvas.types'
+import type { PlotEvent } from '../../../shared/plot.types'
 import type { WikiEntry } from '../../../shared/wiki.types'
 import { isElectron } from '../services/books'
+import { buildPlotChainText } from '../services/syncService'
 import { useToast } from '@/composables/useToast'
 import {
   buildSceneGenMessages,
@@ -36,6 +38,7 @@ const book = ref<Pick<Book, 'title' | 'genre' | 'description'> | null>(null)
 const chapter = ref<Chapter | null>(null)
 const scenes = ref<Scene[]>([])
 const wikiEntries = ref<WikiEntry[]>([])
+const plotEvents = ref<PlotEvent[]>([])
 const loading = ref(true)
 
 const { fitView } = useVueFlow()
@@ -114,23 +117,26 @@ async function loadAll(): Promise<void> {
     return
   }
   try {
-    const [booksRes, chaptersRes, scenesRes, wikiRes, edgeRes] = await Promise.all([
+    const [booksRes, chaptersRes, scenesRes, wikiRes, edgeRes, plotRes] = await Promise.all([
       window.api.books.list(),
       window.api.chapters.list(bookId.value),
       window.api.scenes.list(chapterId.value),
       window.api.wiki.list(bookId.value),
-      window.api.sceneEdges.list(chapterId.value)
+      window.api.sceneEdges.list(chapterId.value),
+      window.api.plot.list(bookId.value)
     ])
     if (!booksRes.ok) throw new Error(booksRes.error)
     if (!chaptersRes.ok) throw new Error(chaptersRes.error)
     if (!scenesRes.ok) throw new Error(scenesRes.error)
     if (!wikiRes.ok) throw new Error(wikiRes.error)
     if (!edgeRes.ok) throw new Error(edgeRes.error)
+    if (!plotRes.ok) throw new Error(plotRes.error)
     book.value = booksRes.data.find((b) => b.id === bookId.value) ?? null
     chapter.value = chaptersRes.data.find((c) => c.id === chapterId.value) ?? null
     scenes.value = scenesRes.data
     wikiEntries.value = wikiRes.data
     sceneEdges.value = edgeRes.data
+    plotEvents.value = plotRes.data
     setTimeout(() => void fitView({ padding: 0.2, maxZoom: 1 }), 120)
   } catch (err) {
     toast.error(err instanceof Error ? err.message : '加载失败')
@@ -418,7 +424,8 @@ async function startSceneGen(): Promise<void> {
       anchorScene: anchor ?? undefined,
       appendCount: appendCount.value,
       wikiText,
-      instruction: aiInstruction.value
+      instruction: aiInstruction.value,
+      plotText: buildPlotChainText(plotEvents.value)
     })
     await generateWriting(messages, {
       onChunk: (t) => aiPanel.value?.append(t),

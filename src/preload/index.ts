@@ -16,6 +16,7 @@ import type {
 } from '../shared/ai.types'
 import type {
   Chapter,
+  ChapterMeta,
   CreateChapterInput,
   UpdateChapterInput
 } from '../shared/chapter.types'
@@ -73,6 +74,8 @@ const api = {
   chapters: {
     list: (bookId: string): Promise<IpcResult<Chapter[]>> =>
       ipcRenderer.invoke('chapters:list', bookId),
+    listMeta: (bookId: string): Promise<IpcResult<ChapterMeta[]>> =>
+      ipcRenderer.invoke('chapters:list-meta', bookId),
     create: (input: CreateChapterInput): Promise<IpcResult<Chapter>> =>
       ipcRenderer.invoke('chapters:create', input),
     update: (id: string, input: UpdateChapterInput): Promise<IpcResult<Chapter>> =>
