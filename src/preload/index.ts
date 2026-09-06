@@ -40,6 +40,14 @@ import type {
   UpdateSceneEdgeInput
 } from '../shared/canvas.types'
 import type {
+  CreatePlotEdgeInput,
+  CreatePlotEventInput,
+  PlotEdge,
+  PlotEvent,
+  UpdatePlotEdgeInput,
+  UpdatePlotEventInput
+} from '../shared/plot.types'
+import type {
   CreateMemoryInput,
   Memory,
   UpdateMemoryInput
@@ -126,6 +134,30 @@ const api = {
       ipcRenderer.invoke('scene-edges:update', id, input),
     remove: (id: string): Promise<IpcResult<boolean>> =>
       ipcRenderer.invoke('scene-edges:remove', id)
+  },
+
+  /** 剧情画布事件连线 */
+  plotEdges: {
+    list: (bookId: string): Promise<IpcResult<PlotEdge[]>> =>
+      ipcRenderer.invoke('plot-edges:list', bookId),
+    create: (input: CreatePlotEdgeInput): Promise<IpcResult<PlotEdge>> =>
+      ipcRenderer.invoke('plot-edges:create', input),
+    update: (id: string, input: UpdatePlotEdgeInput): Promise<IpcResult<PlotEdge>> =>
+      ipcRenderer.invoke('plot-edges:update', id, input),
+    remove: (id: string): Promise<IpcResult<boolean>> =>
+      ipcRenderer.invoke('plot-edges:remove', id)
+  },
+
+  /** 剧情画布事件 */
+  plot: {
+    list: (bookId: string, parentId?: string): Promise<IpcResult<PlotEvent[]>> =>
+      ipcRenderer.invoke('plot:list', bookId, parentId),
+    create: (input: CreatePlotEventInput): Promise<IpcResult<PlotEvent>> =>
+      ipcRenderer.invoke('plot:create', input),
+    update: (id: string, input: UpdatePlotEventInput): Promise<IpcResult<PlotEvent>> =>
+      ipcRenderer.invoke('plot:update', id, input),
+    remove: (id: string): Promise<IpcResult<boolean>> =>
+      ipcRenderer.invoke('plot:remove', id)
   },
 
   /** 作品记忆（事实层） */

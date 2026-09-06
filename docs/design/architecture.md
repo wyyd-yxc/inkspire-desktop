@@ -62,8 +62,8 @@ interface AiProvider {
 /book/:id/genesis → 创世台（五步向导）
 /book/:id/write   → 正文工作台（左章节树 + 中编辑器 + 右侧栏）
 /book/:id/wiki    → 万物百科
-/book/:id/canvas/chapter/:chapterId → 章节画布
-/book/:id/canvas/plot               → 剧情画布
+/book/:bookId/canvas/:chapterId → 章节画布
+/book/:bookId/plot              → 剧情画布
 ```
 
 主题：`styles/theme.css` 定义 CSS 变量（浅紫罗兰风：淡紫背景 #f5f3fa、罗兰紫主色 #6c5ce7、白色圆角卡片、柔和阴影，依据 refs/ 官网截图校准）；预留 `[data-theme=dark]`。

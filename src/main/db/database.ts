@@ -152,6 +152,34 @@ const MIGRATIONS: Array<{ version: number; sql: string }> = [
         created_at TEXT NOT NULL
       );
       CREATE INDEX IF NOT EXISTS idx_assistant_book ON assistant_messages(book_id, created_at);`
+  },
+  {
+    version: 10,
+    sql: `
+      CREATE TABLE IF NOT EXISTS plot_events (
+        id          TEXT PRIMARY KEY,
+        book_id     TEXT NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+        title       TEXT NOT NULL DEFAULT '',
+        description TEXT NOT NULL DEFAULT '',
+        tags        TEXT NOT NULL DEFAULT '[]',
+        pos_x       REAL NOT NULL DEFAULT 0,
+        pos_y       REAL NOT NULL DEFAULT 0,
+        parent_id   TEXT,
+        wiki_refs   TEXT NOT NULL DEFAULT '[]',
+        created_at  TEXT NOT NULL,
+        updated_at  TEXT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_plot_events_book ON plot_events(book_id);
+      CREATE TABLE IF NOT EXISTS plot_edges (
+        id         TEXT PRIMARY KEY,
+        book_id    TEXT NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+        source_id  TEXT NOT NULL REFERENCES plot_events(id) ON DELETE CASCADE,
+        target_id  TEXT NOT NULL REFERENCES plot_events(id) ON DELETE CASCADE,
+        type       TEXT NOT NULL DEFAULT 'main',
+        label      TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_plot_edges_book ON plot_edges(book_id);`
   }
 ]
 

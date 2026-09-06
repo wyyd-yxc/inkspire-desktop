@@ -14,6 +14,7 @@ import { registerGenesisIpc } from './ipc/genesis'
 import { registerWikiIpc } from './ipc/wiki'
 import { registerSceneIpc } from './ipc/scenes'
 import { registerSceneEdgeIpc } from './ipc/sceneEdges'
+import { registerPlotIpc } from './ipc/plot'
 import { registerMemoryIpc } from './ipc/memories'
 import { registerAssistantIpc } from './ipc/assistant'
 
@@ -93,6 +94,7 @@ registerGenesisIpc()
 registerWikiIpc()
 registerSceneIpc()
 registerSceneEdgeIpc()
+registerPlotIpc()
 registerMemoryIpc()
 registerAssistantIpc()
 
