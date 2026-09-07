@@ -110,18 +110,24 @@ export function parseWikiGenerate(
  * 创世台造世内容导入为词条（幂等：跳过已导入标记的段落）。
  * 「主角设定」→ 角色词条；「世界法则」→ 背景词条（injection=always 便于 AI 写作携带）。
  */
+
+/** 实体名提取（M10.6 治本）：取首个分隔符前的自然名称段（≤20 字）；
+ *  无分隔符或为空时回退默认名——防止整段设定文本被当成词条名（历史病态「林昭：青云宗弃徒…」的根因） */
+export function extractEntityName(raw: string, fallback: string, max = 20): string {
+  const line = raw.split('\n').find((l) => l.trim()) ?? ''
+  const seg = line.split(/[：:，,。；;、！？!?]/).map((s) => s.trim()).find((s) => s.length > 0)
+  if (!seg || seg.length > max) return fallback
+  return seg
+}
+
 export function genesisToWorldEntries(
   world: Step3World
 ): Array<Pick<WikiEntry, 'type' | 'name' | 'summary' | 'content' | 'systemRole' | 'injection'>> {
-  const firstLine = (text: string): string => {
-    const line = text.split('\n').find((l) => l.trim())
-    return (line ?? '').replace(/^[:：\s]*/, '').slice(0, 60)
-  }
   const entries: Array<Pick<WikiEntry, 'type' | 'name' | 'summary' | 'content' | 'systemRole' | 'injection'>> = []
   if (world.protagonist.trim()) {
     entries.push({
       type: 'character',
-      name: firstLine(world.protagonist) || '主角',
+      name: extractEntityName(world.protagonist, '主角'),
       summary: '（导入自创世台·主角设定）',
       content: world.protagonist,
       systemRole: 'protagonist',
@@ -131,7 +137,7 @@ export function genesisToWorldEntries(
   if (world.worldRules.trim()) {
     entries.push({
       type: 'lore',
-      name: firstLine(world.worldRules) || '世界法则',
+      name: extractEntityName(world.worldRules, '世界规则'),
       summary: '（导入自创世台·世界法则）',
       content: world.worldRules,
       systemRole: 'rule',
@@ -139,6 +145,64 @@ export function genesisToWorldEntries(
     })
   }
   return entries
+}
+
+// ---- 存量词条近似合并建议（M10.6 整理词条：AI 近似组） ----
+
+/** 合并建议（AI 输出解析产物） */
+export interface WikiMergeSuggestion {
+  keepId: string
+  mergeIds: string[]
+}
+
+/** 整理词条的 AI 近似合并提示词：找「同一实体/事物的不同称呼」组 */
+export function buildWikiDedupMessages(
+  entries: Array<{ id: string; type: string; typeName: string; name: string; summary: string }>
+): ChatMessage[] {
+  const list = entries
+    .map((e) => `- [${e.id}] ${e.typeName}｜${e.name}｜${e.summary.slice(0, 40)}`)
+    .join('\n')
+  return [
+    {
+      role: 'system',
+      content:
+        '你是百科数据整理助手，擅长判断哪些词条描述的是同一个实体或同一事物（同一人物的不同称呼、同一物品的不同叫法、同一规则的宽窄两种表述）。'
+    },
+    {
+      role: 'user',
+      content: `以下是小说百科词条清单。请找出描述**同一实体**的词条组（例如「韦正铭」与「韦正铭舰长」、「银质徽章」与「苏敏遗留徽章」）。
+注意：只是相关或从属的不同实体（如「玄铁令」与「玄铁令分半之秘」是两个不同事物）不要合并；拿不准的不要合并。
+严格输出如下 JSON 数组（不要任何额外文字、不要 markdown 代码块）：
+[{ "keepId": "保留词条的 id", "mergeIds": ["要并入并删除的词条 id", "..."] }]
+每组的 keepId 选名称更简洁通用的那条；没有可合并组时输出 []。
+
+词条清单：
+${list}`
+    }
+  ]
+}
+
+/** 解析合并建议（宽容 JSON + id 白名单过滤 + 结构清洗） */
+export function parseWikiDedup(
+  text: string,
+  validIds: Set<string>
+): WikiMergeSuggestion[] {
+  const first = text.indexOf('[')
+  const last = text.lastIndexOf(']')
+  if (first < 0 || last <= first) return []
+  const parsed = lenientParse<unknown>(text.slice(first, last + 1))
+  if (!Array.isArray(parsed)) return []
+  const out: WikiMergeSuggestion[] = []
+  for (const g of parsed) {
+    const o = g as Record<string, unknown>
+    const keepId = String(o.keepId ?? '')
+    const mergeIds = Array.isArray(o.mergeIds) ? o.mergeIds.map(String) : []
+    if (!validIds.has(keepId) || mergeIds.length === 0) continue
+    const merges = [...new Set(mergeIds)].filter((id) => id !== keepId && validIds.has(id))
+    if (merges.length === 0) continue
+    out.push({ keepId, mergeIds: merges })
+  }
+  return out.slice(0, 8)
 }
 
 // ---- 正文提取词条候选（M10.5 联动同步：正文→百科） ----

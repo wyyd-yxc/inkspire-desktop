@@ -22,6 +22,8 @@ import {
 import { isElectron } from '../services/books'
 import { useToast } from '@/composables/useToast'
 import { useWikiSync } from '@/composables/useWikiSync'
+import { useWikiCleanup } from '@/composables/useWikiCleanup'
+import { isWikiNameDup } from '../services/syncService'
 import { buildWikiGenerateMessages, genesisToWorldEntries, parseWikiGenerate } from '../services/wikiPrompts'
 import { generateWriting } from '../services/aiWriting'
 import AiWritingPanel from '@/components/AiWritingPanel.vue'
@@ -116,6 +118,18 @@ const {
   onCandidatesConfirm
 } = useWikiSync({ bookId, book, chapters, wikiEntries: entries, toast })
 
+// 词条整理（M10.6：病态名修复/近似合并/引用转移，独立面板实例与提取面板并存）
+const {
+  cleanupRunning,
+  candidateDialogVisible: mergeDialogVisible,
+  candidateTitle: mergeTitle,
+  candidateDescription: mergeDescription,
+  candidateItems: mergeItems,
+  runCleanup,
+  confirmMerges,
+  stopEverything: stopCleanup
+} = useWikiCleanup({ bookId, wikiEntries: entries, chapters, toast })
+
 async function loadAll(): Promise<void> {
   if (!isElectron) {
     loading.value = false
@@ -171,7 +185,7 @@ function removeAttribute(i: number): void {
   form.attributes.splice(i, 1)
 }
 
-/** 保存（新建或更新）。Vue 响应式对象过 IPC 必须 toRaw+深拷贝（踩坑 #11） */
+/** 保存（新建或更新）。保存前 checkDup 预检（M10.6）；Vue 响应式对象过 IPC 必须 toRaw+深拷贝（踩坑 #11） */
 async function save(): Promise<void> {
   if (!form.name.trim()) {
     toast.error('词条名称不能为空')
@@ -179,6 +193,16 @@ async function save(): Promise<void> {
   }
   saving.value = true
   try {
+    const dup = await window.api.wiki.checkDup(
+      bookId.value,
+      form.name,
+      form.type,
+      editing.value?.id
+    )
+    if (dup.ok && dup.data.duplicate) {
+      toast.error(`已存在重复词条「${dup.data.matchedName}」，请换一个名称或直接编辑那条`)
+      return
+    }
     const plain = JSON.parse(JSON.stringify({
       type: form.type,
       name: form.name,
@@ -291,10 +315,10 @@ async function importFromGenesis(): Promise<void> {
     }
     const world = step3Rec.data as { protagonist: string; worldRules: string }
     const candidates = genesisToWorldEntries(world)
-    // 幂等：按 name 跳过已存在词条
+    // 幂等：M10.6 统一 isWikiNameDup（与创世台推送入口同强度）
     let created = 0
     for (const c of candidates) {
-      if (entries.value.some((w) => w.name === c.name)) continue
+      if (entries.value.some((w) => isWikiNameDup(c.name, c.type, w.name, w.type))) continue
       const res = await window.api.wiki.create({
         bookId: bookId.value,
         type: c.type,
@@ -373,6 +397,12 @@ onMounted(() => void loadAll())
           class="rounded-lg border border-ink-primary px-3 py-1.5 text-xs text-ink-primary transition-colors hover:bg-ink-primary-soft"
           @click="openAiDialog"
         >✦ AI 生成词条</button>
+        <button
+          class="rounded-lg border border-ink-border px-3 py-1.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary disabled:opacity-50"
+          :disabled="cleanupRunning"
+          title="修复病态词条名、合并同一实体的重复词条（引用自动转移）"
+          @click="runCleanup"
+        >{{ cleanupRunning ? '整理中…' : '🧹 整理词条' }}</button>
       </div>
     </aside>
 
@@ -583,6 +613,15 @@ onMounted(() => void loadAll())
       confirm-text="入库所选项"
       @confirm="onCandidatesConfirm"
       @close="candidateDialogVisible = false"
+    />
+    <SyncCandidateDialog
+      :visible="mergeDialogVisible"
+      :title="mergeTitle"
+      :description="mergeDescription"
+      :items="mergeItems"
+      confirm-text="合并所选项"
+      @confirm="confirmMerges"
+      @close="mergeDialogVisible = false; stopCleanup()"
     />
   </div>
 </template>

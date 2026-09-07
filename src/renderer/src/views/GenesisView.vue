@@ -27,7 +27,7 @@ import {
   parseSoulAssist,
   parseWorldColdStart
 } from '../services/genesisPrompts'
-import { normText } from '../services/syncService'
+import { isWikiNameDup } from '../services/syncService'
 import AiWritingPanel from '@/components/AiWritingPanel.vue'
 
 const route = useRoute()
@@ -247,7 +247,7 @@ async function acceptWorldColdStart(text: string): Promise<void> {
   }
 }
 
-// ---- 推送设定到百科（M10.5 管道 E；与百科页「从创世台导入」同一映射，按 name 幂等） ----
+// ---- 推送设定到百科（M10.5 管道 E；与百科页「从创世台导入」同一映射，M10.6 统一 isWikiNameDup 幂等） ----
 const pushingWiki = ref(false)
 
 async function pushWorldToWiki(): Promise<void> {
@@ -256,13 +256,13 @@ async function pushWorldToWiki(): Promise<void> {
   try {
     const wikiRes = await window.api.wiki.list(bookId.value)
     if (!wikiRes.ok) throw new Error(wikiRes.error)
-    const existing = new Set(wikiRes.data.map((w) => normText(w.name)))
+    const existing = wikiRes.data
     let created = 0
     for (const entry of genesisToWorldEntries(step3.value)) {
-      if (existing.has(normText(entry.name))) continue
+      if (existing.some((w) => isWikiNameDup(entry.name, entry.type, w.name, w.type))) continue
       const res = await window.api.wiki.create({ bookId: bookId.value, ...entry })
       if (!res.ok) throw new Error(res.error)
-      existing.add(normText(entry.name))
+      existing.push(res.data)
       created++
     }
     toast.success(created > 0 ? `已推送 ${created} 个设定词条到百科` : '设定词条已存在，无需推送')

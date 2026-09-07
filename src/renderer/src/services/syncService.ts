@@ -16,6 +16,24 @@ export function normText(s: string): string {
     .replace(/[。，、！？…；：""''「」『』（）,.!?;:()[\]{}'"\-—~·]/g, '')
 }
 
+/** 实体名重复判定（M10.6 百科词条去重）：规范化全等（跨类型也算）或同类型下
+ *  短名是长名的前缀（≥2 规范化字符，如「韦正铭」vs「韦正铭舰长」）。
+ *  主进程 main/db/wiki.ts 内有同款实现（跨进程不可共享运行时，改动需两处同步） */
+export function isWikiNameDup(
+  aName: string,
+  aType: string,
+  bName: string,
+  bType: string
+): boolean {
+  const na = normText(aName)
+  const nb = normText(bName)
+  if (!na || !nb) return false
+  if (na === nb) return true
+  if (aType !== bType) return false
+  const [short, long] = na.length <= nb.length ? [na, nb] : [nb, na]
+  return short.length >= 2 && long.startsWith(short)
+}
+
 /** 抽取水位：chapterId → 抽取时的 wordCount 快照 */
 export type SyncWatermark = Record<string, number>
 

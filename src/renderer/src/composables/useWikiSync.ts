@@ -12,13 +12,14 @@ import type { StreamSession } from '../services/ai'
 import { generateWriting } from '../services/aiWriting'
 import {
   buildWikiExtractMessages,
+  extractEntityName,
   parseWikiExtract,
   type WikiExtractCandidate
 } from '../services/wikiPrompts'
 import {
   changedChapters,
   getWatermark,
-  normText,
+  isWikiNameDup,
   setWatermarkChapter,
   WIKI_WATERMARK_KEY,
   type SyncWatermark
@@ -29,9 +30,10 @@ import type { useToast } from './useToast'
 /** 单轮提取章节上限（手动触发；自动同步另有 3 章上限） */
 const MAX_CHAPTERS_PER_RUN = 20
 
-/** 已有词条清单文本（注入提取 prompt 防同名/同义；useAutoSync 静默档复用） */
-export function buildExistingWikiText(entries: WikiEntry[], limit = 800): string {
-  const lines = entries.map((w) => `- ${WIKI_TYPE_LABELS[w.type]}｜${w.name}`)
+/** 已有词条清单文本（注入提取 prompt 防同名/同义；useAutoSync 静默档复用）。
+ *  name 先经实体名规范化（M10.6：病态长名「林昭：青云宗弃徒…」会让 AI 无法识别与「林昭」重复） */
+export function buildExistingWikiText(entries: WikiEntry[], limit = 1200): string {
+  const lines = entries.map((w) => `- ${WIKI_TYPE_LABELS[w.type]}｜${extractEntityName(w.name, w.name.slice(0, 20))}`)
   const out: string[] = []
   let used = 0
   for (const line of lines) {
@@ -157,22 +159,26 @@ export function useWikiSync(deps: {
     }
   }
 
-  /** 候选按名称规范化去重（同名/同义跳过）→ 打开确认面板 */
+  /** 候选按名称去重（M10.6：isWikiNameDup 全等+同类型前缀包含）→ 打开确认面板 */
   function handleParsed(
     list: Array<WikiExtractCandidate & { chapterId: string; chapterNo: number }>,
     chapterIds: string[]
   ): void {
-    const existingNorm = new Set(wikiEntries.value.map((w) => normText(w.name)))
-    const batchSeen = new Set<string>()
+    const dupAgainst = (name: string, type: string): boolean =>
+      wikiEntries.value.some((w) => isWikiNameDup(name, type, w.name, w.type))
+    const batchSeen: Array<{ name: string; type: string }> = []
     let dupCount = 0
     const unique: Array<WikiExtractCandidate & { chapterId: string; chapterNo: number }> = []
     for (const c of list) {
-      const n = normText(c.name)
-      if (!n || existingNorm.has(n) || batchSeen.has(n)) {
+      if (
+        !c.name.trim() ||
+        dupAgainst(c.name, c.type) ||
+        batchSeen.some((b) => isWikiNameDup(c.name, c.type, b.name, b.type))
+      ) {
         dupCount++
         continue
       }
-      batchSeen.add(n)
+      batchSeen.push({ name: c.name, type: c.type })
       unique.push(c)
     }
     if (unique.length === 0) {
@@ -200,14 +206,22 @@ export function useWikiSync(deps: {
     candidateDialogVisible.value = true
   }
 
-  /** 确认采纳：逐条入库（默认 manual），仅采纳了候选的章节推进水位 */
+  /** 确认采纳：逐条入库（默认 manual），入库前主进程 checkDup 复检（M10.6：防确认期间其它入口抢先入库），
+   *  仅采纳了候选的章节推进水位 */
   async function onCandidatesConfirm(checked: SyncCandidateItem[]): Promise<void> {
     let created = 0
+    let dupSkipped = 0
     const acceptedChapters = new Set<string>()
     try {
       for (const item of checked) {
         const c = pendingCreates.get(item.key)
         if (!c) continue
+        const dup = await window.api.wiki.checkDup(bookId(), c.name, c.type as WikiType)
+        if (res_ok(dup) && dup.data.duplicate) {
+          dupSkipped++
+          acceptedChapters.add(c.chapterId)
+          continue
+        }
         const res = await window.api.wiki.create({
           bookId: bookId(),
           type: c.type as WikiType,
@@ -221,12 +235,19 @@ export function useWikiSync(deps: {
         created++
       }
       await advanceWatermark(acceptedChapters)
-      toast.success(`已入库 ${created} 个词条（默认仅手动引用）`)
+      toast.success(
+        `已入库 ${created} 个词条（默认仅手动引用）` + (dupSkipped > 0 ? `，跳过 ${dupSkipped} 条重复` : '')
+      )
     } catch (err) {
       toast.error(err instanceof Error ? err.message : '入库失败')
     } finally {
       candidateDialogVisible.value = false
     }
+  }
+
+  /** IpcResult 收窄小工具（checkDup 的 data 可选） */
+  function res_ok<T>(r: { ok: boolean; data?: T }): r is { ok: true; data: T } {
+    return r.ok && r.data !== undefined
   }
 
   async function advanceWatermark(chapterIds: Set<string>): Promise<void> {

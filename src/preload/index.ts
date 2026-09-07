@@ -112,6 +112,13 @@ const api = {
   wiki: {
     list: (bookId: string): Promise<IpcResult<WikiEntry[]>> =>
       ipcRenderer.invoke('wiki:list', bookId),
+    checkDup: (
+      bookId: string,
+      name: string,
+      type: string,
+      excludeId?: string
+    ): Promise<IpcResult<{ duplicate: boolean; matchedName: string }>> =>
+      ipcRenderer.invoke('wiki:check-dup', bookId, name, type, excludeId),
     create: (input: CreateWikiInput): Promise<IpcResult<WikiEntry>> =>
       ipcRenderer.invoke('wiki:create', input),
     update: (id: string, input: UpdateWikiInput): Promise<IpcResult<WikiEntry>> =>

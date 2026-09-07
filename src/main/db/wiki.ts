@@ -75,9 +75,48 @@ export function getWikiEntry(id: string): WikiEntry | undefined {
   return row ? toEntry(row) : undefined
 }
 
+/** 实体名重复判定（M10.6）：与渲染层 syncService.isWikiNameDup 同款实现（跨进程不共享运行时，改动需两处同步） */
+function normNameDup(aName: string, aType: string, bName: string, bType: string): boolean {
+  const norm = (s: string): string =>
+    s
+      .toLowerCase()
+      .replace(/\s+/g, '')
+      .replace(/[。，、！？…；：""''「」『』（）,.!?;:()[\]{}'"\-—~·]/g, '')
+  const na = norm(aName)
+  const nb = norm(bName)
+  if (!na || !nb) return false
+  if (na === nb) return true
+  if (aType !== bType) return false
+  const [short, long] = na.length <= nb.length ? [na, nb] : [nb, na]
+  return short.length >= 2 && long.startsWith(short)
+}
+
+/** 查找与 (name,type) 重复的既有词条（M10.6 五入口统一查重的后端实现） */
+export function findDuplicate(
+  bookId: string,
+  name: string,
+  type: string,
+  excludeId?: string
+): { duplicate: boolean; matchedName: string } {
+  const d: Database = getDb()
+  const rows = d
+    .prepare('SELECT id, name, type FROM wiki_entries WHERE book_id = ?')
+    .all(bookId) as Array<{ id: string; name: string; type: string }>
+  for (const r of rows) {
+    if (excludeId && r.id === excludeId) continue
+    if (normNameDup(name, type, r.name, r.type)) {
+      return { duplicate: true, matchedName: r.name }
+    }
+  }
+  return { duplicate: false, matchedName: '' }
+}
+
 export function createWikiEntry(input: CreateWikiInput): WikiEntry {
   const name = input.name.trim()
   if (!name) throw new Error('词条名称不能为空')
+  // DAO 终极兜底查重（M10.6：任何渲染层入口漏检都不产生重复词条）
+  const dup = findDuplicate(input.bookId, name, input.type)
+  if (dup.duplicate) throw new Error(`已存在重复词条「${dup.matchedName}」`)
   const d: Database = getDb()
   const now = new Date().toISOString()
   const row: WikiRow = {
@@ -105,6 +144,13 @@ export function updateWikiEntry(id: string, input: UpdateWikiInput): WikiEntry {
   const existing = getWikiEntry(id)
   if (!existing) throw new Error('词条不存在')
   if (input.name !== undefined && !input.name.trim()) throw new Error('词条名称不能为空')
+  // 改名/改类型时的兜底查重（排除自身）
+  const nextType = input.type ?? existing.type
+  const nextName = input.name !== undefined ? input.name.trim() : existing.name
+  if (nextName !== existing.name || nextType !== existing.type) {
+    const dup = findDuplicate(existing.bookId, nextName, nextType, id)
+    if (dup.duplicate) throw new Error(`已存在重复词条「${dup.matchedName}」`)
+  }
 
   const next: WikiEntry = {
     ...existing,

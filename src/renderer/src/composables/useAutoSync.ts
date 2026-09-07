@@ -20,6 +20,7 @@ import {
 import {
   changedChapters,
   getWatermark,
+  isWikiNameDup,
   normText,
   setWatermarkChapter,
   MEMORY_WATERMARK_KEY,
@@ -248,12 +249,19 @@ async function silentSyncChapter(
         buildExistingWikiText(entries)
       )
     )
-    const existingNorm = new Set(entries.map((w) => normText(w.name)))
-    const batchSeen = new Set<string>()
+    // M10.6：isWikiNameDup（全等+同类型前缀包含），与手动路径同强度
+    const dupAgainst = (name: string, type: string): boolean =>
+      entries.some((w) => isWikiNameDup(name, type, w.name, w.type))
+    const batchSeen: Array<{ name: string; type: string }> = []
     for (const c of parseWikiExtract(out)) {
-      const n = normText(c.name)
-      if (!n || existingNorm.has(n) || batchSeen.has(n)) continue
-      batchSeen.add(n)
+      if (
+        !c.name.trim() ||
+        dupAgainst(c.name, c.type) ||
+        batchSeen.some((b) => isWikiNameDup(c.name, c.type, b.name, b.type))
+      ) {
+        continue
+      }
+      batchSeen.push({ name: c.name, type: c.type })
       const res = await window.api.wiki.create({
         bookId: change.book.id,
         type: c.type as WikiType,
