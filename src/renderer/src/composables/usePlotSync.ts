@@ -198,11 +198,13 @@ export function usePlotSync(deps: {
             acceptedChapters.add(chapterIdByNo(no))
             continue
           }
+          // tags 强制第一项为第N章（不信任 AI 输出的标签）
+          const safeTags = [`第${no}章`, ...p.tags.filter((t) => !String(t).startsWith('第'))].slice(0, 3)
           const res = await window.api.plot.create({
             bookId: bookId(),
             title: p.title,
             description: p.description,
-            tags: p.tags,
+            tags: safeTags,
             posX: 160 + col * 340,
             posY: 160 + row * 220
           })

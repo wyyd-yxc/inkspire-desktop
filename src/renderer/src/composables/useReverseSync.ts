@@ -22,7 +22,10 @@ interface ReverseEdit {
   targetId: string
   quote: string
   suggestion: string
-  /** 非正文目标的宿主上下文（chapterId 供场景定位） */
+  /** 确定性替换的旧/新值（应用时 quote 内只换这对值，AI suggestion 仅定位不参与改写——保证无关部分逐字节不变） */
+  oldValue: string
+  newValue: string
+  /** 非正文目标的宿主上下文（chapterId 供场景定位；plot 存字段名） */
   hostChapterId?: string
 }
 
@@ -31,11 +34,13 @@ function countWords(text: string): number {
   return text.replace(/\s/g, '').length
 }
 
-/** 正文 HTML 定点替换：只在文本节点内做子串替换（不动任何标签结构与无关段落） */
+/** 正文 HTML 定点替换（M10.7）：quote 校验通过后，该章文本节点内做 oldValue→newValue 的确定性替换。
+ *  逐文本节点替换保证段落结构与无关文字逐字节不变（跨段 quote 不会合并段落）。
+ *  语义：勾选一个 quote 即替换该章内该旧值的全部出现（改名语义本应如此）。 */
 function replaceInHtml(
   html: string,
-  quote: string,
-  suggestion: string
+  oldValue: string,
+  newValue: string
 ): { html: string; replaced: number } {
   const doc = new DOMParser().parseFromString(html, 'text/html')
   let replaced = 0
@@ -43,8 +48,8 @@ function replaceInHtml(
     for (const child of Array.from(node.childNodes)) {
       if (child.nodeType === Node.TEXT_NODE) {
         const t = child.textContent ?? ''
-        if (t.includes(quote)) {
-          child.textContent = t.split(quote).join(suggestion)
+        if (t.includes(oldValue)) {
+          child.textContent = t.split(oldValue).join(newValue)
           replaced++
         }
       } else if (child.nodeType === Node.ELEMENT_NODE) {
@@ -131,7 +136,9 @@ export function useReverseSync(deps: {
             kind: 'chapter',
             targetId: hit.chapterId,
             quote: hit.quote,
-            suggestion: hit.suggestion
+            suggestion: hit.suggestion,
+            oldValue,
+            newValue: entity.newValue
           })
           void ch
         }
@@ -145,7 +152,9 @@ export function useReverseSync(deps: {
             kind: 'memory',
             targetId: m.id,
             quote: oldValue,
-            suggestion: entity.newValue
+            suggestion: entity.newValue,
+            oldValue,
+            newValue: entity.newValue
           })
         }
       }
@@ -158,6 +167,8 @@ export function useReverseSync(deps: {
               targetId: p.id,
               quote: oldValue,
               suggestion: entity.newValue,
+              oldValue,
+              newValue: entity.newValue,
               hostChapterId: field
             })
           }
@@ -172,6 +183,8 @@ export function useReverseSync(deps: {
               targetId: sc.id,
               quote: oldValue,
               suggestion: entity.newValue,
+              oldValue,
+              newValue: entity.newValue,
               hostChapterId: ch.id
             })
           }
@@ -197,7 +210,7 @@ export function useReverseSync(deps: {
             source: `第${ch?.sortOrder ?? '?'}章 ${ch?.title ?? ''}` + (edits.length ? '' : ''),
             tag: '正文修订',
             oldText: e.quote,
-            newText: e.suggestion,
+            newText: e.quote.split(e.oldValue).join(e.newValue),
             checked: true
           }
         }
@@ -210,7 +223,7 @@ export function useReverseSync(deps: {
           source: label,
           tag: label,
           oldText: e.quote,
-          newText: e.suggestion,
+          newText: e.quote.split(e.oldValue).join(e.newValue),
           checked: true
         }
       })
@@ -241,7 +254,7 @@ export function useReverseSync(deps: {
             skipped++
             continue
           }
-          const { html, replaced } = replaceInHtml(res.data.content, edit.quote, edit.suggestion)
+          const { html, replaced } = replaceInHtml(res.data.content, edit.oldValue, edit.newValue)
           if (replaced === 0) {
             skipped++
             continue
