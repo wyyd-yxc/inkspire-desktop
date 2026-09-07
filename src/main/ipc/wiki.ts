@@ -20,6 +20,7 @@ export function registerWikiIpc(): void {
       if (typeof bookId !== 'string' || typeof name !== 'string' || typeof type !== 'string') {
         throw new Error('参数格式非法')
       }
+      if (excludeId !== undefined && typeof excludeId !== 'string') throw new Error('参数格式非法')
       return findDuplicate(bookId, name, type, excludeId)
     })
   )
