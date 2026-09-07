@@ -197,8 +197,11 @@ const MIGRATIONS: Array<{
       UPDATE books SET genre = '现实主义' WHERE genre IN ('都市', '言情');
       UPDATE books SET genre = '其他' WHERE genre IN ('游戏', '轻小说');`,
     migrate: (db) => {
+      // 表名白名单守卫（二轮审查低-4：防未来调用方传入未预期表名）
       const TAG_MAP: Record<string, string> = { 打斗: '对峙', 感情: '情感' }
+      const ALLOWED_TABLES = new Set(['plot_events', 'scenes'])
       const retag = db.transaction((table: string) => {
+        if (!ALLOWED_TABLES.has(table)) return
         const rows = db.prepare(`SELECT id, tags FROM ${table}`).all() as Array<{
           id: string
           tags: string
