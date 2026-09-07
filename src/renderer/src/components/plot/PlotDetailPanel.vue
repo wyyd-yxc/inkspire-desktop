@@ -109,9 +109,9 @@ function submit(): void {
               </span>
             </label>
             <div class="flex flex-col gap-1">
-              <span class="text-sm text-ink-text-secondary">挂接百科词条（AI 生成时参考设定）</span>
+              <span class="text-sm text-ink-text-secondary">挂接设定集词条（AI 生成时参考设定）</span>
               <p v-if="wikiEntries.length === 0" class="text-xs text-ink-text-muted">
-                百科还没有词条，可先去「百科」页创建
+                设定集还没有词条，可先去「设定集」页创建
               </p>
               <div class="flex flex-wrap gap-1.5">
                 <button

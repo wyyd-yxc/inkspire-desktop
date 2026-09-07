@@ -21,7 +21,7 @@ export interface WritingContext {
     soul?: Step2Soul
     rules?: Step4Layout['rules']
   }
-  /** 百科词条（injection=always 的设定，M6）：拼接好的注入文本 */
+  /** 设定集词条（injection=always 的设定，M6）：拼接好的注入文本 */
   wiki?: {
     entries: string
   }
@@ -69,7 +69,7 @@ function systemPrompt(ctx: WritingContext): string {
     if (r.styleNotes) rules.push(`写法要求：${r.styleNotes}`)
     if (rules.length) parts.push(`写作规则——${rules.join('；')}。`)
   }
-  // 百科词条注入（M6）：injection=always 的设定，AI 必须遵守不得写错
+  // 设定集词条注入（M6）：injection=always 的设定，AI 必须遵守不得写错
   if (ctx.wiki?.entries) {
     parts.push(`本书设定（必须严格遵守，不得写错名称与属性）：\n${ctx.wiki.entries}`)
   }

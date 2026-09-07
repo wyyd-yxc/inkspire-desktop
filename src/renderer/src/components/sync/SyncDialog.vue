@@ -56,7 +56,7 @@ function start(): void {
         <div class="flex flex-col gap-2">
           <label class="flex cursor-pointer items-center gap-2 rounded-lg border border-ink-border/60 px-3 py-2 text-sm hover:border-ink-primary/50">
             <input v-model="syncWiki" type="checkbox" />
-            <span class="flex-1">提取设定词条 → 百科</span>
+            <span class="flex-1">提取设定词条 → 设定集</span>
             <span class="text-xs text-ink-text-muted">待提取 {{ changedWikiCount }} 章</span>
           </label>
           <label class="flex cursor-pointer items-center gap-2 rounded-lg border border-ink-border/60 px-3 py-2 text-sm hover:border-ink-primary/50">

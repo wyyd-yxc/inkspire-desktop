@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * 百科「从正文提取」配置弹窗（M10.5）：范围（变更章节/单章）+ 进度显示。
+ * 设定集「从正文提取」配置弹窗（M10.5）：范围（变更章节/单章）+ 进度显示。
  * 纯配置 UI：抽取编排与候选确认在 useWikiSync / SyncCandidateDialog。
  */
 import type { Chapter } from '../../../../shared/chapter.types'

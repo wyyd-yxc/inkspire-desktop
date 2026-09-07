@@ -828,7 +828,7 @@ onMounted(() => void loadAll())
                 </div>
               </div>
               <div class="flex flex-col gap-1">
-                <span class="text-sm text-ink-text-secondary">关联百科词条（AI 生成时参考）</span>
+                <span class="text-sm text-ink-text-secondary">关联设定集词条（AI 生成时参考）</span>
                 <div class="flex max-h-32 flex-wrap gap-1.5 overflow-y-auto rounded-lg border border-ink-border p-2">
                   <button
                     v-for="w in wikiEntries"
@@ -837,7 +837,7 @@ onMounted(() => void loadAll())
                     :class="panelForm.wikiRefs.includes(w.id) ? 'border-ink-primary bg-ink-primary-soft text-ink-primary' : 'border-ink-border text-ink-text-secondary'"
                     @click="panelForm.wikiRefs.includes(w.id) ? panelForm.wikiRefs.splice(panelForm.wikiRefs.indexOf(w.id), 1) : panelForm.wikiRefs.push(w.id)"
                   >{{ w.name }}</button>
-                  <span v-if="wikiEntries.length === 0" class="px-1 text-xs text-ink-text-muted">百科暂无词条</span>
+                  <span v-if="wikiEntries.length === 0" class="px-1 text-xs text-ink-text-muted">设定集暂无词条</span>
                 </div>
               </div>
             </div>

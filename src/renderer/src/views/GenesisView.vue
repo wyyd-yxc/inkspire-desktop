@@ -247,7 +247,7 @@ async function acceptWorldColdStart(text: string): Promise<void> {
   }
 }
 
-// ---- 推送设定到百科（M10.5 管道 E；与百科页「从构思台导入」同一映射，M10.6 统一 isWikiNameDup 幂等） ----
+// ---- 推送设定到设定集（M10.5 管道 E；与设定集页「从构思台导入」同一映射，M10.6 统一 isWikiNameDup 幂等） ----
 const pushingWiki = ref(false)
 
 async function pushWorldToWiki(): Promise<void> {
@@ -265,7 +265,7 @@ async function pushWorldToWiki(): Promise<void> {
       existing.push(res.data)
       created++
     }
-    toast.success(created > 0 ? `已推送 ${created} 个设定词条到百科` : '设定词条已存在，无需推送')
+    toast.success(created > 0 ? `已推送 ${created} 个设定词条到设定集` : '设定词条已存在，无需推送')
   } catch (err) {
     toast.error(err instanceof Error ? err.message : '推送失败')
   } finally {
@@ -441,9 +441,9 @@ onMounted(() => void loadAll())
             <button
               class="rounded-full border border-ink-primary px-4 py-1.5 text-sm text-ink-primary transition-colors hover:bg-ink-primary-soft disabled:opacity-50"
               :disabled="pushingWiki"
-              title="把主角设定与世界法则作为词条推送到百科（已推送过的自动跳过）"
+              title="把主角设定与世界法则作为词条推送到设定集（已推送过的自动跳过）"
               @click="pushWorldToWiki"
-            >{{ pushingWiki ? '推送中…' : '推送设定到百科' }}</button>
+            >{{ pushingWiki ? '推送中…' : '推送设定到设定集' }}</button>
           </div>
           <div v-for="item in [
             { label: '全书大纲', text: step3.bookOutline },

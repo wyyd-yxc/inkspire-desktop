@@ -37,7 +37,7 @@ const plotEvents = ref<PlotEvent[]>([])
 const pendingDelete = ref<Chapter | null>(null)
 const loading = ref(true)
 
-// ---- 联动同步（M10.5/M10.7）：把正文改动推送到百科/记忆/剧情；编排细节在各 composable ----
+// ---- 联动同步（M10.5/M10.7）：把正文改动推送到设定集/记忆/剧情；编排细节在各 composable ----
 const memorySync = useMemorySync({ bookId, book, chapters, memories, toast })
 const wikiSync = useWikiSync({ bookId, book, chapters, wikiEntries, toast })
 const plotSync = usePlotSync({ bookId, book, chapters, events: plotEvents, toast })

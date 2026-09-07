@@ -84,8 +84,8 @@ export function createPlotEvent(input: CreatePlotEventInput): PlotEvent {
     const w = d.prepare('SELECT book_id FROM wiki_entries WHERE id = ?').get(rid) as
       | { book_id: string }
       | undefined
-    if (!w) throw new Error('挂接的百科词条不存在')
-    if (w.book_id !== input.bookId) throw new Error('挂接的百科词条必须属于本书')
+    if (!w) throw new Error('挂接的设定集词条不存在')
+    if (w.book_id !== input.bookId) throw new Error('挂接的设定集词条必须属于本书')
   }
   // 默认落位取本书最大 x 右移一格（防删事件后 COUNT 回退导致坐标重叠，三轮静态审查 P2）
   const maxX = (

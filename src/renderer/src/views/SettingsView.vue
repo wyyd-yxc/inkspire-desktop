@@ -200,7 +200,7 @@ onMounted(() => {
       <section v-if="syncCfg" class="mb-6 rounded-card bg-surface p-5 shadow-card">
         <h2 class="mb-1 font-semibold">自动同步</h2>
         <p class="mb-4 text-sm leading-relaxed text-ink-text-secondary">
-          定期检测正文改动，把新设定与新事实同步到百科与叙事档案。只新增、绝不改写已有内容；
+          定期检测正文改动，把新设定与新事实同步到设定集与叙事档案。只新增、绝不改写已有内容；
           提取结果默认「仅手动引用」，不会自动进入写作上下文。
         </p>
         <div class="flex flex-col gap-3 text-sm">

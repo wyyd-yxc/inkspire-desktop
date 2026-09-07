@@ -93,7 +93,7 @@ const wordsLabel = computed(() => props.totalWords.toLocaleString('zh-CN'))
           >档案</router-link>
           <button
             class="relative rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
-            title="同步：把正文改动推送到百科与叙事档案"
+            title="同步：把正文改动推送到设定集与叙事档案"
             aria-label="同步正文到设定集与叙事档案"
             @click="emit('sync')"
           >同步<span

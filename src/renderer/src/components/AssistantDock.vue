@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * 写作助手浮球+聊天面板（v1 仅写作台）。
- * 上下文感知：自动携带当前章节与选区；@召唤百科词条；对话持久化；流式回复。
+ * 上下文感知：自动携带当前章节与选区；@召唤设定集词条；对话持久化；流式回复。
  */
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import type { Book } from '../../../shared/book.types'
@@ -57,7 +57,7 @@ async function loadWiki(): Promise<void> {
     const res = await window.api.wiki.list(props.bookId)
     if (res.ok) wikiEntries.value = res.data
   } catch {
-    /* 百科加载失败不阻塞助手 */
+    /* 设定集加载失败不阻塞助手 */
   }
 }
 
@@ -286,7 +286,7 @@ onMounted(() => {
           <p class="text-sm text-ink-text-secondary">我是写作助手，你的创作伙伴</p>
           <p class="text-xs leading-5 text-ink-text-muted">
             可以问我剧情构思、设定矛盾、写作技巧；<br />
-            输入 @ 可引用百科词条；<br />
+            输入 @ 可引用设定集词条；<br />
             选中正文文字后提问会自动带上选区。
           </p>
         </div>
@@ -311,7 +311,7 @@ onMounted(() => {
 
       <!-- @ 召唤选择器 -->
       <div v-if="showPicker" class="border-t border-ink-border/60 px-4 py-2">
-        <p class="mb-1 text-xs text-ink-text-muted">选择百科词条</p>
+        <p class="mb-1 text-xs text-ink-text-muted">选择设定集词条</p>
         <div class="flex max-h-32 flex-wrap gap-1 overflow-y-auto">
           <button
             v-for="w in pickerList"
@@ -319,7 +319,7 @@ onMounted(() => {
             class="rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
             @click="pickEntry(w)"
           >{{ w.name }}</button>
-          <span v-if="pickerList.length === 0" class="px-1 text-xs text-ink-text-muted">百科暂无词条</span>
+          <span v-if="pickerList.length === 0" class="px-1 text-xs text-ink-text-muted">设定集暂无词条</span>
         </div>
         <button class="mt-1 text-xs text-ink-text-muted hover:text-ink-danger" @click="showPicker = false">取消</button>
       </div>

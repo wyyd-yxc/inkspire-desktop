@@ -101,7 +101,7 @@ const typeCounts = computed(() => {
   return map
 })
 
-// 正文→百科提取（M10.5，编排逻辑在 useWikiSync）
+// 正文→设定集提取（M10.5，编排逻辑在 useWikiSync）
 const {
   extractDialogVisible,
   extractScope,

@@ -79,7 +79,7 @@ async function ensureGenesisLoaded(): Promise<void> {
   await genesisLoadingPromise
 }
 
-// ---------------- 百科词条注入（M6，与 genesisCache 同款三件套） ----------------
+// ---------------- 设定集词条注入（M6，与 genesisCache 同款三件套） ----------------
 
 /** injection=always 词条注入预算（字符） */
 const WIKI_INJECT_LIMIT = 1200
@@ -117,7 +117,7 @@ async function loadWiki(bookId: string): Promise<void> {
     }
     wikiCache.value = { entries: blocks.join('\n') }
   } catch (err) {
-    console.warn('[ChapterEditor] 百科词条加载失败:', err)
+    console.warn('[ChapterEditor] 设定集词条加载失败:', err)
   }
 }
 
@@ -275,7 +275,7 @@ function aiTextToHtml(text: string): string {
 /** 划词目标（发起划词操作时的选区快照，含前后文供 AI 无缝衔接） */
 let selectionTarget: (SelectionContext & { from: number; to: number }) | null = null
 
-/** 组装写作上下文（前文 = 当前正文纯文本；含构思台设定+百科词条+记忆+剧情事件链注入 AI 提示词） */
+/** 组装写作上下文（前文 = 当前正文纯文本；含构思台设定+设定集词条+记忆+剧情事件链注入 AI 提示词） */
 function writingContext() {
   return {
     book: props.book,
