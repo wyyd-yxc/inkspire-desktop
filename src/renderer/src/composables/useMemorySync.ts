@@ -33,7 +33,7 @@ import type { useToast } from './useToast'
 
 /** 记忆类型角标色（与 MemoryView 列表色点一致，单一来源） */
 export const MEMORY_KIND_TAG_COLORS: Record<MemoryKind, string> = {
-  plot: '#6c5ce7', stage: '#2e7d74', character: '#b06f2a', relationship: '#9d3f63', clue: '#3a6fa8'
+  plot: '#5f5a8a', stage: '#3d6b64', character: '#8a6a3f', relationship: '#8a4a5f', clue: '#3f6a8a'
 }
 
 export function useMemorySync(deps: {

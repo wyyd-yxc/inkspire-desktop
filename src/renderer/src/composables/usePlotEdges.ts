@@ -29,7 +29,7 @@ export function usePlotEdges(deps: {
         target: e.targetId,
         type: 'smoothstep',
         label: e.label || st.label,
-        labelBgStyle: { fill: '#f5f3fa' },
+        labelBgStyle: { fill: '#faf8f3' },
         labelBgPadding: [4, 2],
         labelBgBorderRadius: 4,
         style: { stroke: st.stroke, strokeWidth: 2, strokeDasharray: st.dash }

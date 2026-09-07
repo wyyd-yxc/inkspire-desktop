@@ -82,10 +82,10 @@ const statusLabels: Record<SceneStatus, string> = {
   locked: '已锁定'
 }
 const statusColors: Record<SceneStatus, string> = {
-  draft: '#9d97b5',
-  main: '#c9a227',
-  side: '#8b5fbf',
-  locked: '#3fa66a'
+  draft: '#8b8574',
+  main: '#8a6d2f',
+  side: '#6d5a7d',
+  locked: '#5c7d63'
 }
 
 const modeLabels: Record<SceneGenMode, string> = {
@@ -153,9 +153,9 @@ const edgeForm = ref({ type: 'main' as SceneEdgeType, label: '' })
 
 /** 连线类型样式（颜色/虚线/labelBg） */
 const edgeTypeStyle: Record<SceneEdgeType, { stroke: string; dash: string; label: string }> = {
-  main: { stroke: '#c9a227', dash: '0', label: '主线' },
-  logic: { stroke: '#5b9bd1', dash: '6 4', label: '因果' },
-  relation: { stroke: '#9d97b5', dash: '2 4', label: '关联' }
+  main: { stroke: '#8a6d2f', dash: '0', label: '主线' },
+  logic: { stroke: '#4a6f8a', dash: '6 4', label: '因果' },
+  relation: { stroke: '#8b8574', dash: '2 4', label: '关联' }
 }
 
 /** DB 连线 → Vue Flow Edge（样式按类型，label 上边） */
@@ -168,7 +168,7 @@ const flowEdges = computed<Edge[]>(() =>
       target: e.targetId,
       type: 'smoothstep',
       label: e.label || st.label,
-      labelBgStyle: { fill: '#f5f3fa' },
+      labelBgStyle: { fill: '#faf8f3' },
       labelBgPadding: [4, 2],
       labelBgBorderRadius: 4,
       style: { stroke: st.stroke, strokeWidth: 2, strokeDasharray: st.dash }

@@ -1,23 +1,23 @@
 /**
  * 剧情画布渲染层样式常量：连线四类型视觉（颜色/线型/展示名）与标签取色。
- * 前三类承接章节画布 M7.5 配色，reference 引用为 M10 新增（绿点线）。
+ * M10.8 严肃化：低饱和墨系配色（炭/黛/赭/青灰/橄榄/绛），降低彩度。
  */
 import type { PlotEdgeType } from '../../../shared/plot.types'
 
 export const PLOT_EDGE_STYLES: Record<PlotEdgeType, { stroke: string; dash: string; label: string }> = {
-  main: { stroke: '#c9a227', dash: '0', label: '主线' },
-  logic: { stroke: '#5b9bd1', dash: '6 4', label: '逻辑' },
-  relation: { stroke: '#9d97b5', dash: '2 4', label: '关联' },
-  reference: { stroke: '#58a27a', dash: '1 4', label: '引用' }
+  main: { stroke: '#8a6d2f', dash: '0', label: '主线' },
+  logic: { stroke: '#4a6f8a', dash: '6 4', label: '逻辑' },
+  relation: { stroke: '#8b8574', dash: '2 4', label: '关联' },
+  reference: { stroke: '#5c7d63', dash: '1 4', label: '引用' }
 }
 
-/** 标签色板：事件节点左侧色条按首个标签取色（同一标签恒同色，标签决定节点视觉色，照原站文档）。
- *  16 色降低不同语义标签哈希撞色概率（M10 三轮静态审查 P3） */
+/** 标签色板：事件节点左侧色条按首个标签取色（同一标签恒同色）。
+ *  16 色低饱和墨系（M10.8 严肃化），保留哈希取色的稳定性 */
 const TAG_PALETTE = [
-  '#6c5ce7', '#c9a227', '#5b9bd1', '#3fa66a',
-  '#e07b54', '#8b5fbf', '#d16a8a', '#4aa8a2',
-  '#b0713f', '#5a7d2f', '#a3495f', '#3f7d99',
-  '#9466a8', '#c2884e', '#6a9c89', '#7a6ff0'
+  '#6b5f4a', '#8a6d2f', '#4a6f8a', '#5c7d63',
+  '#a1663f', '#6d5a7d', '#96555f', '#47807a',
+  '#8a6a4a', '#5f7050', '#8a5560', '#4a6a80',
+  '#75628a', '#96774a', '#5f7d6d', '#665f8a'
 ]
 
 export function tagColor(tag: string): string {

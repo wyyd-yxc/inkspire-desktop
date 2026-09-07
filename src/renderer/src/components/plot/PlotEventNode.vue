@@ -25,7 +25,7 @@ const props = defineProps<Props>()
 
 /** 左侧标签色条：取首个标签色做渐变；无标签回退灰紫 */
 const barBackground = computed(() =>
-  `linear-gradient(90deg, ${tagColor(props.event.tags[0] ?? '')}, #cfc8ea)`
+  `linear-gradient(90deg, ${tagColor(props.event.tags[0] ?? '')}, #d8d2c2)`
 )
 </script>
 

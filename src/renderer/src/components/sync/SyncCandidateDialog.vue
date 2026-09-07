@@ -89,7 +89,7 @@ function confirm(): void {
                 <span
                   v-if="it.tag"
                   class="shrink-0 rounded px-1.5 py-0.5 text-[10px] text-white"
-                  :style="it.tagColor ? { background: it.tagColor } : { background: '#6c5ce7' }"
+                  :style="it.tagColor ? { background: it.tagColor } : { background: '#6b5f4a' }"
                 >{{ it.tag }}</span>
                 <span class="min-w-0 flex-1 truncate text-sm" :title="it.title">{{ it.title }}</span>
                 <span v-if="it.disabled" class="shrink-0 text-[10px] text-ink-text-muted">已存在，跳过</span>

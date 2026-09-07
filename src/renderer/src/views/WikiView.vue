@@ -71,14 +71,14 @@ const isBusy = ref(false)
 // 创世台导入
 const importing = ref(false)
 
-/** 类型配色（卡片头像底色） */
+/** 类型配色（卡片头像底色；M10.8 严肃化：低饱和墨系渐变） */
 const typeColors: Record<WikiType, string> = {
-  character: 'linear-gradient(135deg,#8b7cf0,#5b4bd1)',
-  location: 'linear-gradient(135deg,#4aa3a0,#2e7d74)',
-  item: 'linear-gradient(135deg,#d8974a,#b06f2a)',
-  faction: 'linear-gradient(135deg,#c96a8b,#9d3f63)',
-  skill: 'linear-gradient(135deg,#5b9bd1,#3a6fa8)',
-  lore: 'linear-gradient(135deg,#7d8b5b,#5a6b3a)'
+  character: 'linear-gradient(135deg,#7a6f58,#57503f)',
+  location: 'linear-gradient(135deg,#5c7d78,#3d615c)',
+  item: 'linear-gradient(135deg,#a3835a,#7d6240)',
+  faction: 'linear-gradient(135deg,#9a6a78,#6f4a58)',
+  skill: 'linear-gradient(135deg,#5c7d94,#3f5c72)',
+  lore: 'linear-gradient(135deg,#7d8a5f,#5c6844)'
 }
 
 const filtered = computed(() => {

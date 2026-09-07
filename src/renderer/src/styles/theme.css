@@ -1,34 +1,38 @@
 /*
- * 全局主题（墨灵·浅紫学院风，依据 refs/ 官方截图校准）。
+ * 全局主题（墨笺·案头纸墨，严肃写作风）。
  * 以 Tailwind 4 的 @theme 定义设计令牌：模板中可用 bg-paper / text-ink 等工具类。
+ * 设计语言：暖米纸底 + 炭墨主色 + 衬线标题/正文编辑区，去彩度、轻装饰（M10.8 严肃化改造）。
  * 暗色模式预留：后续通过 [data-theme="dark"] 覆盖同名变量即可，无需改组件。
  */
 @import 'tailwindcss';
 
 @theme {
-  /* 背景与表面（依据官方截图：淡紫渐变 + 白色卡片） */
-  --color-paper: #f5f3fa; /* 淡紫底：全局背景 */
-  --color-surface: #ffffff; /* 卡片表面 */
+  /* 背景与表面（暖米纸色，无彩渐变） */
+  --color-paper: #faf8f3; /* 米纸底：全局背景 */
+  --color-surface: #fffefb; /* 卡片表面（微暖白） */
 
-  /* 主色：罗兰紫 */
-  --color-ink-primary: #6c5ce7;
-  --color-ink-primary-hover: #5b4bd1;
-  --color-ink-primary-soft: #efeaff; /* 主色浅底（选中态/标签底） */
+  /* 主色：炭墨（沉稳、去彩） */
+  --color-ink-primary: #3a352e;
+  --color-ink-primary-hover: #26221b;
+  --color-ink-primary-soft: #f1ede2; /* 主色浅底（选中态/标签底） */
 
   /* 文字 */
-  --color-ink-text: #2b2640; /* 深紫灰：主文字 */
-  --color-ink-text-secondary: #6e6885; /* 次要文字 */
-  --color-ink-text-muted: #9d97b5; /* 占位/辅助 */
+  --color-ink-text: #2b2721; /* 深炭：主文字 */
+  --color-ink-text-secondary: #6d6558; /* 次要文字 */
+  --color-ink-text-muted: #a89e8e; /* 占位/辅助 */
 
-  /* 边框与状态 */
-  --color-ink-border: #e6e2f2;
-  --color-ink-danger: #d64550;
-  --color-ink-warning: #c08a2e;
-  --color-ink-success: #3fa66a;
+  /* 边框与状态（低饱和） */
+  --color-ink-border: #e6dfd1;
+  --color-ink-danger: #b04a3e; /* 朱砂偏暗：删除/错误 */
+  --color-ink-warning: #a8813c;
+  --color-ink-success: #4a7d5b;
 
-  /* 圆角与阴影（柔和卡片风格） */
-  --radius-card: 12px;
-  --shadow-card: 0 1px 3px rgb(43 38 64 / 0.06), 0 4px 16px rgb(43 38 64 / 0.06);
+  /* 圆角与阴影（收敛圆角，阴影更轻） */
+  --radius-card: 8px;
+  --shadow-card: 0 1px 2px rgb(43 39 33 / 0.05), 0 3px 12px rgb(43 39 33 / 0.05);
+
+  /* 字体：标题与正文编辑区衬线（严肃写作），UI 控件保持无衬线 */
+  --font-serif: 'Noto Serif SC', 'Source Han Serif SC', 'STZhongsong', SimSun, Georgia, serif;
 }
 
 /* 全局基础样式 */
@@ -41,8 +45,7 @@ body,
 body {
   margin: 0;
   background:
-    radial-gradient(1200px 500px at 15% -5%, #efe9ff 0%, transparent 60%),
-    radial-gradient(1000px 500px at 95% 5%, #e8f0ff 0%, transparent 55%),
+    linear-gradient(180deg, #f6f2e9 0%, var(--color-paper) 240px),
     var(--color-paper);
   color: var(--color-ink-text);
   font-family:
@@ -54,7 +57,22 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* 暗色模式预留位：M0 不实现，变量清单与浅色一一对应
+/* 标题衬线：页面主标题/区块标题（严肃写作气质） */
+h1,
+h2 {
+  font-family: var(--font-serif);
+  letter-spacing: 0.02em;
+}
+
+/* 正文编辑区衬线 + 行长与行距（写作沉浸） */
+.prose-editor-wrapper .ProseMirror,
+.prose-editor-wrapper .tiptap {
+  font-family: var(--font-serif);
+  font-size: 16px;
+  line-height: 1.9;
+}
+
+/* 暗色模式预留位：不实现，变量清单与浅色一一对应
 [data-theme='dark'] {
   --color-paper: ...;
 }
