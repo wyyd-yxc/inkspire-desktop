@@ -68,35 +68,35 @@ const wordsLabel = computed(() => props.totalWords.toLocaleString('zh-CN'))
           to="/"
           class="flex items-center gap-1 text-xs text-ink-text-muted transition-colors hover:text-ink-primary"
         >
-          ← 书斋
+          ← 书房
         </router-link>
         <div class="flex items-center gap-1.5">
           <router-link
             :to="`/book/${bookId}/genesis`"
             class="rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
-            title="创世台"
-          >创世台</router-link>
+            title="构思台"
+          >构思台</router-link>
           <router-link
             :to="`/book/${bookId}/wiki`"
             class="rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
-            title="万物百科"
+            title="设定集"
           >百科</router-link>
           <router-link
             :to="`/book/${bookId}/plot`"
             class="rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
-            title="剧情画布"
+            title="情节大纲"
           >剧情</router-link>
           <router-link
             :to="`/book/${bookId}/memory`"
             class="rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
-            title="作品记忆"
+            title="叙事档案"
           >记忆</router-link>
           <button
             class="relative rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
-            title="同步：把正文改动推送到百科与作品记忆"
-            aria-label="同步正文到百科与记忆"
+            title="同步：把正文改动推送到百科与叙事档案"
+            aria-label="同步正文到设定集与叙事档案"
             @click="emit('sync')"
-          >⟳<span
+          >同步<span
             v-if="props.syncAlert"
             class="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-ink-danger"
           /></button>
@@ -146,7 +146,7 @@ const wordsLabel = computed(() => props.totalWords.toLocaleString('zh-CN'))
         <div v-if="editingId !== c.id" class="hidden shrink-0 items-center gap-0.5 group-hover:flex">
           <button
             class="rounded p-0.5 text-ink-text-muted hover:bg-paper hover:text-ink-primary"
-            title="章节画布"
+            title="场景规划"
             @click.stop="router.push(`/book/${props.bookId}/canvas/${c.id}`)"
           >
             <svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>

@@ -1,5 +1,5 @@
 /**
- * genesis_steps 表 DAO：创世台五步设定存取。
+ * genesis_steps 表 DAO：构思台五步设定存取。
  * 每书每步一行（复合主键 book_id+step）；data 为 JSON 字符串。
  */
 import type { Database } from 'better-sqlite3'

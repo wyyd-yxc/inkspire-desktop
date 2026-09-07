@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
- * 创世台页：五步向导（定风/定魂/造世/布局/执笔）。
- * 顶部步骤条可跳转；每步独立保存（UPSERT）；定魂支持 AI 辅助，造世支持一键冷启动。
- * 完成第五步（执笔）即 MVP 闭环：跳转正文工作台，设定已接通 AI 写作。
+ * 构思台页：五步向导（基调/内核/世界构建/布局/开笔）。
+ * 顶部步骤条可跳转；每步独立保存（UPSERT）；内核支持 AI 辅助，世界构建支持一键起草。
+ * 完成第五步（开笔）即 MVP 闭环：跳转写作台，设定已接通 AI 写作。
  */
 import { computed, onMounted, ref, toRaw, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -48,7 +48,7 @@ const step3 = ref<Step3World | null>(null)
 const step4 = ref<Step4Layout>(emptyLayout())
 const step5 = ref<Step5Write>({ started: false })
 
-// AI 面板（定魂辅助/造世冷启动共用）
+// AI 面板（内核辅助/世界构建起草共用）
 const aiPanel = ref<InstanceType<typeof AiWritingPanel> | null>(null)
 const aiPanelVisible = ref(false)
 const aiPanelKind = ref<'soul' | 'world'>('soul')
@@ -69,11 +69,11 @@ function emptyLayout(): Step4Layout {
   }
 }
 
-const STEP_LABELS = ['定风', '定魂', '造世', '布局', '执笔']
+const STEP_LABELS = ['基调', '内核', '世界构建', '结构', '开笔']
 const STEP_HINTS = [
   '选一个文风参考',
   '一句话锁定故事核心',
-  '一键生成世界观设定',
+  '起草世界观设定',
   '规划分卷与章节大纲',
   '开始写正文'
 ]
@@ -121,7 +121,7 @@ async function saveStep(step: GenesisStep, data: unknown, isDone?: boolean): Pro
   steps.value[step] = res.data
 }
 
-// ---- 第 1 步 定风 ----
+// ---- 第 1 步 基调 ----
 async function selectStyle(styleId: string, styleName: string): Promise<void> {
   step1.value = { styleId, styleName }
   try {
@@ -132,11 +132,11 @@ async function selectStyle(styleId: string, styleName: string): Promise<void> {
   }
 }
 
-// ---- 第 2 步 定魂 ----
+// ---- 第 2 步 内核 ----
 async function saveSoul(): Promise<void> {
   try {
     await saveStep(2, step2.value, !!step2.value.logline.trim())
-    toast.success('定魂已保存')
+    toast.success('内核已保存')
   } catch (err) {
     toast.error(err instanceof Error ? err.message : '保存失败')
   }
@@ -166,7 +166,7 @@ async function aiAssistSoul(): Promise<void> {
   }
 }
 
-/** 采纳定魂辅助：解析 JSON 后按字段合并（仅覆盖 AI 给出的非空字段，保留用户已填内容） */
+/** 采纳内核辅助：解析 JSON 后按字段合并（仅覆盖 AI 给出的非空字段，保留用户已填内容） */
 function acceptSoulAssist(text: string): void {
   const parsed = parseSoulAssist(text)
   if (!parsed) {
@@ -199,11 +199,11 @@ function acceptSoulAssist(text: string): void {
   toast.success('已填入故事核心设定，请检查后保存')
 }
 
-// ---- 第 3 步 造世冷启动 ----
+// ---- 第 3 步 世界构建起草 ----
 async function coldStartWorld(): Promise<void> {
   if (isBusy) return
   if (!step2.value.logline.trim()) {
-    toast.error('请先完成「定魂」再冷启动造世')
+    toast.error('请先完成「内核」再起草世界构建')
     return
   }
   if (!book.value) return
@@ -229,7 +229,7 @@ async function coldStartWorld(): Promise<void> {
   }
 }
 
-/** 采纳造世冷启动：解析四段存入 step3 */
+/** 采纳世界构建起草：解析四段存入 step3 */
 async function acceptWorldColdStart(text: string): Promise<void> {
   const parsed = parseWorldColdStart(text)
   if (!parsed.bookOutline && !parsed.volumeOutline && !parsed.worldRules && !parsed.protagonist) {
@@ -247,7 +247,7 @@ async function acceptWorldColdStart(text: string): Promise<void> {
   }
 }
 
-// ---- 推送设定到百科（M10.5 管道 E；与百科页「从创世台导入」同一映射，M10.6 统一 isWikiNameDup 幂等） ----
+// ---- 推送设定到百科（M10.5 管道 E；与百科页「从构思台导入」同一映射，M10.6 统一 isWikiNameDup 幂等） ----
 const pushingWiki = ref(false)
 
 async function pushWorldToWiki(): Promise<void> {
@@ -273,7 +273,7 @@ async function pushWorldToWiki(): Promise<void> {
   }
 }
 
-// ---- 第 4 步 布局 ----
+// ---- 第 4 步 结构 ----
 function addVolume(): void {
   step4.value.volumes.push({ name: `第 ${step4.value.volumes.length + 1} 卷`, chapters: [] })
 }
@@ -291,17 +291,17 @@ async function saveLayout(): Promise<void> {
   try {
     const hasChapter = step4.value.volumes.some((v) => v.chapters.length > 0)
     await saveStep(4, step4.value, hasChapter)
-    toast.success('布局已保存')
+    toast.success('结构已保存')
   } catch (err) {
     toast.error(err instanceof Error ? err.message : '保存失败')
   }
 }
 
-// ---- 第 5 步 执笔 ----
+// ---- 第 5 步 开笔 ----
 async function startWriting(): Promise<void> {
   try {
     await saveStep(5, { started: true }, true)
-    toast.success('设定已就绪，进入正文工作台')
+    toast.success('设定已就绪，进入写作台')
     router.push(`/book/${bookId.value}/write`)
   } catch (err) {
     toast.error(err instanceof Error ? err.message : '保存失败')
@@ -327,8 +327,8 @@ onMounted(() => void loadAll())
     <!-- 顶栏 -->
     <header class="flex items-center justify-between border-b border-ink-border/60 bg-surface px-8 py-4">
       <div class="flex items-baseline gap-3">
-        <router-link :to="`/book/${bookId}/write`" class="text-xs text-ink-text-muted hover:text-ink-primary">← 工作台</router-link>
-        <h1 class="text-lg font-bold text-ink-primary">创世台</h1>
+        <router-link :to="`/book/${bookId}/write`" class="text-xs text-ink-text-muted hover:text-ink-primary">← 写作台</router-link>
+        <h1 class="text-lg font-bold text-ink-primary">构思台</h1>
         <span class="text-sm text-ink-text-muted">{{ book?.title ?? '…' }}</span>
       </div>
       <span class="text-xs text-ink-text-muted">已完成 {{ completedCount }}/5 步</span>
@@ -356,9 +356,9 @@ onMounted(() => void loadAll())
     <div class="min-h-0 flex-1 overflow-y-auto px-8 py-6">
       <div v-if="loading" class="py-24 text-center text-ink-text-muted">加载中…</div>
 
-      <!-- 第 1 步 定风 -->
+      <!-- 第 1 步 基调 -->
       <div v-else-if="activeStep === 1" class="mx-auto max-w-3xl">
-        <h2 class="mb-1 text-lg font-semibold">定风 · 选择文风</h2>
+        <h2 class="mb-1 text-lg font-semibold">基调 · 选择文风</h2>
         <p class="mb-6 text-sm text-ink-text-secondary">{{ STEP_HINTS[0] }}——绑定后，AI 写作会自动贴近这个调性。</p>
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div
@@ -378,14 +378,14 @@ onMounted(() => void loadAll())
         </div>
       </div>
 
-      <!-- 第 2 步 定魂 -->
+      <!-- 第 2 步 内核 -->
       <div v-else-if="activeStep === 2" class="mx-auto max-w-3xl">
         <div class="mb-4 flex items-center justify-between">
           <div>
-            <h2 class="text-lg font-semibold">定魂 · 故事核心</h2>
+            <h2 class="text-lg font-semibold">内核 · 故事核心</h2>
             <p class="text-sm text-ink-text-secondary">{{ STEP_HINTS[1] }}——这是 AI 后续创作的最高指令。</p>
           </div>
-          <button class="rounded-full border border-ink-primary px-3 py-1.5 text-sm text-ink-primary transition-colors hover:bg-ink-primary-soft" @click="aiAssistSoul">✦ AI 辅助起草</button>
+          <button class="rounded-full border border-ink-primary px-3 py-1.5 text-sm text-ink-primary transition-colors hover:bg-ink-primary-soft" @click="aiAssistSoul">AI 辅助起草</button>
         </div>
 
         <label class="mb-4 flex flex-col gap-1.5">
@@ -404,7 +404,7 @@ onMounted(() => void loadAll())
             </div>
           </fieldset>
           <fieldset class="rounded-card border border-ink-border p-4">
-            <legend class="px-2 text-sm font-medium">金手指设定</legend>
+            <legend class="px-2 text-sm font-medium">核心能力设定</legend>
             <div class="flex flex-col gap-2">
               <input v-model="step2.cheat.coreAbility" placeholder="核心能力" class="rounded border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
               <input v-model="step2.cheat.powerSystem" placeholder="力量体系" class="rounded border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
@@ -423,17 +423,17 @@ onMounted(() => void loadAll())
           </div>
         </fieldset>
 
-        <button class="rounded-full bg-ink-primary px-6 py-2 text-sm text-white transition-colors hover:bg-ink-primary-hover" @click="saveSoul">保存定魂</button>
+        <button class="rounded-full bg-ink-primary px-6 py-2 text-sm text-white transition-colors hover:bg-ink-primary-hover" @click="saveSoul">保存内核</button>
       </div>
 
-      <!-- 第 3 步 造世 -->
+      <!-- 第 3 步 世界构建 -->
       <div v-else-if="activeStep === 3" class="mx-auto max-w-3xl">
         <div class="mb-4 flex items-center justify-between">
           <div>
-            <h2 class="text-lg font-semibold">造世 · 世界观设定</h2>
-            <p class="text-sm text-ink-text-secondary">{{ STEP_HINTS[2] }}——基于定魂内容量身生成。</p>
+            <h2 class="text-lg font-semibold">世界构建 · 世界观设定</h2>
+            <p class="text-sm text-ink-text-secondary">{{ STEP_HINTS[2] }}——基于内核内容量身生成。</p>
           </div>
-          <button class="rounded-full bg-ink-primary px-4 py-1.5 text-sm text-white transition-colors hover:bg-ink-primary-hover" @click="coldStartWorld">⚡ 一键冷启动</button>
+          <button class="rounded-full bg-ink-primary px-4 py-1.5 text-sm text-white transition-colors hover:bg-ink-primary-hover" @click="coldStartWorld">一键起草</button>
         </div>
 
         <div v-if="step3" class="flex flex-col gap-4">
@@ -443,7 +443,7 @@ onMounted(() => void loadAll())
               :disabled="pushingWiki"
               title="把主角设定与世界法则作为词条推送到百科（已推送过的自动跳过）"
               @click="pushWorldToWiki"
-            >{{ pushingWiki ? '推送中…' : '⇨ 推送设定到百科' }}</button>
+            >{{ pushingWiki ? '推送中…' : '推送设定到百科' }}</button>
           </div>
           <div v-for="item in [
             { label: '全书大纲', text: step3.bookOutline },
@@ -458,13 +458,13 @@ onMounted(() => void loadAll())
         </div>
         <div v-else class="py-16 text-center">
           <p class="mb-2 text-ink-text-secondary">还没有世界观设定</p>
-          <p class="text-sm text-ink-text-muted">点上方「⚡ 一键冷启动」，AI 会根据定魂内容生成全套设定</p>
+          <p class="text-sm text-ink-text-muted">点上方「一键起草」，AI 会根据内核内容生成全套设定</p>
         </div>
       </div>
 
       <!-- 第 4 步 布局 -->
       <div v-else-if="activeStep === 4" class="mx-auto max-w-3xl">
-        <h2 class="mb-1 text-lg font-semibold">布局 · 分卷与章节</h2>
+        <h2 class="mb-1 text-lg font-semibold">结构 · 分卷与章节</h2>
         <p class="mb-6 text-sm text-ink-text-secondary">{{ STEP_HINTS[3] }}——写作规则会全局约束 AI 生成。</p>
 
         <div v-for="(v, vi) in step4.volumes" :key="vi" class="mb-4 rounded-card border border-ink-border p-4">
@@ -493,18 +493,18 @@ onMounted(() => void loadAll())
         <button class="rounded-full bg-ink-primary px-6 py-2 text-sm text-white transition-colors hover:bg-ink-primary-hover" @click="saveLayout">保存布局</button>
       </div>
 
-      <!-- 第 5 步 执笔 -->
+      <!-- 第 5 步 开笔 -->
       <div v-else-if="activeStep === 5" class="mx-auto max-w-2xl py-12 text-center">
-        <h2 class="mb-2 text-lg font-semibold">执笔 · 开始创作</h2>
+        <h2 class="mb-2 text-lg font-semibold">开笔 · 开始创作</h2>
         <p class="mb-8 text-sm text-ink-text-secondary">{{ STEP_HINTS[4] }}——前四步的设定会自动跟随进入创作流程。</p>
         <div class="mb-8 flex justify-center gap-4 text-sm">
-          <span :class="steps[1]?.isDone ? 'text-ink-success' : 'text-ink-text-muted'">{{ steps[1]?.isDone ? '✓' : '○' }} 定风</span>
-          <span :class="steps[2]?.isDone ? 'text-ink-success' : 'text-ink-text-muted'">{{ steps[2]?.isDone ? '✓' : '○' }} 定魂</span>
-          <span :class="steps[3]?.isDone ? 'text-ink-success' : 'text-ink-text-muted'">{{ steps[3]?.isDone ? '✓' : '○' }} 造世</span>
+          <span :class="steps[1]?.isDone ? 'text-ink-success' : 'text-ink-text-muted'">{{ steps[1]?.isDone ? '✓' : '○' }} 基调</span>
+          <span :class="steps[2]?.isDone ? 'text-ink-success' : 'text-ink-text-muted'">{{ steps[2]?.isDone ? '✓' : '○' }} 内核</span>
+          <span :class="steps[3]?.isDone ? 'text-ink-success' : 'text-ink-text-muted'">{{ steps[3]?.isDone ? '✓' : '○' }} 世界构建</span>
           <span :class="steps[4]?.isDone ? 'text-ink-success' : 'text-ink-text-muted'">{{ steps[4]?.isDone ? '✓' : '○' }} 布局</span>
         </div>
-        <button class="rounded-full bg-ink-primary px-8 py-3 text-white shadow-card transition-colors hover:bg-ink-primary-hover" @click="startWriting">进入正文工作台 →</button>
-        <p class="mt-4 text-xs text-ink-text-muted">（建议至少完成定魂与造世，AI 写作效果更好）</p>
+        <button class="rounded-full bg-ink-primary px-8 py-3 text-white shadow-card transition-colors hover:bg-ink-primary-hover" @click="startWriting">进入写作台 →</button>
+        <p class="mt-4 text-xs text-ink-text-muted">（建议至少完成内核与世界构建，AI 写作效果更好）</p>
       </div>
     </div>
 

@@ -1,5 +1,5 @@
 /**
- * memories 表 DAO：作品记忆（事实层）增删改查。
+ * memories 表 DAO：叙事档案（事实层）增删改查。
  */
 import { randomUUID } from 'node:crypto'
 import type { Database } from 'better-sqlite3'

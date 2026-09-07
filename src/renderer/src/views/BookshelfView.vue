@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * 书斋页：全部作品的管理中心。
- * 布局：顶部标题栏（墨灵 logo + 新建按钮）+ 书籍卡片网格 + 空状态引导。
+ * 书房页：全部作品的管理中心。
+ * 布局：顶部标题栏（墨笺 logo + 新建按钮）+ 书籍卡片网格 + 空状态引导。
  */
 import { onMounted, ref } from 'vue'
 import type { Book } from '../../../shared/book.types'
@@ -54,14 +54,14 @@ onMounted(refresh)
     <!-- 顶栏 -->
     <header class="sticky top-0 z-10 flex items-center justify-between border-b border-ink-border/60 bg-paper/80 px-8 py-4 backdrop-blur">
       <div class="flex items-baseline gap-3">
-        <h1 class="text-xl font-bold tracking-widest text-ink-primary">墨灵</h1>
-        <span class="text-sm text-ink-text-muted">书斋</span>
+        <h1 class="text-xl font-bold tracking-widest text-ink-primary">墨笺</h1>
+        <span class="text-sm text-ink-text-muted">书房</span>
       </div>
       <div class="flex items-center gap-3">
         <router-link
           to="/settings"
           class="flex h-9 w-9 items-center justify-center rounded-full border border-ink-border text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
-          title="设置中心"
+          title="设置"
         >
           <svg viewBox="0 0 24 24" class="h-4.5 w-4.5" fill="none" stroke="currentColor" stroke-width="1.8">
             <circle cx="12" cy="12" r="3" />
@@ -83,7 +83,7 @@ onMounted(refresh)
     <!-- 内容区 -->
     <main class="px-8 py-6">
       <!-- 加载中 -->
-      <div v-if="loading" class="py-24 text-center text-ink-text-muted">正在加载书斋…</div>
+      <div v-if="loading" class="py-24 text-center text-ink-text-muted">正在加载书房…</div>
 
       <!-- 空状态 -->
       <div v-else-if="books.length === 0" class="flex flex-col items-center gap-4 py-24">

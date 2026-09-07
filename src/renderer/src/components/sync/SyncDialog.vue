@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * 工作台「同步」配置弹窗（M10.5）：勾选同步目标（提取词条/抽取记忆）× 范围（待同步章节/当前章）。
+ * 写作台「同步」配置弹窗（M10.5）：勾选同步目标（提取词条/抽取记忆）× 范围（待同步章节/当前章）。
  * 纯配置 UI：执行编排由 WorkspaceView 驱动 useWikiSync/useMemorySync 完成。
  */
 import { ref, watch } from 'vue'
@@ -49,7 +49,7 @@ function start(): void {
       @click.self="emit('close')"
     >
       <div class="w-[440px] rounded-2xl bg-surface p-6 shadow-card">
-        <h2 class="mb-1 text-lg font-semibold">⟳ 同步到其他模块</h2>
+        <h2 class="mb-1 text-lg font-semibold">同步到其他模块</h2>
         <p class="mb-4 text-xs text-ink-text-muted">
           从正文提取设定与事实，单向推送（只新增、不改写已有内容）；提取结果会先弹窗勾选确认
         </p>
@@ -61,12 +61,12 @@ function start(): void {
           </label>
           <label class="flex cursor-pointer items-center gap-2 rounded-lg border border-ink-border/60 px-3 py-2 text-sm hover:border-ink-primary/50">
             <input v-model="syncMemory" type="checkbox" />
-            <span class="flex-1">抽取事实 → 作品记忆</span>
+            <span class="flex-1">抽取事实 → 叙事档案</span>
             <span class="text-xs text-ink-text-muted">待抽取 {{ changedMemoryCount }} 章</span>
           </label>
           <label class="flex cursor-pointer items-center gap-2 rounded-lg border border-ink-border/60 px-3 py-2 text-sm hover:border-ink-primary/50">
             <input v-model="syncPlot" type="checkbox" />
-            <span class="flex-1">回溯事件 → 剧情画布</span>
+            <span class="flex-1">回溯事件 → 情节大纲</span>
             <span class="text-xs text-ink-text-muted">待提取 {{ changedPlotCount }} 章</span>
           </label>
         </div>

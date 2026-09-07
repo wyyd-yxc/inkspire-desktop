@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * 剧情画布：Vue Flow 跨章节剧情事件编排（M10）。
+ * 情节大纲：Vue Flow 跨章节剧情事件编排（M10）。
  * 事件节点拖拽持久化；四类连线（主线/逻辑/关联/引用）；双击详情面板；搜索高亮；
  * AI 三模式（初始化事件链/向后延伸/分歧推演）。编辑逻辑在 composables/usePlotEdges、usePlotAi。
  */
@@ -210,8 +210,8 @@ onMounted(() => void loadAll())
   <div class="flex h-full flex-col">
     <!-- 顶部工具栏 -->
     <header class="flex items-center gap-3 border-b border-ink-border/60 bg-surface px-5 py-3">
-      <router-link :to="`/book/${bookId}/write`" class="text-xs text-ink-text-muted hover:text-ink-primary">← 工作台</router-link>
-      <h1 class="text-base font-bold text-ink-primary">剧情画布</h1>
+      <router-link :to="`/book/${bookId}/write`" class="text-xs text-ink-text-muted hover:text-ink-primary">← 写作台</router-link>
+      <h1 class="text-base font-bold text-ink-primary">情节大纲</h1>
       <span class="truncate text-sm text-ink-text-muted">{{ book?.title ?? '…' }}</span>
       <div class="ml-auto flex items-center gap-2">
         <!-- 搜索高亮 -->
@@ -255,7 +255,7 @@ onMounted(() => void loadAll())
           class="rounded-lg border border-ink-primary px-3 py-1.5 text-xs text-ink-primary transition-colors hover:bg-ink-primary-soft"
           title="空画布：按故事核心设定生成分卷大纲主干事件链"
           @click="openAiDialog('init')"
-        >✦ 初始化</button>
+        >初始化</button>
         <button
           class="rounded-lg border px-3 py-1.5 text-xs transition-colors disabled:opacity-40"
           :class="selectedEvent ? 'border-ink-primary text-ink-primary hover:bg-ink-primary-soft' : 'border-ink-border text-ink-text-muted'"
@@ -269,13 +269,13 @@ onMounted(() => void loadAll())
           :disabled="!selectedEvent"
           title="单击选中事件后可用：推演多条分歧走向，择一采纳"
           @click="openAiDialog('diverge')"
-        >⑃ 分歧推演</button>
+        >分歧推演</button>
         <button
           class="rounded-lg border border-ink-border px-3 py-1.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary disabled:opacity-50"
           :disabled="extractBusy"
           :title="runProgress || '从已写章节正文回溯剧情事件上画布'"
           @click="startPlotExtract"
-        >{{ extractBusy ? '⇦ 提取中…' : '⇦ 从正文提取' }}</button>
+        >{{ extractBusy ? '提取中…' : '从正文提取' }}</button>
         <button
           class="rounded-lg border border-ink-border px-3 py-1.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
           @click="openCreate"
@@ -311,7 +311,7 @@ onMounted(() => void loadAll())
         class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
       >
         <p class="rounded-xl bg-surface/90 px-6 py-4 text-sm text-ink-text-muted shadow-card">
-          画布还是空的：点「✦ 初始化」让 AI 生成初始事件链，或「+ 手动加事件」
+          画布还是空的：点「初始化」让 AI 生成初始事件链，或「+ 手动加事件」
         </p>
       </div>
       <div v-if="loading" class="absolute inset-0 z-10 flex items-center justify-center bg-paper/70">

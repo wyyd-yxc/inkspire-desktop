@@ -1,5 +1,5 @@
 /**
- * wiki_entries 表 DAO：万物百科词条增删改查。
+ * wiki_entries 表 DAO：设定集词条增删改查。
  * attributes/relations 为 JSON 字符串存储，读取时容错回退空数组。
  */
 import { randomUUID } from 'node:crypto'

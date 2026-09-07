@@ -1,5 +1,5 @@
 /**
- * 剧情画布 AI 三模式编排：初始化事件链 / 向后延伸 / 分歧推演。
+ * 情节大纲 AI 三模式编排：初始化事件链 / 向后延伸 / 分歧推演。
  * 流式走 generateWriting + AiWritingPanel；采纳时解析 JSON 落库并自动连线。
  * 从 PlotCanvasView 抽出以保单文件 ≤400 行（编码规范 §6）。
  * 锁纪律（踩坑 #14）：isBusy 覆盖到 onDone/onError（generateWriting resolve 后 finally 释放）。

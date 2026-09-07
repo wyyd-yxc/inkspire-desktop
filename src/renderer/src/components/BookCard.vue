@@ -43,17 +43,17 @@ function formatDate(iso: string): string {
   ).padStart(2, '0')}`
 }
 
-/** 点击卡片进入正文工作台 */
+/** 点击卡片进入写作台 */
 function openBook(): void {
   void router.push(`/book/${props.book.id}/write`)
 }
 
-/** 进入创世台 */
+/** 进入构思台 */
 function openGenesis(): void {
   void router.push(`/book/${props.book.id}/genesis`)
 }
 
-/** 进入万物百科 */
+/** 进入设定集 */
 function openWiki(): void {
   void router.push(`/book/${props.book.id}/wiki`)
 }
@@ -95,7 +95,7 @@ function openWiki(): void {
         <button
           class="flex-1 rounded-lg border border-ink-border py-1 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
           @click.stop="openGenesis"
-        >创世台</button>
+        >构思台</button>
         <button
           class="flex-1 rounded-lg border border-ink-border py-1 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
           @click.stop="openWiki"

@@ -1,5 +1,5 @@
 /**
- * wiki 域 IPC：万物百科词条增删改查 + 名称查重（M10.6）。
+ * wiki 域 IPC：设定集词条增删改查 + 名称查重（M10.6）。
  */
 import { ipcMain } from 'electron'
 import { wrap } from './wrap'

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * 作品记忆页：长篇创作的「事实层」（防穿帮）。
+ * 叙事档案页：长篇创作的「事实层」（防穿帮）。
  * 五类事实卡片 + 当前剧情视图 + AI 抽取（候选确认面板）+ 未抽取章节批量 + 清理重复。
  * 抽取/去重编排逻辑在 composables/useMemorySync（M10.5）。
  */
@@ -64,7 +64,7 @@ const kindCounts = computed(() => {
   return map
 })
 
-/** 当前剧情视图：剧情状态 + 舞台时空（按章节序号排序置顶） */
+/** 当前剧情视图：剧情状态 + 场景时空（按章节序号排序置顶） */
 const currentPlotView = computed(() =>
   memories.value
     .filter((m) => m.kind === 'plot' || m.kind === 'stage')
@@ -177,8 +177,8 @@ onMounted(loadAll)
     <!-- 左栏：类型筛选 + 概览 + 操作 -->
     <aside class="flex w-52 shrink-0 flex-col border-r border-ink-border/60 bg-surface">
       <div class="border-b border-ink-border/60 px-4 py-3">
-        <router-link :to="`/book/${bookId}/write`" class="text-xs text-ink-text-muted hover:text-ink-primary">← 工作台</router-link>
-        <p class="mt-2 text-sm font-semibold">作品记忆</p>
+        <router-link :to="`/book/${bookId}/write`" class="text-xs text-ink-text-muted hover:text-ink-primary">← 写作台</router-link>
+        <p class="mt-2 text-sm font-semibold">叙事档案</p>
         <p class="truncate text-xs text-ink-text-muted" :title="book?.title">{{ book?.title ?? '…' }}</p>
       </div>
       <div class="px-2 py-3">
@@ -211,13 +211,13 @@ onMounted(loadAll)
         <button
           class="rounded-lg border border-ink-primary px-3 py-1.5 text-xs text-ink-primary transition-colors hover:bg-ink-primary-soft"
           @click="openExtractDialog"
-        >✦ AI 从章节抽取</button>
+        >AI 从章节抽取</button>
         <button
           class="rounded-lg border border-ink-border px-3 py-1.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary disabled:opacity-50"
           :disabled="dedupRunning"
           title="清理完全重复与近似重复的记忆"
           @click="runCleanup"
-        >{{ dedupRunning ? '清理中…' : '🧹 清理重复' }}</button>
+        >{{ dedupRunning ? '清理中…' : '清理重复' }}</button>
       </div>
     </aside>
 
@@ -229,7 +229,7 @@ onMounted(loadAll)
         <template v-else>
           <!-- 当前剧情视图（plot+stage 置顶） -->
           <section v-if="currentPlotView.length" class="mb-6">
-            <h2 class="mb-2 text-sm font-semibold text-ink-text-secondary">当前剧情（剧情状态与舞台时空）</h2>
+            <h2 class="mb-2 text-sm font-semibold text-ink-text-secondary">当前剧情（剧情状态与场景时空）</h2>
             <div class="flex flex-col gap-2">
               <div
                 v-for="m in currentPlotView"
@@ -331,7 +331,7 @@ onMounted(loadAll)
     <teleport to="body">
       <div v-if="extractDialogVisible" class="fixed inset-0 z-40 flex items-center justify-center bg-black/30" @click.self="extractDialogVisible = false">
         <div class="w-[420px] rounded-2xl bg-surface p-6 shadow-card">
-          <h2 class="mb-2 text-lg font-semibold">✦ AI 从章节抽取记忆</h2>
+          <h2 class="mb-2 text-lg font-semibold">AI 从章节抽取记忆</h2>
           <p class="mb-4 text-sm text-ink-text-secondary">AI 扫描章节正文，提取影响后续剧情的事实；已有记忆不会重复提取</p>
           <div class="mb-3 flex gap-1.5">
             <button

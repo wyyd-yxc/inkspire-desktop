@@ -1,6 +1,6 @@
 /**
  * AI 写作服务：续写/润色/扩写/改写/整章润色的提示词构造与调用封装。
- * 复用 services/ai.ts 的流式管线与「默认档案」机制；提示词面向网文写作，
+ * 复用 services/ai.ts 的流式管线与「默认档案」机制；提示词面向长篇写作，
  * 输出约定为纯正文（不带解释、不带引号包裹）。
  */
 import type { ChatMessage } from '../../../shared/ai.types'
@@ -15,7 +15,7 @@ export interface WritingContext {
   chapterTitle: string
   /** 前文尾部纯文本（调用方负责截断） */
   contextTail: string
-  /** 创世台设定（定魂+布局写作规则+文风），注入 AI 提示词；无则 undefined */
+  /** 构思台设定（内核+结构写作规则+文风），注入 AI 提示词；无则 undefined */
   genesis?: {
     styleHint?: string
     soul?: Step2Soul
@@ -25,11 +25,11 @@ export interface WritingContext {
   wiki?: {
     entries: string
   }
-  /** 作品记忆（当前章之前的事实，M8）：防穿帮注入文本 */
+  /** 叙事档案（当前章之前的事实，M8）：防穿帮注入文本 */
   memory?: {
     facts: string
   }
-  /** 剧情事件链（M10.5 联动）：剧情画布事件按序拼接的注入文本 */
+  /** 剧情事件链（M10.5 联动）：情节大纲事件按序拼接的注入文本 */
   plot?: {
     events: string
   }
@@ -38,17 +38,17 @@ export interface WritingContext {
 /** 前文注入上限（字符）：过长会挤占生成预算且多数模型难以利用 */
 const CONTEXT_TAIL_LIMIT = 3000
 
-/** system 提示：网文写作助手角色与输出纪律；注入创世台设定（文风/定魂/写作规则） */
+/** system 提示：长篇写作助手角色与输出纪律；注入构思台设定（文风/内核/写作规则） */
 function systemPrompt(ctx: WritingContext): string {
   const meta: string[] = []
   if (ctx.book?.title) meta.push(`书名《${ctx.book.title}》`)
   if (ctx.book?.genre) meta.push(`题材：${ctx.book.genre}`)
   if (ctx.book?.description) meta.push(`简介：${ctx.book.description.slice(0, 200)}`)
   const parts: string[] = [
-    '你是一位资深网文写作助手，正在为一部长篇小说执笔。',
+    '你是一位资深长篇小说写作助手，正在为一部长篇小说开笔。',
     meta.length ? `作品信息——${meta.join('；')}。` : ''
   ]
-  // 创世台设定注入（定魂是最高指令，文风约束调性，写作规则全局约束）
+  // 构思台设定注入（内核是最高指令，文风约束调性，写作规则全局约束）
   if (ctx.genesis?.styleHint) parts.push(`目标文风：${ctx.genesis.styleHint}`)
   if (ctx.genesis?.soul) {
     const s = ctx.genesis.soul
@@ -57,7 +57,7 @@ function systemPrompt(ctx: WritingContext): string {
     const cheatAbility = s.cheat?.coreAbility
     const cheatSystem = s.cheat?.powerSystem
     if (cheatAbility || cheatSystem)
-      pillars.push(`金手指：${[cheatAbility, cheatSystem].filter(Boolean).join(' / ')}`)
+      pillars.push(`核心能力：${[cheatAbility, cheatSystem].filter(Boolean).join(' / ')}`)
     if (s.conflict?.mainline) pillars.push(`主线冲突：${s.conflict.mainline}`)
     if (pillars.length) parts.push(pillars.join('；'))
   }
@@ -73,11 +73,11 @@ function systemPrompt(ctx: WritingContext): string {
   if (ctx.wiki?.entries) {
     parts.push(`本书设定（必须严格遵守，不得写错名称与属性）：\n${ctx.wiki.entries}`)
   }
-  // 作品记忆注入（M8）：当前章之前的事实（单向可见防剧透），AI 不得违背
+  // 叙事档案注入（M8）：当前章之前的事实（单向可见防剧透），AI 不得违背
   if (ctx.memory?.facts) {
     parts.push(`当前故事状态（此前章节已确立的事实，必须遵守不得矛盾）：\n${ctx.memory.facts}`)
   }
-  // 剧情事件链注入（M10.5 联动）：剧情画布主线，写作走向必须遵守其因果与顺序
+  // 剧情事件链注入（M10.5 联动）：情节大纲主线，写作走向必须遵守其因果与顺序
   if (ctx.plot?.events) {
     parts.push(`全书剧情主线（事件链，写作走向必须遵守其因果与顺序，不得跳过或推翻）：\n${ctx.plot.events}`)
   }
@@ -213,7 +213,7 @@ async function resolveProfile() {
   if (!defRes.ok) throw new Error(defRes.error)
   const profiles = listRes.data
   if (profiles.length === 0) {
-    throw new Error('还没有可用的 AI 档案，请先到「设置中心」配置 API')
+    throw new Error('还没有可用的 AI 档案，请先到「设置」配置 API')
   }
   return profiles.find((p) => p.id === defRes.data) ?? profiles[0]
 }

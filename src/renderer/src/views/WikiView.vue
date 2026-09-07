@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * 万物百科页：世界观知识库（对照原站三栏布局）。
- * 左栏类型筛选+搜索；中栏词条卡片；右侧滑出编辑面板；AI 生成词条；创世台导入。
+ * 设定集页：世界观知识库（对照原站三栏布局）。
+ * 左栏类型筛选+搜索；中栏词条卡片；右侧滑出编辑面板；AI 生成词条；构思台导入。
  */
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
@@ -68,7 +68,7 @@ const aiPanel = ref<InstanceType<typeof AiWritingPanel> | null>(null)
 const aiPanelVisible = ref(false)
 const isBusy = ref(false)
 
-// 创世台导入
+// 构思台导入
 const importing = ref(false)
 
 /** 类型配色（卡片头像底色；M10.8 严肃化：低饱和墨系渐变） */
@@ -329,7 +329,7 @@ function acceptAiEntry(text: string): void {
   toast.success('已填入词条内容，请检查后保存')
 }
 
-// ---- 创世台导入 ----
+// ---- 构思台导入 ----
 async function importFromGenesis(): Promise<void> {
   if (importing.value || !isElectron) return
   importing.value = true
@@ -338,12 +338,12 @@ async function importFromGenesis(): Promise<void> {
     if (!genesisRes.ok) throw new Error(genesisRes.error)
     const step3Rec = genesisRes.data.find((s) => s.step === 3)
     if (!step3Rec?.data) {
-      toast.error('请先在创世台完成「造世」冷启动，再来导入')
+      toast.error('请先在构思台完成「世界构建」起草，再来导入')
       return
     }
     const world = step3Rec.data as { protagonist: string; worldRules: string }
     const candidates = genesisToWorldEntries(world)
-    // 幂等：M10.6 统一 isWikiNameDup（与创世台推送入口同强度）
+    // 幂等：M10.6 统一 isWikiNameDup（与构思台推送入口同强度）
     let created = 0
     for (const c of candidates) {
       if (entries.value.some((w) => isWikiNameDup(c.name, c.type, w.name, w.type))) continue
@@ -361,7 +361,7 @@ async function importFromGenesis(): Promise<void> {
         created++
       }
     }
-    toast.success(created ? `已导入 ${created} 条词条` : '创世台内容均已导入过，无新增')
+    toast.success(created ? `已导入 ${created} 条词条` : '构思台内容均已导入过，无新增')
   } catch (err) {
     toast.error(err instanceof Error ? err.message : '导入失败')
   } finally {
@@ -378,8 +378,8 @@ onMounted(() => void loadAll())
     <!-- 左栏：类型筛选 + 搜索 -->
     <aside class="flex w-52 shrink-0 flex-col border-r border-ink-border/60 bg-surface">
       <div class="border-b border-ink-border/60 px-4 py-3">
-        <router-link :to="`/book/${bookId}/write`" class="text-xs text-ink-text-muted hover:text-ink-primary">← 工作台</router-link>
-        <p class="mt-2 text-sm font-semibold">万物百科</p>
+        <router-link :to="`/book/${bookId}/write`" class="text-xs text-ink-text-muted hover:text-ink-primary">← 写作台</router-link>
+        <p class="mt-2 text-sm font-semibold">设定集</p>
         <p class="truncate text-xs text-ink-text-muted" :title="book?.title">{{ book?.title ?? '…' }}</p>
       </div>
       <div class="px-3 py-3">
@@ -416,21 +416,21 @@ onMounted(() => void loadAll())
           class="rounded-lg border border-ink-border px-3 py-1.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary disabled:opacity-50"
           :disabled="importing"
           @click="importFromGenesis"
-        >{{ importing ? '导入中…' : '从创世台导入' }}</button>
+        >{{ importing ? '导入中…' : '从构思台导入' }}</button>
         <button
           class="rounded-lg border border-ink-primary px-3 py-1.5 text-xs text-ink-primary transition-colors hover:bg-ink-primary-soft"
           @click="openExtractDialog"
-        >⇦ 从正文提取</button>
+        >从正文提取</button>
         <button
           class="rounded-lg border border-ink-primary px-3 py-1.5 text-xs text-ink-primary transition-colors hover:bg-ink-primary-soft"
           @click="openAiDialog"
-        >✦ AI 生成词条</button>
+        >AI 生成词条</button>
         <button
           class="rounded-lg border border-ink-border px-3 py-1.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary disabled:opacity-50"
           :disabled="cleanupRunning"
           title="修复病态词条名、合并同一实体的重复词条（引用自动转移）"
           @click="runCleanup"
-        >{{ cleanupRunning ? '整理中…' : '🧹 整理词条' }}</button>
+        >{{ cleanupRunning ? '整理中…' : '整理词条' }}</button>
       </div>
     </aside>
 
@@ -440,7 +440,7 @@ onMounted(() => void loadAll())
         <div v-if="loading" class="py-24 text-center text-ink-text-muted">加载中…</div>
         <div v-else-if="filtered.length === 0" class="flex flex-col items-center gap-3 py-24">
           <p class="text-ink-text-secondary">{{ entries.length ? '没有匹配的词条' : '还没有词条' }}</p>
-          <p class="text-sm text-ink-text-muted">左侧「新建词条 / AI 生成 / 从创世台导入」任选</p>
+          <p class="text-sm text-ink-text-muted">左侧「新建词条 / AI 生成 / 从构思台导入」任选</p>
         </div>
         <div v-else class="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
           <div
@@ -575,7 +575,7 @@ onMounted(() => void loadAll())
     <teleport to="body">
       <div v-if="aiDialogVisible" class="fixed inset-0 z-40 flex items-center justify-center bg-black/30" @click.self="aiDialogVisible = false">
         <div class="w-[420px] rounded-2xl bg-surface p-6 shadow-card">
-          <h2 class="mb-4 text-lg font-semibold">✦ AI 生成词条</h2>
+          <h2 class="mb-4 text-lg font-semibold">AI 生成词条</h2>
           <div class="flex flex-col gap-4">
             <div class="flex flex-col gap-1.5">
               <span class="text-sm text-ink-text-secondary">词条类型</span>

@@ -61,7 +61,7 @@ export interface ChatMessage {
 export interface ChatStreamRequest {
   /** 直接用某档案发起（应用内常规路径） */
   profileId?: string
-  /** 或用临时档案数据发起（设置中心「测试连接」用，尚未保存也能测） */
+  /** 或用临时档案数据发起（设置「测试连接」用，尚未保存也能测） */
   profile?: Omit<ApiProfile, 'id' | 'createdAt' | 'updatedAt'>
   messages: ChatMessage[]
 }

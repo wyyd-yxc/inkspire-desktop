@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * 章节画布：Vue Flow 场景编排 + AI 场景生成 + 按场景顺序生成正文。
+ * 场景规划：Vue Flow 场景编排 + AI 场景生成 + 按场景顺序生成正文。
  * 节点 x 坐标即叙事顺序（sort_order）；详情面板编辑全部字段；AI 面板流式预览。
  */
 import { computed, onMounted, ref, watch } from 'vue'
@@ -611,7 +611,7 @@ async function startProseGen(): Promise<void> {
     return
   }
   aiPanel.value?.finish()
-  // 写入章节并跳工作台（原站行为：生成完成自动跳转）
+  // 写入章节并跳写作台（原站行为：生成完成自动跳转）
   try {
     const html = full
       .split(/\n+/)
@@ -645,8 +645,8 @@ onMounted(() => void loadAll())
   <div class="flex h-full flex-col">
     <!-- 顶部工具栏 -->
     <header class="flex items-center gap-3 border-b border-ink-border/60 bg-surface px-5 py-3">
-      <router-link :to="`/book/${bookId}/write`" class="text-xs text-ink-text-muted hover:text-ink-primary">← 工作台</router-link>
-      <h1 class="text-base font-bold text-ink-primary">章节画布</h1>
+      <router-link :to="`/book/${bookId}/write`" class="text-xs text-ink-text-muted hover:text-ink-primary">← 写作台</router-link>
+      <h1 class="text-base font-bold text-ink-primary">场景规划</h1>
       <span class="truncate text-sm text-ink-text-muted">{{ chapter?.title ?? '…' }}</span>
       <div class="ml-auto flex items-center gap-2">
         <!-- 连线编辑器（单击边选中后出现） -->
@@ -682,7 +682,7 @@ onMounted(() => void loadAll())
         <button
           class="rounded-lg border border-ink-primary px-3 py-1.5 text-xs text-ink-primary transition-colors hover:bg-ink-primary-soft"
           @click="openAiDialog('init')"
-        >✦ 初始化</button>
+        >初始化</button>
         <button
           class="rounded-lg border border-ink-primary px-3 py-1.5 text-xs text-ink-primary transition-colors hover:bg-ink-primary-soft"
           @click="openAiDialog('append')"
@@ -693,23 +693,23 @@ onMounted(() => void loadAll())
           :disabled="!selectedScene"
           title="单击选中场景后可用：在其前插入过渡场景"
           @click="openAiDialog('bridge')"
-        >⇋ 搭桥</button>
+        >搭桥</button>
         <button
           class="rounded-lg border px-3 py-1.5 text-xs transition-colors disabled:opacity-40"
           :class="selectedScene ? 'border-ink-primary text-ink-primary hover:bg-ink-primary-soft' : 'border-ink-border text-ink-text-muted'"
           :disabled="!selectedScene"
           title="单击选中场景后可用：融入设定充实该场景"
           @click="openAiDialog('rewrite')"
-        >✎ 改写</button>
+        >改写</button>
         <button
           class="rounded-lg border border-ink-primary px-3 py-1.5 text-xs text-ink-primary transition-colors hover:bg-ink-primary-soft"
           @click="openAiDialog('ending')"
-        >✧ 收尾</button>
+        >收尾</button>
         <button
           class="rounded-lg bg-ink-primary px-4 py-1.5 text-xs text-white shadow-card transition-colors hover:bg-ink-primary-hover disabled:opacity-50"
           :disabled="proseRunning"
           @click="openProseDialog"
-        >{{ proseRunning ? '生成中…' : '⚡ 按场景生成正文' }}</button>
+        >{{ proseRunning ? '生成中…' : '按场景生成正文' }}</button>
       </div>
     </header>
 
@@ -863,7 +863,7 @@ onMounted(() => void loadAll())
     <teleport to="body">
       <div v-if="aiDialogVisible" class="fixed inset-0 z-40 flex items-center justify-center bg-black/30" @click.self="aiDialogVisible = false">
         <div class="w-[440px] rounded-2xl bg-surface p-6 shadow-card">
-          <h2 class="mb-1 text-lg font-semibold">✦ AI 生成场景</h2>
+          <h2 class="mb-1 text-lg font-semibold">AI 生成场景</h2>
           <p class="mb-4 text-sm text-ink-text-secondary">{{ modeLabels[aiMode] }}</p>
           <p v-if="needsAnchorFor(aiMode)" class="mb-3 rounded-lg bg-ink-primary-soft px-3 py-2 text-xs text-ink-primary">
             锚点场景：{{ selectedScene?.title }}
@@ -888,7 +888,7 @@ onMounted(() => void loadAll())
     <teleport to="body">
       <div v-if="proseDialogVisible" class="fixed inset-0 z-40 flex items-center justify-center bg-black/30" @click.self="proseDialogVisible = false">
         <div class="w-[440px] rounded-2xl bg-surface p-6 shadow-card">
-          <h2 class="mb-2 text-lg font-semibold">⚡ 按场景生成正文</h2>
+          <h2 class="mb-2 text-lg font-semibold">按场景生成正文</h2>
           <p class="mb-4 text-sm leading-6 text-ink-text-secondary">
             按叙事顺序逐场景生成并拼合，完成后<b>替换本章现有正文</b>（当前 {{ chapter?.wordCount ?? 0 }} 字将被覆盖）。已锁定场景 {{ lockedCount }} 个将跳过生成、以占位段插入。
           </p>

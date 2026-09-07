@@ -23,7 +23,7 @@ const mock = (() => {
     {
       id: 'mock-1',
       title: '示例小说（浏览器调试数据）',
-      genre: '玄幻',
+      genre: '奇幻',
       description: '这是一条仅在普通浏览器中显示的示例数据，用于调 UI。',
       cover: '',
       status: 'writing',

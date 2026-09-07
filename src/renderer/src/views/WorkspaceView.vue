@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * 正文工作台页：左章节树 + 中编辑器。
+ * 写作台页：左章节树 + 中编辑器。
  * 数据编排：章节列表加载/CRUD、编辑器内容防抖自动保存（1.5s）+ Ctrl+S、切换章节前保存。
  */
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
@@ -337,7 +337,7 @@ onBeforeUnmount(() => {
     />
 
     <div v-if="loading" class="fixed inset-0 z-30 flex items-center justify-center bg-paper/60">
-      <p class="text-ink-text-muted">正在载入工作台…</p>
+      <p class="text-ink-text-muted">正在载入写作台…</p>
     </div>
   </div>
 </template>

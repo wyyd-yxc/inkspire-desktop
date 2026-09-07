@@ -1,5 +1,5 @@
 /**
- * api_profiles / settings 域 IPC（设置中心数据）。
+ * api_profiles / settings 域 IPC（设置数据）。
  */
 import { ipcMain } from 'electron'
 import { wrap } from './wrap'

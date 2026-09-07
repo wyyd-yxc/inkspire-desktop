@@ -1,5 +1,5 @@
 /**
- * 作品记忆 AI 抽取与去重编排（M10.5）：单章/未抽取批量抽取 → 候选确认面板勾选采纳 → 入库 + 水位推进。
+ * 叙事档案 AI 抽取与去重编排（M10.5）：单章/未抽取批量抽取 → 候选确认面板勾选采纳 → 入库 + 水位推进。
  * 去重双保险：prompt 注入已有记忆（AI 级防同义）+ 入库前规范化比对（本地级）。
  */
 import { computed, ref, toValue, type MaybeRefOrGetter, type Ref } from 'vue'

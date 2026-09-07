@@ -1,5 +1,5 @@
 /**
- * scenes 表 DAO：章节画布场景节点增删改查与排序。
+ * scenes 表 DAO：场景规划场景节点增删改查与排序。
  */
 import { randomUUID } from 'node:crypto'
 import type { Database } from 'better-sqlite3'

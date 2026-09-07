@@ -59,7 +59,7 @@ const api = {
   /** IPC 通路自检：正常返回 { ok: true, data: 'pong' } */
   ping: (): Promise<IpcResult<string>> => ipcRenderer.invoke('app:ping'),
 
-  /** 书籍管理（书斋） */
+  /** 书籍管理（书房） */
   books: {
     list: (): Promise<IpcResult<Book[]>> => ipcRenderer.invoke('books:list'),
     create: (input: CreateBookInput): Promise<IpcResult<Book>> =>
@@ -70,7 +70,7 @@ const api = {
       ipcRenderer.invoke('books:delete', id)
   },
 
-  /** 章节管理（正文工作台） */
+  /** 章节管理（写作台） */
   chapters: {
     list: (bookId: string): Promise<IpcResult<Chapter[]>> =>
       ipcRenderer.invoke('chapters:list', bookId),
@@ -93,7 +93,7 @@ const api = {
       ipcRenderer.invoke('sync:watermark-merge', key, chapterId, wordCount)
   },
 
-  /** 创世台五步设定 */
+  /** 构思台五步设定 */
   genesis: {
     get: (bookId: string): Promise<IpcResult<GenesisStepRecord[]>> =>
       ipcRenderer.invoke('genesis:get', bookId),
@@ -108,7 +108,7 @@ const api = {
       ipcRenderer.invoke('genesis:save-step', bookId, step, data, isDone)
   },
 
-  /** 万物百科词条 */
+  /** 设定集词条 */
   wiki: {
     list: (bookId: string): Promise<IpcResult<WikiEntry[]>> =>
       ipcRenderer.invoke('wiki:list', bookId),
@@ -127,7 +127,7 @@ const api = {
       ipcRenderer.invoke('wiki:remove', id)
   },
 
-  /** 章节画布场景 */
+  /** 场景规划场景 */
   scenes: {
     list: (chapterId: string): Promise<IpcResult<Scene[]>> =>
       ipcRenderer.invoke('scenes:list', chapterId),
@@ -141,7 +141,7 @@ const api = {
       ipcRenderer.invoke('scenes:reorder', chapterId, orderedIds)
   },
 
-  /** 章节画布场景连线 */
+  /** 场景规划场景连线 */
   sceneEdges: {
     list: (chapterId: string): Promise<IpcResult<SceneEdge[]>> =>
       ipcRenderer.invoke('scene-edges:list', chapterId),
@@ -153,7 +153,7 @@ const api = {
       ipcRenderer.invoke('scene-edges:remove', id)
   },
 
-  /** 剧情画布事件连线 */
+  /** 情节大纲事件连线 */
   plotEdges: {
     list: (bookId: string): Promise<IpcResult<PlotEdge[]>> =>
       ipcRenderer.invoke('plot-edges:list', bookId),
@@ -165,7 +165,7 @@ const api = {
       ipcRenderer.invoke('plot-edges:remove', id)
   },
 
-  /** 剧情画布事件 */
+  /** 情节大纲事件 */
   plot: {
     list: (bookId: string, parentId?: string): Promise<IpcResult<PlotEvent[]>> =>
       ipcRenderer.invoke('plot:list', bookId, parentId),
@@ -177,7 +177,7 @@ const api = {
       ipcRenderer.invoke('plot:remove', id)
   },
 
-  /** 作品记忆（事实层） */
+  /** 叙事档案（事实层） */
   memories: {
     list: (bookId: string): Promise<IpcResult<Memory[]>> =>
       ipcRenderer.invoke('memories:list', bookId),
@@ -189,7 +189,7 @@ const api = {
       ipcRenderer.invoke('memories:remove', id)
   },
 
-  /** 墨灵助手对话历史 */
+  /** 写作助手对话历史 */
   assistant: {
     list: (bookId: string): Promise<IpcResult<AssistantMessage[]>> =>
       ipcRenderer.invoke('assistant:list', bookId),
@@ -203,7 +203,7 @@ const api = {
       ipcRenderer.invoke('assistant:clear', bookId)
   },
 
-  /** AI 接口档案（设置中心） */
+  /** AI 接口档案（设置） */
   apiProfiles: {
     list: (): Promise<IpcResult<ApiProfile[]>> => ipcRenderer.invoke('api-profiles:list'),
     create: (input: CreateApiProfileInput): Promise<IpcResult<ApiProfile>> =>

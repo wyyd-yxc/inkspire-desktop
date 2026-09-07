@@ -1,7 +1,7 @@
 /**
  * 剧情提取编排（M10.7 正文中枢）：正文→剧情事件。选章/变更章 → 逐章 AI 回溯事件 →
  * 标题 isWikiNameDup 去重（对已有事件+批内）→ SyncCandidateDialog 勾选 → 落库（按章节序横排+tags 标第N章）
- * → 水位推进。与 useWikiSync 同范式；无独立配置弹窗（工作台 SyncDialog 或剧情页按钮驱动）。
+ * → 水位推进。与 useWikiSync 同范式；无独立配置弹窗（写作台 SyncDialog 或剧情页按钮驱动）。
  */
 import { computed, ref, toValue, type MaybeRefOrGetter, type Ref } from 'vue'
 import type { Book } from '../../../shared/book.types'

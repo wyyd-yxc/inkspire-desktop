@@ -3,23 +3,22 @@
  * 命名用 camelCase；与数据库 snake_case 行的映射在 DAO 层完成。
  */
 
-/** 网文题材分类（影响后续 AI 生成的题材偏好，对照原站书斋分类） */
+/** 题材分类（M10.8 严肃写作命名；旧值经 migration v11 映射） */
 export const BOOK_GENRES = [
-  '玄幻',
-  '仙侠',
-  '都市',
+  '长篇',
+  '中短篇',
   '科幻',
   '历史',
-  '言情',
   '悬疑',
+  '奇幻',
+  '现实主义',
   '武侠',
-  '游戏',
-  '轻小说'
+  '其他'
 ] as const
 
 export type BookGenre = (typeof BOOK_GENRES)[number]
 
-/** 书籍状态：创作中 / 完结 / 封存（archived 在书斋中隐藏） */
+/** 书籍状态：创作中 / 完结 / 封存（archived 在书房中隐藏） */
 export type BookStatus = 'writing' | 'finished' | 'archived'
 
 /** 书籍实体（API 返回形态） */

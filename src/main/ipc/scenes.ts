@@ -1,5 +1,5 @@
 /**
- * scenes 域 IPC：章节画布场景节点。
+ * scenes 域 IPC：场景规划场景节点。
  */
 import { ipcMain } from 'electron'
 import { wrap } from './wrap'

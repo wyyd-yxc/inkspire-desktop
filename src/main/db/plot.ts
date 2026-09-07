@@ -1,5 +1,5 @@
 /**
- * plot_events 表 DAO：剧情画布事件节点增删改查（book 维度，跨章节）。
+ * plot_events 表 DAO：情节大纲事件节点增删改查（book 维度，跨章节）。
  * 事件删除时关联连线经 FK ON DELETE CASCADE 自动清理。
  */
 import { randomUUID } from 'node:crypto'

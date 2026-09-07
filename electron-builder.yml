@@ -1,6 +1,6 @@
 # electron-builder 打包配置（NSIS 安装包）
 appId: cn.inkspire.desktop
-productName: 墨灵
+productName: 墨笺
 # better-sqlite3 使用 NAPI 预编译二进制（跨 ABI），无需 node-gyp 重编译
 #（机器无 Python/VS 编译环境，rebuild 必失败；dev 模式已验证预编译二进制在 Electron 内正常）
 npmRebuild: false
@@ -25,4 +25,4 @@ nsis:
   artifactName: InkSpire-Setup-${version}.exe
   oneClick: false
   allowToChangeInstallationDirectory: true
-  shortcutName: 墨灵
+  shortcutName: 墨笺

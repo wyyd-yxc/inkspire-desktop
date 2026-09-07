@@ -1,6 +1,6 @@
 /**
  * 路由表。路径与功能模块的对应关系见 docs/design/architecture.md 第 4 节。
- * M0 仅有书斋占位页，后续里程碑逐个补齐。
+ * M0 仅有书房占位页，后续里程碑逐个补齐。
  */
 import { createRouter, createWebHashHistory } from 'vue-router'
 

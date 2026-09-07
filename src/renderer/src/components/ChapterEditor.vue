@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * 正文编辑器：TipTap 封装 + AI 写作集成。
- * - 标题行内编辑；正文区（网文排版）
+ * - 标题行内编辑；正文区（长篇排版）
  * - AI 三入口：状态栏「续写」、划词浮条（润色/扩写/改写）、标题栏「整章润色」
  * - 生成结果经底部 AiWritingPanel 预览：流式显示 → 采纳插入（续写=光标处、划词=替换选区、整章=全文替换）
  * - 父组件以 :key=章节id 重建本组件（undo 历史隔离），AI 面板状态随组件重置
@@ -41,14 +41,14 @@ const toast = useToast()
 const saveState = ref<'saved' | 'dirty' | 'saving'>('saved')
 const titleText = ref(props.chapter?.title ?? '')
 
-/** 创世台设定缓存（bookId 变化时加载，注入 AI 写作上下文） */
+/** 构思台设定缓存（bookId 变化时加载，注入 AI 写作上下文） */
 const genesisCache = ref<{ styleHint?: string; soul?: Step2Soul; rules?: Step4Layout['rules'] }>({})
 /** 加载状态：loadGenesis 进行中的 promise（防「秒点续写」时设定未加载完） */
 let genesisLoadingPromise: Promise<void> = Promise.resolve()
 /** 加载序号：切书时递增，防止旧请求延迟返回覆盖新书设定 */
 let genesisLoadSeq = 0
 
-/** 加载该书创世台设定用于 AI 上下文注入 */
+/** 加载该书构思台设定用于 AI 上下文注入 */
 async function loadGenesis(bookId: string): Promise<void> {
   if (!isElectron) return
   const mySeq = ++genesisLoadSeq
@@ -69,8 +69,8 @@ async function loadGenesis(bookId: string): Promise<void> {
       rules: layout?.rules && (layout.rules.targetWords || layout.rules.forbidden || layout.rules.styleNotes) ? layout.rules : undefined
     }
   } catch (err) {
-    // 创世台加载失败不阻塞写作，但记录便于排查（此前 isElectron 未导入导致 ReferenceError 被静默吞掉）
-    console.warn('[ChapterEditor] 创世台设定加载失败:', err)
+    // 构思台加载失败不阻塞写作，但记录便于排查（此前 isElectron 未导入导致 ReferenceError 被静默吞掉）
+    console.warn('[ChapterEditor] 构思台设定加载失败:', err)
   }
 }
 
@@ -125,7 +125,7 @@ async function ensureWikiLoaded(): Promise<void> {
   await wikiLoadingPromise
 }
 
-// ---------------- 作品记忆注入（M8，与 genesisCache 同款三件套） ----------------
+// ---------------- 叙事档案注入（M8，与 genesisCache 同款三件套） ----------------
 
 /** 记忆注入预算（字符） */
 const MEMORY_INJECT_LIMIT = 1200
@@ -144,7 +144,7 @@ async function loadMemory(bookId: string): Promise<void> {
     if (mySeq !== memoryLoadSeq) return
     if (res.ok) memoryAll.value = res.data
   } catch (err) {
-    console.warn('[ChapterEditor] 作品记忆加载失败:', err)
+    console.warn('[ChapterEditor] 叙事档案加载失败:', err)
   }
 }
 
@@ -217,7 +217,7 @@ const memoryCache = computed<{ facts: string }>(() => {
   return { facts: blocks.join('\n') }
 })
 
-/** 纯文本字数（去所有空白字符，符合网文计数习惯） */
+/** 纯文本字数（去所有空白字符，符合长篇计数习惯） */
 function countWords(text: string): number {
   return text.replace(/\s/g, '').length
 }
@@ -260,7 +260,7 @@ let isBusy = false
 /** 生成序号：stop 时递增使尚未启动的 nextTick 回调失效（防「点续写后立刻停止仍会发起生成」竞态） */
 let generationSeq = 0
 
-/** AI 输出纯文本 → TipTap HTML：按换行分段（保留网文段落结构），HTML 特殊字符转义 */
+/** AI 输出纯文本 → TipTap HTML：按换行分段（保留长篇段落结构），HTML 特殊字符转义 */
 function aiTextToHtml(text: string): string {
   const escapeHtml = (s: string): string =>
     s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -275,7 +275,7 @@ function aiTextToHtml(text: string): string {
 /** 划词目标（发起划词操作时的选区快照，含前后文供 AI 无缝衔接） */
 let selectionTarget: (SelectionContext & { from: number; to: number }) | null = null
 
-/** 组装写作上下文（前文 = 当前正文纯文本；含创世台设定+百科词条+记忆+剧情事件链注入 AI 提示词） */
+/** 组装写作上下文（前文 = 当前正文纯文本；含构思台设定+百科词条+记忆+剧情事件链注入 AI 提示词） */
 function writingContext() {
   return {
     book: props.book,
@@ -296,7 +296,7 @@ async function runGeneration(kind: PanelKind): Promise<void> {
   }
   if (!editor.value) return
   isBusy = true
-  // 确保 genesis 设定已加载完成（防「进工作台秒点续写」时 genesisCache 仍空）
+  // 确保 genesis 设定已加载完成（防「进写作台秒点续写」时 genesisCache 仍空）
   await ensureGenesisLoaded()
   await ensureWikiLoaded()
   await ensureMemoryLoaded()
@@ -551,7 +551,7 @@ const saveLabel = computed(
           class="shrink-0 rounded-full border border-ink-border px-3 py-1 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
           title="保持情节不变，逐段打磨文笔"
           @click="runGeneration('chapter-polish')"
-        >✧ 整章润色</button>
+        >整章润色</button>
       </div>
 
       <!-- 正文 -->
@@ -578,7 +578,7 @@ const saveLabel = computed(
             class="flex items-center gap-1 rounded-full px-2 py-0.5 text-ink-primary transition-colors hover:bg-ink-primary-soft"
             title="AI 从前文自然续写（流式预览后采纳）"
             @click="runGeneration('continue')"
-          >✦ AI 续写</button>
+          >AI 续写</button>
           <span>{{ wordCount.toLocaleString('zh-CN') }} 字 · Ctrl+S 立即保存</span>
         </div>
       </div>

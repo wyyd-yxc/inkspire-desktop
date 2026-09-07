@@ -1,12 +1,12 @@
 /**
- * 创世台共享类型：五步设定数据结构。
+ * 构思台共享类型：五步设定数据结构。
  * 每步 data 为 JSON，结构因步而异（见各接口定义）。
  */
 
-/** 创世台五步序号 */
+/** 构思台五步序号 */
 export type GenesisStep = 1 | 2 | 3 | 4 | 5
 
-/** 第 1 步·定风：绑定的风格包 */
+/** 第 1 步·基调：绑定的风格包 */
 export interface Step1Style {
   /** 预设风格包 id（内置常量）；空串表示未绑定 */
   styleId: string
@@ -14,7 +14,7 @@ export interface Step1Style {
   styleName: string
 }
 
-/** 第 2 步·定魂：一句话 + 三大支柱 */
+/** 第 2 步·内核：一句话 + 三大支柱 */
 export interface Step2Soul {
   /** 核心一句话：主角是谁、想做什么、面对什么阻碍 */
   logline: string
@@ -25,7 +25,7 @@ export interface Step2Soul {
     targetReader: string
     mood: string
   }
-  /** 金手指设定 */
+  /** 核心能力设定 */
   cheat: {
     coreAbility: string
     powerSystem: string
@@ -40,7 +40,7 @@ export interface Step2Soul {
   }
 }
 
-/** 第 3 步·造世：冷启动生成的设定（M6 迁移至百科前的暂存） */
+/** 第 3 步·世界构建：起草生成的设定（M6 迁移至百科前的暂存） */
 export interface Step3World {
   /** 全书大纲 */
   bookOutline: string
@@ -50,7 +50,7 @@ export interface Step3World {
   worldRules: string
   /** 主角设定 */
   protagonist: string
-  /** 冷启动时间戳 */
+  /** 起草时间戳 */
   generatedAt: string
 }
 
@@ -73,7 +73,7 @@ export interface Step4Layout {
   }
 }
 
-/** 第 5 步·执笔：仅标记是否已开始 */
+/** 第 5 步·开笔：仅标记是否已开始 */
 export interface Step5Write {
   started: boolean
 }

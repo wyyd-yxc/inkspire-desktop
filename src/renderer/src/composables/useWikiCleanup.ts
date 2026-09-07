@@ -20,13 +20,13 @@ import type { useToast } from './useToast'
 
 /** 病态名判定：创世导入标记 + 超长（历史 firstLine 60 字截断的产物） */
 function isBadName(e: WikiEntry): boolean {
-  return e.name.length > 20 && e.summary.includes('导入自创世台')
+  return e.name.length > 20 && e.summary.includes('导入自构思台')
 }
 
 /** 实质摘要（排除导入标记占位） */
 function realSummary(e: WikiEntry): string {
   const s = e.summary.trim()
-  if (!s || s.includes('导入自创世台')) return ''
+  if (!s || s.includes('导入自构思台')) return ''
   return s
 }
 

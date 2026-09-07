@@ -1,5 +1,5 @@
 /**
- * 万物百科共享类型：世界观知识库词条（架构文档第 3 节 wiki_entries 表）。
+ * 设定集共享类型：世界观知识库词条（架构文档第 3 节 wiki_entries 表）。
  * 词条让 AI 写作时能查到正确设定，避免长篇写错名字、忘记设定、前后矛盾。
  */
 
@@ -9,7 +9,7 @@ export const WIKI_TYPES = [
   'location', // 地点
   'item', // 物品
   'faction', // 势力
-  'skill', // 功法
+  'skill', // 技艺
   'lore' // 背景
 ] as const
 
@@ -21,7 +21,7 @@ export const WIKI_TYPE_LABELS: Record<WikiType, string> = {
   location: '地点',
   item: '物品',
   faction: '势力',
-  skill: '功法',
+  skill: '技艺',
   lore: '背景'
 }
 

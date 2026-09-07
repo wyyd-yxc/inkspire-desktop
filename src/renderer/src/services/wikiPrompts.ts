@@ -1,6 +1,6 @@
 /**
- * 万物百科提示词构造与解析：AI 生成词条（严格 JSON + 容错解析）、
- * 创世台造世冷启动内容导入为词条。
+ * 设定集提示词构造与解析：AI 生成词条（严格 JSON + 容错解析）、
+ * 构思台世界构建起草内容导入为词条。
  * 提示词使用面向故事的中性描述，不出现内部流程术语（踩坑 #16）。
  */
 import type { ChatMessage } from '../../../shared/ai.types'
@@ -22,7 +22,7 @@ function wikiSystemPrompt(book: Pick<Book, 'title' | 'genre' | 'description'>): 
   if (book.genre) meta.push(`题材：${book.genre}`)
   if (book.description) meta.push(`简介：${book.description.slice(0, 200)}`)
   return [
-    '你是一位资深网文世界观架构师，擅长为长篇小说设计具体、自洽、可落地的设定。',
+    '你是一位资深长篇小说世界观架构师，擅长为长篇小说设计具体、自洽、可落地的设定。',
     meta.length ? `作品信息——${meta.join('；')}。` : '',
     '输出要求：设定具体可落地、避免空话套话；与已有设定保持一致；中文书写。'
   ]
@@ -107,7 +107,7 @@ export function parseWikiGenerate(
 }
 
 /**
- * 创世台造世内容导入为词条（幂等：跳过已导入标记的段落）。
+ * 构思台世界构建内容导入为词条（幂等：跳过已导入标记的段落）。
  * 「主角设定」→ 角色词条；「世界法则」→ 背景词条（injection=always 便于 AI 写作携带）。
  */
 
@@ -128,7 +128,7 @@ export function genesisToWorldEntries(
     entries.push({
       type: 'character',
       name: extractEntityName(world.protagonist, '主角'),
-      summary: '（导入自创世台·主角设定）',
+      summary: '（导入自构思台·主角设定）',
       content: world.protagonist,
       systemRole: 'protagonist',
       injection: 'always'
@@ -138,7 +138,7 @@ export function genesisToWorldEntries(
     entries.push({
       type: 'lore',
       name: extractEntityName(world.worldRules, '世界规则'),
-      summary: '（导入自创世台·世界法则）',
+      summary: '（导入自构思台·世界法则）',
       content: world.worldRules,
       systemRole: 'rule',
       injection: 'always'
@@ -220,8 +220,8 @@ function wikiExtractSystemPrompt(book: Pick<Book, 'title' | 'genre' | 'descripti
   if (book.title) meta.push(`书名《${book.title}》`)
   if (book.genre) meta.push(`题材：${book.genre}`)
   return [
-    '你是一位网文设定编辑，擅长从正文中识别值得收入「万物百科」的设定元素：',
-    '有名字的人物、地点、物品、势力组织、功法技能，以及影响后续剧情的世界规则。',
+    '你是一位长篇设定编辑，擅长从正文中识别值得收入「设定集」的设定元素：',
+    '有名字的人物、地点、物品、势力组织、技艺，以及影响后续剧情的世界规则。',
     '一笔带过、无名字的路人不收；与已有词条同名或同义的不收。中文书写。'
   ]
     .filter(Boolean)
@@ -253,7 +253,7 @@ export function buildWikiExtractMessages(
     "summary": "正文已确立的关键设定（60 字内：身份/特征/能力/归属等）"
   }
 ]
-type 六选一：character=人物 / location=地点 / item=物品 / faction=势力 / skill=功法技能 / lore=世界规则。
+type 六选一：character=人物 / location=地点 / item=物品 / faction=势力 / skill=技艺 / lore=世界规则。
 只收正文明确出现的元素，最多 8 条，宁缺毋滥；不要脑补正文没有的设定。字段值内禁止使用英文双引号。
 
 正文：

@@ -19,7 +19,7 @@ import { registerMemoryIpc } from './ipc/memories'
 import { registerAssistantIpc } from './ipc/assistant'
 import { registerSyncIpc } from './ipc/sync'
 
-/** 创建应用主窗口（1280x800，中文标题「墨灵」）。 */
+/** 创建应用主窗口（1280x800，中文标题「墨笺」）。 */
 function createWindow(): void {
   const win = new BrowserWindow({
     width: 1280,
@@ -28,7 +28,7 @@ function createWindow(): void {
     minHeight: 680,
     show: false,
     autoHideMenuBar: true,
-    title: '墨灵',
+    title: '墨笺',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: true,

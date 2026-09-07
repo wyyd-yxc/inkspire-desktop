@@ -1,5 +1,5 @@
 /**
- * 创世台提示词构造：定魂 AI 辅助 + 造世冷启动。
+ * 构思台提示词构造：内核 AI 辅助 + 世界构建起草。
  * 复用 services/ai.ts 的 chatStream 管线。
  */
 import type { ChatMessage } from '../../../shared/ai.types'
@@ -8,7 +8,7 @@ import type { Step2Soul } from '../../../shared/genesis.types'
 import { getPresetStyle } from '../../../shared/presetStyles'
 import { lenientParse } from './jsonRepair'
 
-/** 组装创世台的 system 提示：网文策划专家角色 + 书籍元信息 + 已绑定的文风 */
+/** 组装构思台的 system 提示：长篇策划专家角色 + 书籍元信息 + 已绑定的文风 */
 function genesisSystemPrompt(book: Pick<Book, 'title' | 'genre' | 'description'>, styleId?: string): string {
   const meta: string[] = []
   if (book.title) meta.push(`书名《${book.title}》`)
@@ -16,7 +16,7 @@ function genesisSystemPrompt(book: Pick<Book, 'title' | 'genre' | 'description'>
   if (book.description) meta.push(`简介：${book.description.slice(0, 200)}`)
   const style = styleId ? getPresetStyle(styleId) : undefined
   return [
-    '你是一位资深网文策划与世界观架构师，擅长帮作者把模糊灵感打磨成可执行的长篇设定。',
+    '你是一位资深长篇小说策划与世界观架构师，擅长帮作者把模糊灵感打磨成可执行的长篇设定。',
     meta.length ? `作品信息——${meta.join('；')}。` : '',
     style ? `目标文风：${style.name}。${style.promptHint}` : '',
     '输出要求：内容具体可落地、避免空话套话；中文书写。'
@@ -25,7 +25,7 @@ function genesisSystemPrompt(book: Pick<Book, 'title' | 'genre' | 'description'>
     .join('')
 }
 
-/** 定魂 AI 辅助：根据书名/分类/简介起草 logline + 三大支柱，输出严格 JSON 便于解析 */
+/** 内核 AI 辅助：根据书名/分类/简介起草 logline + 三大支柱，输出严格 JSON 便于解析 */
 export function buildSoulAssistMessages(
   book: Pick<Book, 'title' | 'genre' | 'description'>,
   styleId?: string
@@ -46,7 +46,7 @@ export function buildSoulAssistMessages(
   ]
 }
 
-/** 造世冷启动：基于定魂内容生成全套初始设定，分段输出 */
+/** 世界构建起草：基于内核内容生成全套初始设定，分段输出 */
 export function buildWorldColdStartMessages(
   book: Pick<Book, 'title' | 'genre' | 'description'>,
   soul: Step2Soul,
@@ -55,7 +55,7 @@ export function buildWorldColdStartMessages(
   const soulText = [
     `核心一句话：${soul.logline}`,
     `题材定位：主类型${soul.genre.mainType} / 副类型${soul.genre.subType} / 目标读者${soul.genre.targetReader} / 情绪基调${soul.genre.mood}`,
-    `金手指：核心能力${soul.cheat.coreAbility} / 力量体系${soul.cheat.powerSystem} / 限制代价${soul.cheat.limitation}`,
+    `核心能力：核心能力${soul.cheat.coreAbility} / 力量体系${soul.cheat.powerSystem} / 限制代价${soul.cheat.limitation}`,
     `冲突梯队：开局${soul.conflict.opening} / 主线${soul.conflict.mainline} / 终极${soul.conflict.ultimate} / 反派${soul.conflict.villain}`
   ].join('\n')
   return [
@@ -68,7 +68,7 @@ export function buildWorldColdStartMessages(
 （卷级结构、字数分配、节奏规划、伏笔布局，200-400 字）
 
 【第一卷大纲】
-（情绪弧线、章节分段建议、爽点节奏，200-400 字）
+（情绪弧线、章节分段建议、情绪高点节奏，200-400 字）
 
 【世界法则】
 （世界规则、力量体系、核心设定，200-400 字）
@@ -82,7 +82,7 @@ ${soulText}`
   ]
 }
 
-/** 解析冷启动输出：按【段名】分割为四块 */
+/** 解析起草输出：按【段名】分割为四块 */
 export function parseWorldColdStart(text: string): {
   bookOutline: string
   volumeOutline: string

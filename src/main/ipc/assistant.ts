@@ -1,5 +1,5 @@
 /**
- * assistant 域 IPC：墨灵助手对话历史。
+ * assistant 域 IPC：写作助手对话历史。
  */
 import { ipcMain } from 'electron'
 import { wrap } from './wrap'

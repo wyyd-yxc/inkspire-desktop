@@ -1,5 +1,5 @@
 /**
- * memories 域 IPC：作品记忆 CRUD。
+ * memories 域 IPC：叙事档案 CRUD。
  */
 import { ipcMain } from 'electron'
 import { wrap } from './wrap'

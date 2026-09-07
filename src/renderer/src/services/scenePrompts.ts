@@ -1,6 +1,6 @@
 /**
- * 章节画布提示词构造与解析：5 种 AI 场景生成模式 + 按场景顺序生成正文。
- * 提示词不使用内部流程术语；带前文/已挂词条/创世台设定上下文。
+ * 场景规划提示词构造与解析：5 种 AI 场景生成模式 + 按场景顺序生成正文。
+ * 提示词不使用内部流程术语；带前文/已挂词条/构思台设定上下文。
  */
 import type { ChatMessage } from '../../../shared/ai.types'
 import type { Book } from '../../../shared/book.types'
@@ -15,7 +15,7 @@ function sceneSystemPrompt(book: Pick<Book, 'title' | 'genre' | 'description'>):
   if (book.genre) meta.push(`题材：${book.genre}`)
   if (book.description) meta.push(`简介：${book.description.slice(0, 200)}`)
   return [
-    '你是一位资深网文结构师，擅长设计章节内的场景节奏与冲突升级。',
+    '你是一位资深长篇小说结构师，擅长设计章节内的场景节奏与冲突升级。',
     meta.length ? `作品信息——${meta.join('；')}。` : '',
     '输出要求：设定具体、冲突清晰、节拍明确；中文书写。'
   ]
@@ -186,7 +186,7 @@ export function buildSceneProseMessages(
     {
       role: 'system',
       content: [
-        '你是一位资深网文写作助手，正在为一部长篇小说执笔。',
+        '你是一位资深长篇小说写作助手，正在为一部长篇小说开笔。',
         meta.length ? `作品信息——${meta.join('；')}。` : '',
         wikiText ? `本章关联设定（必须严格遵守）：\n${wikiText}` : '',
         relationText ? `场景关系（叙事走向必须遵守，不得写反因果）：${relationText}` : '',

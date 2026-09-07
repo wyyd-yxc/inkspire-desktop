@@ -98,12 +98,12 @@ watch(text, () => autoScroll())
           v-if="phase === 'generating'"
           class="rounded-md px-2 py-1 text-xs text-ink-danger transition-colors hover:bg-ink-danger/10"
           @click="emit('stop')"
-        >■ 停止</button>
+        >停止</button>
         <template v-else>
           <button
             class="rounded-md px-2 py-1 text-xs text-ink-text-secondary transition-colors hover:bg-surface hover:text-ink-primary"
             @click="emit('retry')"
-          >↻ 重写</button>
+          >重写</button>
           <button
             class="rounded-md px-2 py-1 text-xs text-ink-text-secondary transition-colors hover:bg-surface"
             @click="emit('close')"

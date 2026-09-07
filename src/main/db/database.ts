@@ -154,7 +154,7 @@ const MIGRATIONS: Array<{ version: number; sql: string }> = [
       CREATE INDEX IF NOT EXISTS idx_assistant_book ON assistant_messages(book_id, created_at);`
   },
   {
-    // v10 剧情画布。注意 plot_events.parent_id 为子画布（M11+）预留列，故意不加 FK 约束：
+    // v10 情节大纲。注意 plot_events.parent_id 为子画布（M11+）预留列，故意不加 FK 约束：
     // 现阶段恒为 null，待子画布需求落地时再以 migration v11+ 补 FOREIGN KEY ... ON DELETE SET NULL。
     version: 10,
     sql: `
@@ -182,6 +182,42 @@ const MIGRATIONS: Array<{ version: number; sql: string }> = [
         created_at TEXT NOT NULL
       );
       CREATE INDEX IF NOT EXISTS idx_plot_edges_book ON plot_edges(book_id);`
+  },
+  {
+    // v11 M10.8 严肃写作重命名：题材与标签旧值映射（数据迁移，纯 SQL/JSON1）
+    version: 11,
+    sql: `
+      UPDATE books SET genre = '奇幻' WHERE genre IN ('玄幻', '仙侠');
+      UPDATE books SET genre = '现实主义' WHERE genre IN ('都市', '言情');
+      UPDATE books SET genre = '其他' WHERE genre IN ('游戏', '轻小说');
+      UPDATE plot_events SET tags = (
+        SELECT json_group_array(
+          CASE json_extract(j.value, '$')
+            WHEN '打斗' THEN '对峙'
+            WHEN '感情' THEN '情感'
+            ELSE json_extract(j.value, '$')
+          END
+        )
+        FROM json_each(json(tags)) j
+      )
+      WHERE EXISTS (
+        SELECT 1 FROM json_each(json(tags)) j
+        WHERE json_extract(j.value, '$') IN ('打斗', '感情')
+      );
+      UPDATE scenes SET tags = (
+        SELECT json_group_array(
+          CASE json_extract(j.value, '$')
+            WHEN '打斗' THEN '对峙'
+            WHEN '感情' THEN '情感'
+            ELSE json_extract(j.value, '$')
+          END
+        )
+        FROM json_each(json(tags)) j
+      )
+      WHERE EXISTS (
+        SELECT 1 FROM json_each(json(tags)) j
+        WHERE json_extract(j.value, '$') IN ('打斗', '感情')
+      );`
   }
 ]
 

@@ -1,5 +1,5 @@
 /**
- * 作品记忆提示词构造与解析：AI 从章节正文抽取事实变更候选 + 存量近似重复合并（严格 JSON + 宽容解析）。
+ * 叙事档案提示词构造与解析：AI 从章节正文抽取事实变更候选 + 存量近似重复合并（严格 JSON + 宽容解析）。
  */
 import type { ChatMessage } from '../../../shared/ai.types'
 import type { Book } from '../../../shared/book.types'
@@ -12,7 +12,7 @@ function memorySystemPrompt(book: Pick<Book, 'title' | 'genre' | 'description'>)
   if (book.title) meta.push(`书名《${book.title}》`)
   if (book.genre) meta.push(`题材：${book.genre}`)
   return [
-    '你是一位网文连载编辑，擅长从章节正文中提取影响后续剧情的事实变化',
+    '你是一位长篇连载编辑，擅长从章节正文中提取影响后续剧情的事实变化',
     '（如角色受伤、关系破裂、获得道具、埋下伏笔、场景转移等）。',
     meta.length ? `作品信息——${meta.join('；')}。` : '',
     '只提取「后续章节需要记住」的事实，忽略一次性细节；表述简洁明确；中文书写。'
@@ -36,7 +36,7 @@ export function buildMemoryExtractMessages(
     { role: 'system', content: memorySystemPrompt(book) },
     {
       role: 'user',
-      content: `请从以下章节正文提取事实变更，形成「作品记忆」候选。章节：第 ${chapterNo} 章「${chapterTitle}」。${existingBlock}
+      content: `请从以下章节正文提取事实变更，形成「叙事档案」候选。章节：第 ${chapterNo} 章「${chapterTitle}」。${existingBlock}
 
 严格输出如下 JSON 数组（不要任何额外文字、不要 markdown 代码块）：
 [
@@ -104,7 +104,7 @@ export function buildMemoryDedupMessages(
     {
       role: 'system',
       content:
-        '你是数据清理助手。给定一部小说的「作品记忆」条目列表（id｜类型｜起始章｜内容），找出表达**同一个事实**的近似重复组' +
+        '你是数据清理助手。给定一部小说的「叙事档案」条目列表（id｜类型｜起始章｜内容），找出表达**同一个事实**的近似重复组' +
         '（如「主角左臂骨折」与「林小天左臂已断」）。只合并确属同一事实的条目；不同事实、仅主题相近的一律不合并。'
     },
     {

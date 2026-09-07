@@ -216,7 +216,7 @@ export function useReverseSync(deps: {
           }
         }
         const label =
-          e.kind === 'memory' ? '作品记忆' : e.kind === 'plot' ? '剧情事件' : '场景摘要'
+          e.kind === 'memory' ? '叙事档案' : e.kind === 'plot' ? '剧情事件' : '场景摘要'
         return {
           key: `rev:${e.kind}:${i}`,
           title: e.suggestion,

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * 设置中心：AI 接口档案管理（列表/新建/编辑/删除/设为默认/快速测试）。
+ * 设置：AI 接口档案管理（列表/新建/编辑/删除/设为默认/快速测试）。
  * 档案是后续所有 AI 功能（续写/润色/助手/Agent）的模型来源，支持多套并存。
  */
 import { onBeforeUnmount, onMounted, ref } from 'vue'
@@ -173,11 +173,11 @@ onMounted(() => {
   <div class="h-full overflow-y-auto">
     <header class="sticky top-0 z-10 flex items-center justify-between border-b border-ink-border/60 bg-paper/80 px-8 py-4 backdrop-blur">
       <div class="flex items-baseline gap-3">
-        <h1 class="text-xl font-bold tracking-widest text-ink-primary">墨灵</h1>
-        <span class="text-sm text-ink-text-muted">设置中心</span>
+        <h1 class="text-xl font-bold tracking-widest text-ink-primary">墨笺</h1>
+        <span class="text-sm text-ink-text-muted">设置</span>
       </div>
       <router-link to="/" class="text-sm text-ink-text-secondary transition-colors hover:text-ink-primary">
-        ← 返回书斋
+        ← 返回书房
       </router-link>
     </header>
 
@@ -200,7 +200,7 @@ onMounted(() => {
       <section v-if="syncCfg" class="mb-6 rounded-card bg-surface p-5 shadow-card">
         <h2 class="mb-1 font-semibold">自动同步</h2>
         <p class="mb-4 text-sm leading-relaxed text-ink-text-secondary">
-          定期检测正文改动，把新设定与新事实同步到百科与作品记忆。只新增、绝不改写已有内容；
+          定期检测正文改动，把新设定与新事实同步到百科与叙事档案。只新增、绝不改写已有内容；
           提取结果默认「仅手动引用」，不会自动进入写作上下文。
         </p>
         <div class="flex flex-col gap-3 text-sm">
@@ -239,7 +239,7 @@ onMounted(() => {
                 type="checkbox"
                 :checked="syncCfg.targets.memory"
                 @change="saveSync('targets', { ...syncCfg.targets, memory: ($event.target as HTMLInputElement).checked })"
-              />作品记忆
+              />叙事档案
             </label>
             <label class="flex cursor-pointer items-center gap-1.5">
               <input

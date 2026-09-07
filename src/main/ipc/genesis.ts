@@ -1,5 +1,5 @@
 /**
- * genesis 域 IPC：创世台五步设定存取。
+ * genesis 域 IPC：构思台五步设定存取。
  */
 import { ipcMain } from 'electron'
 import { wrap } from './wrap'

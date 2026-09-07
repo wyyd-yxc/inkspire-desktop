@@ -32,9 +32,9 @@ const emit = defineEmits<{
       @click.self="emit('close')"
     >
       <div class="w-[420px] rounded-2xl bg-surface p-6 shadow-card">
-        <h2 class="mb-2 text-lg font-semibold">⇦ 从正文提取词条</h2>
+        <h2 class="mb-2 text-lg font-semibold">从正文提取词条</h2>
         <p class="mb-4 text-sm text-ink-text-secondary">
-          AI 扫描章节正文，提取人物/地点/物品/势力/功法/规则等设定元素；已有词条不会重复提取
+          AI 扫描章节正文，提取人物/地点/物品/势力/技艺/规则等设定元素；已有词条不会重复提取
         </p>
         <div class="mb-3 flex gap-1.5">
           <button

@@ -1,7 +1,7 @@
 /**
- * 剧情画布提示词构造与解析：AI 三模式（初始化事件链 / 向后延伸 / 分歧推演）。
- * 上下文注入故事核心设定（创世台 step2）+ 分卷大纲（step4）+ 百科词条。
- * 提示词禁用「定魂/布局/创世台」等内部流程术语（踩坑 #16：AI 会当故事概念写进输出）。
+ * 情节大纲提示词构造与解析：AI 三模式（初始化事件链 / 向后延伸 / 分歧推演）。
+ * 上下文注入故事核心设定（构思台 step2）+ 分卷大纲（step4）+ 百科词条。
+ * 提示词禁用「内核/布局/构思台」等内部流程术语（踩坑 #16：AI 会当故事概念写进输出）。
  */
 import type { ChatMessage } from '../../../shared/ai.types'
 import type { Book } from '../../../shared/book.types'
@@ -45,7 +45,7 @@ export interface PlotGenContext {
   factsText?: string
 }
 
-/** injection=always 词条的注入文本（复用章节画布的词条拼接） */
+/** injection=always 词条的注入文本（复用场景规划的词条拼接） */
 export function wikiAlwaysText(ids: string[], wikiEntries: WikiEntry[]): string {
   return wikiRefText(ids, wikiEntries)
 }
@@ -56,7 +56,7 @@ function plotSystemPrompt(book: Pick<Book, 'title' | 'genre' | 'description'>): 
   if (book.genre) meta.push(`题材：${book.genre}`)
   if (book.description) meta.push(`简介：${book.description.slice(0, 200)}`)
   return [
-    '你是一位资深网文剧情策划，擅长设计全书层面的剧情事件链与多线走向。',
+    '你是一位资深长篇小说剧情策划，擅长设计全书层面的剧情事件链与多线走向。',
     meta.length ? `作品信息——${meta.join('；')}。` : '',
     '输出要求：事件因果清晰、节奏递进、标签精准；中文书写。'
   ]
@@ -76,7 +76,7 @@ export function soulText(soul: Step2Soul | null): string {
   }
   const c = soul.cheat
   if (c && (c.coreAbility || c.powerSystem)) {
-    parts.push(`主角金手指：${[c.coreAbility, c.powerSystem, c.limitation].filter(Boolean).join('；')}`)
+    parts.push(`主角核心能力：${[c.coreAbility, c.powerSystem, c.limitation].filter(Boolean).join('；')}`)
   }
   const f = soul.conflict
   if (f) {

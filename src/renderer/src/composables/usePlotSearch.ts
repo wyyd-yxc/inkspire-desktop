@@ -1,5 +1,5 @@
 /**
- * 剧情画布搜索高亮（从 PlotCanvasView 抽出以保单文件 ≤400 行）：
+ * 情节大纲搜索高亮（从 PlotCanvasView 抽出以保单文件 ≤400 行）：
  * 关键词命中（标题/描述/标签）→ 匹配节点高亮、不匹配变暗（照原站文档）。
  */
 import { computed, ref } from 'vue'

@@ -182,7 +182,7 @@ export async function checkOnce(settings?: AutoSyncSettings): Promise<number> {
       .join('|')
     if (sig !== lastAlertSig) {
       lastAlertSig = sig
-      toast.info(`${changedIds.size} 章有变更，可到工作台点「⟳ 同步」推送到百科与记忆`)
+      toast.info(`${changedIds.size} 章有变更，可到写作台点「同步」推送到设定集与叙事档案`)
     }
     return changedIds.size
   }

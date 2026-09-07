@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * 墨灵助手浮球+聊天面板（v1 仅正文工作台）。
+ * 写作助手浮球+聊天面板（v1 仅写作台）。
  * 上下文感知：自动携带当前章节与选区；@召唤百科词条；对话持久化；流式回复。
  */
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
@@ -104,17 +104,17 @@ function removeAttachment(id: string): void {
   pendingAttachments.value = pendingAttachments.value.filter((x) => x.id !== id)
 }
 
-/** 构建消息：system（助手角色+书籍信息+创世台设定）+ 历史 + 本轮 */
+/** 构建消息：system（助手角色+书籍信息+构思台设定）+ 历史 + 本轮 */
 function buildMessages(userText: string) {
   const meta: string[] = []
   if (props.book?.title) meta.push(`书名《${props.book.title}》`)
   if (props.book?.genre) meta.push(`题材：${props.book.genre}`)
   if (props.book?.description) meta.push(`简介：${props.book.description.slice(0, 200)}`)
 
-  // 创世台设定（从父级工作台状态继承不可行，直接读 DB——但为简化 v1，从 props.book 无创世台，
+  // 构思台设定（从父级写作台状态继承不可行，直接读 DB——但为简化 v1，从 props.book 无构思台，
   // 改由 generateWriting 同源档案解析 + 本书上下文）
   const systemParts = [
-    '你是「墨灵」，一位资深网文创作顾问。回答创作相关问题时具体、可落地；闲聊时轻松自然。中文书写。',
+    '你是「墨笺」，一位资深长篇小说创作顾问。回答创作相关问题时具体、可落地；闲聊时轻松自然。中文书写。',
     meta.length ? `当前作品信息——${meta.join('；')}。` : ''
   ]
 
@@ -225,7 +225,7 @@ async function resolveProfile() {
   if (!listRes.ok) throw new Error(listRes.error)
   if (!defRes.ok) throw new Error(defRes.error)
   const profiles = listRes.data
-  if (profiles.length === 0) throw new Error('还没有可用的 AI 档案，请先到「设置中心」配置 API')
+  if (profiles.length === 0) throw new Error('还没有可用的 AI 档案，请先到「设置」配置 API')
   return profiles.find((p) => p.id === defRes.data) ?? profiles[0]
 }
 
@@ -250,7 +250,7 @@ onMounted(() => {
   <button
     v-if="!expanded"
     class="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-ink-primary text-white shadow-lg transition-transform hover:scale-110"
-    title="墨灵助手"
+    title="写作助手"
     @click="toggle"
   >
     <svg viewBox="0 0 24 24" class="h-7 w-7" fill="currentColor">
@@ -272,7 +272,7 @@ onMounted(() => {
               <path d="M12 2C6.48 2 2 5.94 2 10.8c0 2.4 1.06 4.58 2.78 6.18-.16 1.14-.64 2.7-1.66 3.9a.5.5 0 0 0 .44.82c2.14-.16 3.94-.94 5.16-1.66 1.02.28 2.12.44 3.28.44 5.52 0 10-3.94 10-8.8S17.52 2 12 2z" />
             </svg>
           </span>
-          <span class="font-semibold">墨灵助手</span>
+          <span class="font-semibold">写作助手</span>
         </div>
         <div class="flex gap-2 text-xs">
           <button class="text-ink-text-muted hover:text-ink-danger" @click="clearConversation">清空</button>
@@ -283,7 +283,7 @@ onMounted(() => {
       <!-- 消息列表 -->
       <div ref="listEl" class="min-h-0 flex-1 overflow-y-auto px-4 py-3">
         <div v-if="messages.length === 0" class="flex flex-col items-center gap-2 py-16 text-center">
-          <p class="text-sm text-ink-text-secondary">我是墨灵助手，你的创作伙伴</p>
+          <p class="text-sm text-ink-text-secondary">我是写作助手，你的创作伙伴</p>
           <p class="text-xs leading-5 text-ink-text-muted">
             可以问我剧情构思、设定矛盾、写作技巧；<br />
             输入 @ 可引用百科词条；<br />

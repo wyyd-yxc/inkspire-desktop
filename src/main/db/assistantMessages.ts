@@ -1,5 +1,5 @@
 /**
- * assistant_messages 表 DAO：墨灵助手对话历史（按书单会话，最近 50 条）。
+ * assistant_messages 表 DAO：写作助手对话历史（按书单会话，最近 50 条）。
  */
 import { randomUUID } from 'node:crypto'
 import type { Database } from 'better-sqlite3'
