@@ -49,8 +49,9 @@ function replaceInHtml(
       if (child.nodeType === Node.TEXT_NODE) {
         const t = child.textContent ?? ''
         if (t.includes(oldValue)) {
+          const hits = t.split(oldValue).length - 1
           child.textContent = t.split(oldValue).join(newValue)
-          replaced++
+          replaced += hits
         }
       } else if (child.nodeType === Node.ELEMENT_NODE) {
         walk(child)
@@ -242,12 +243,22 @@ export function useReverseSync(deps: {
     if (applying.value) return
     applying.value = true
     try {
-      let applied = 0
-      let skipped = 0
-      for (const item of checked) {
-        const idx = Number(item.key.split(':').pop())
-        const edit = pendingEdits[idx]
-        if (!edit) continue
+    let applied = 0
+    let skipped = 0
+    /** 同目标去重：同次传播的替换对恒同（oldValue→newValue），同章第二条必然 replaced=0，
+     *  直接跳过以免「已应用/跳过」计数误导（二轮审查严重-2）；
+     *  跨标签被格式化截断的文本节点无法匹配时安全跳过（产品 UI 无内联格式来源，见已知边界） */
+    const doneTargets = new Set<string>()
+    for (const item of checked) {
+      const idx = Number(item.key.split(':').pop())
+      const edit = pendingEdits[idx]
+      if (!edit) continue
+      const dedupKey = `${edit.kind}:${edit.targetId}:${edit.hostChapterId ?? ''}`
+      if (doneTargets.has(dedupKey)) {
+        skipped++
+        continue
+      }
+      doneTargets.add(dedupKey)
         if (edit.kind === 'chapter') {
           const res = await window.api.chapters.get(edit.targetId)
           if (!res.ok) {
