@@ -15,11 +15,11 @@ const router = useRouter()
 /** 封面渐变按书名 hash 稳定取色，避免每次渲染闪变 */
 const coverStyle = computed(() => {
   const palettes = [
-    'linear-gradient(135deg,#8b7cf0,#5b4bd1)',
-    'linear-gradient(135deg,#7cc7b8,#3d8b79)',
-    'linear-gradient(135deg,#f0a58b,#c96a4a)',
-    'linear-gradient(135deg,#8ba6e8,#4a6bc9)',
-    'linear-gradient(135deg,#d897c9,#a55a92)'
+    'linear-gradient(135deg,#8a7d62,#5c5342)',
+    'linear-gradient(135deg,#6f8a80,#48685f)',
+    'linear-gradient(135deg,#b08868,#8a5c42)',
+    'linear-gradient(135deg,#7a8aa6,#54618a)',
+    'linear-gradient(135deg,#a67f96,#7d5a70)'
   ]
   let h = 0
   for (const ch of props.book.title) h = (h * 31 + ch.codePointAt(0)!) % 997
