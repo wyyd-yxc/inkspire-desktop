@@ -129,6 +129,42 @@ const DIVERGE_JSON_SPEC = `严格输出如下 JSON 对象（不要任何额外�
   ]
 }`
 
+/** 正文→剧情提取（M10.7 正文中枢）：从已写正文回溯已发生事件，注入已有事件链防重复 */
+export function buildPlotExtractMessages(
+  book: Pick<Book, 'title' | 'genre' | 'description'>,
+  chapterTitle: string,
+  chapterNo: number,
+  contentText: string,
+  existingChainText = ''
+): ChatMessage[] {
+  const chainBlock = existingChainText
+    ? `\n【已有剧情事件（与这些事件重复或同义的一律不要输出）】\n${existingChainText}\n`
+    : ''
+  return [
+    {
+      role: 'system',
+      content: [
+        '你是一位小说情节编辑，擅长从已完成的章节正文中提炼「已经发生的剧情事件」。',
+        `作品信息——书名《${book.title}》。`,
+        '输出要求：只收录正文实际发生的事件（不是计划/设想）；名称简洁；中文书写。'
+      ].join('')
+    },
+    {
+      role: 'user',
+      content: `请从以下章节正文提炼 2-5 个已发生的剧情事件，按发生顺序排列。章节：第 ${chapterNo} 章「${chapterTitle}」。${chainBlock}
+
+严格输出如下 JSON 数组（不要任何额外文字、不要 markdown 代码块）：
+[
+  { "title": "事件名（20字内）", "description": "已发生的事实：起因/经过/结果，60-120字", "tags": ["第${chapterNo}章"] }
+]
+tags 第一项固定为「第${chapterNo}章」，可另加 1 个性质标签（如 冲突、转折）。与已有事件重复或同义的一律不要输出。字段值内禁止使用英文双引号。
+
+正文：
+${contentText.slice(0, 6000)}`
+    }
+  ]
+}
+
 /** 初始化事件链：空画布按核心设定+大纲生成 5-8 个事件 */
 export function buildPlotInitMessages(ctx: PlotGenContext, instruction: string): ChatMessage[] {
   const task =

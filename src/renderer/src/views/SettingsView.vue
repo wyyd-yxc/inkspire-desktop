@@ -241,6 +241,13 @@ onMounted(() => {
                 @change="saveSync('targets', { ...syncCfg.targets, memory: ($event.target as HTMLInputElement).checked })"
               />作品记忆
             </label>
+            <label class="flex cursor-pointer items-center gap-1.5">
+              <input
+                type="checkbox"
+                :checked="syncCfg.targets.plot"
+                @change="saveSync('targets', { ...syncCfg.targets, plot: ($event.target as HTMLInputElement).checked })"
+              />剧情事件
+            </label>
           </div>
           <div class="flex items-center gap-4">
             <span class="text-ink-text-secondary">提醒方式</span>

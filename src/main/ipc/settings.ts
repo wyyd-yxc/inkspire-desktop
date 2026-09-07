@@ -27,7 +27,8 @@ const ALLOWED_SETTING_KEYS = new Set([
 const READABLE_SETTING_KEYS = new Set([
   ...ALLOWED_SETTING_KEYS,
   'sync.memory_watermark',
-  'sync.wiki_watermark'
+  'sync.wiki_watermark',
+  'sync.plot_watermark'
 ])
 
 export function registerSettingsIpc(): void {

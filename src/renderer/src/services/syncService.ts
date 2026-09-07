@@ -39,6 +39,7 @@ export type SyncWatermark = Record<string, number>
 
 export const MEMORY_WATERMARK_KEY = 'sync.memory_watermark'
 export const WIKI_WATERMARK_KEY = 'sync.wiki_watermark'
+export const PLOT_WATERMARK_KEY = 'sync.plot_watermark'
 
 /** 读水位（键不存在返回空对象） */
 export async function getWatermark(key: string): Promise<SyncWatermark> {

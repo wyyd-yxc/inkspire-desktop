@@ -17,10 +17,12 @@ import { isElectron } from '../services/books'
 import { useToast } from '@/composables/useToast'
 import { usePlotEdges } from '@/composables/usePlotEdges'
 import { usePlotAi } from '@/composables/usePlotAi'
+import { usePlotSync } from '@/composables/usePlotSync'
 import PlotEventNode from '@/components/plot/PlotEventNode.vue'
 import PlotDetailPanel from '@/components/plot/PlotDetailPanel.vue'
 import PlotAiDialog from '@/components/plot/PlotAiDialog.vue'
 import PlotDivergeDialog from '@/components/plot/PlotDivergeDialog.vue'
+import SyncCandidateDialog from '@/components/sync/SyncCandidateDialog.vue'
 import AiWritingPanel from '@/components/AiWritingPanel.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 
@@ -83,6 +85,22 @@ const {
   acceptPlot,
   adoptDirection
 } = usePlotAi({ bookId, book, events, plotEdges, wikiEntries, selectedEvent, toast, fitView })
+
+// ---- 正文→剧情提取（M10.7 正文中枢） ----
+const {
+  isBusy: extractBusy,
+  runProgress,
+  candidateDialogVisible: extractDialogVisible,
+  candidateItems: extractItems,
+  candidateDescription: extractDescription,
+  startExtract,
+  onCandidatesConfirm: onExtractConfirm
+} = usePlotSync({ bookId, book, events, toast })
+
+/** 提取入口（按钮驱动，进度经按钮文案与 toast 反馈） */
+async function startPlotExtract(): Promise<void> {
+  await startExtract('changed')
+}
 
 /** Vue Flow 节点派生（含搜索命中态；交互事件均为单参数载荷，踩坑 #17） */
 const nodes = computed<Node[]>(() =>
@@ -299,6 +317,12 @@ onMounted(() => void loadAll())
           @click="openAiDialog('diverge')"
         >⑃ 分歧推演</button>
         <button
+          class="rounded-lg border border-ink-border px-3 py-1.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary disabled:opacity-50"
+          :disabled="extractBusy"
+          :title="runProgress || '从已写章节正文回溯剧情事件上画布'"
+          @click="startPlotExtract"
+        >{{ extractBusy ? '⇦ 提取中…' : '⇦ 从正文提取' }}</button>
+        <button
           class="rounded-lg border border-ink-border px-3 py-1.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
           @click="openCreate"
         >+ 手动加事件</button>
@@ -391,6 +415,17 @@ onMounted(() => void loadAll())
       confirm-text="删除"
       @update:model-value="pendingDelete = null"
       @confirm="doRemove"
+    />
+
+    <!-- 正文→剧情提取候选面板（M10.7） -->
+    <SyncCandidateDialog
+      :visible="extractDialogVisible"
+      title="采纳剧情事件候选"
+      :description="extractDescription"
+      :items="extractItems"
+      confirm-text="上画布"
+      @confirm="onExtractConfirm"
+      @close="extractDialogVisible = false"
     />
   </div>
 </template>

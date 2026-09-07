@@ -10,6 +10,7 @@ interface Props {
   busy: boolean
   changedWikiCount: number
   changedMemoryCount: number
+  changedPlotCount: number
   /** 当前章有正文才可按「当前章」同步 */
   canSyncCurrent: boolean
 }
@@ -17,12 +18,13 @@ interface Props {
 const props = defineProps<Props>()
 
 const emit = defineEmits<{
-  start: [opts: { wiki: boolean; memory: boolean; scope: 'changed' | 'current' }]
+  start: [opts: { wiki: boolean; memory: boolean; plot: boolean; scope: 'changed' | 'current' }]
   close: []
 }>()
 
 const syncWiki = ref(true)
 const syncMemory = ref(true)
+const syncPlot = ref(false)
 const scope = ref<'changed' | 'current'>('changed')
 
 watch(
@@ -35,7 +37,7 @@ watch(
 )
 
 function start(): void {
-  emit('start', { wiki: syncWiki.value, memory: syncMemory.value, scope: scope.value })
+  emit('start', { wiki: syncWiki.value, memory: syncMemory.value, plot: syncPlot.value, scope: scope.value })
 }
 </script>
 
@@ -61,6 +63,11 @@ function start(): void {
             <input v-model="syncMemory" type="checkbox" />
             <span class="flex-1">抽取事实 → 作品记忆</span>
             <span class="text-xs text-ink-text-muted">待抽取 {{ changedMemoryCount }} 章</span>
+          </label>
+          <label class="flex cursor-pointer items-center gap-2 rounded-lg border border-ink-border/60 px-3 py-2 text-sm hover:border-ink-primary/50">
+            <input v-model="syncPlot" type="checkbox" />
+            <span class="flex-1">回溯事件 → 剧情画布</span>
+            <span class="text-xs text-ink-text-muted">待提取 {{ changedPlotCount }} 章</span>
           </label>
         </div>
         <div class="mt-4 flex gap-1.5">

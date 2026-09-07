@@ -14,16 +14,19 @@ import { isElectron } from '../services/books'
 import { generateWriting } from '../services/aiWriting'
 import { buildWikiExtractMessages, parseWikiExtract } from '../services/wikiPrompts'
 import { buildMemoryExtractMessages, parseMemoryExtract } from '../services/memoryPrompts'
+import { buildPlotExtractMessages, parsePlotEventGen } from '../services/plotPrompts'
 import {
   buildExistingWikiText
 } from './useWikiSync'
 import {
+  buildPlotChainText,
   changedChapters,
   getWatermark,
   isWikiNameDup,
   normText,
   setWatermarkChapter,
   MEMORY_WATERMARK_KEY,
+  PLOT_WATERMARK_KEY,
   WIKI_WATERMARK_KEY,
   type SyncWatermark
 } from '../services/syncService'
@@ -35,14 +38,14 @@ export interface AutoSyncSettings {
   enabled: boolean
   intervalMin: number
   mode: AutoSyncMode
-  targets: { wiki: boolean; memory: boolean }
+  targets: { wiki: boolean; memory: boolean; plot: boolean }
 }
 
 const DEFAULT_SETTINGS: AutoSyncSettings = {
   enabled: false,
   intervalMin: 10,
   mode: 'remind',
-  targets: { wiki: true, memory: true }
+  targets: { wiki: true, memory: true, plot: true }
 }
 
 /** 轻节拍：每分钟醒一次读设置，判断是否到达检测间隔（读设置与 listMeta 均零 AI 消耗） */
@@ -67,9 +70,10 @@ export async function loadAutoSyncSettings(): Promise<AutoSyncSettings> {
     window.api.settings.get<boolean>('sync.auto_enabled', false),
     window.api.settings.get<number>('sync.auto_interval_min', 10),
     window.api.settings.get<AutoSyncMode>('sync.auto_mode', 'remind'),
-    window.api.settings.get<{ wiki: boolean; memory: boolean }>('sync.auto_targets', {
+    window.api.settings.get<{ wiki: boolean; memory: boolean; plot: boolean }>('sync.auto_targets', {
       wiki: true,
-      memory: true
+      memory: true,
+      plot: true
     })
   ])
   return {
@@ -78,7 +82,8 @@ export async function loadAutoSyncSettings(): Promise<AutoSyncSettings> {
     mode: mo.ok && mo.data === 'silent' ? 'silent' : 'remind',
     targets: {
       wiki: !(tg.ok && tg.data && tg.data.wiki === false),
-      memory: !(tg.ok && tg.data && tg.data.memory === false)
+      memory: !(tg.ok && tg.data && tg.data.memory === false),
+      plot: !(tg.ok && tg.data && tg.data.plot === false)
     }
   }
 }
@@ -117,8 +122,10 @@ interface BookChange {
   metas: ChapterMeta[]
   memoryWatermark: SyncWatermark
   wikiWatermark: SyncWatermark
+  plotWatermark: SyncWatermark
   memoryChanged: Array<{ id: string; wordCount: number }>
   wikiChanged: Array<{ id: string; wordCount: number }>
+  plotChanged: Array<{ id: string; wordCount: number }>
 }
 
 /** 立即检测一次（定时 tick 与设置页「立即检测」共用）；返回变更章数（跨书去重） */
@@ -134,24 +141,28 @@ export async function checkOnce(settings?: AutoSyncSettings): Promise<number> {
   for (const b of booksRes.data) {
     const metaRes = await window.api.chapters.listMeta(b.id)
     if (!metaRes.ok) throw new Error(metaRes.error)
-    const [mw, ww] = await Promise.all([
+    const [mw, ww, pw] = await Promise.all([
       getWatermark(MEMORY_WATERMARK_KEY),
-      getWatermark(WIKI_WATERMARK_KEY)
+      getWatermark(WIKI_WATERMARK_KEY),
+      getWatermark(PLOT_WATERMARK_KEY)
     ])
     changes.push({
       book: b,
       metas: metaRes.data,
       memoryWatermark: mw,
       wikiWatermark: ww,
+      plotWatermark: pw,
       memoryChanged: s.targets.memory ? changedChapters(metaRes.data, mw) : [],
-      wikiChanged: s.targets.wiki ? changedChapters(metaRes.data, ww) : []
+      wikiChanged: s.targets.wiki ? changedChapters(metaRes.data, ww) : [],
+      plotChanged: s.targets.plot ? changedChapters(metaRes.data, pw) : []
     })
   }
-  // 跨书去重后的变更章数（同一章同时挂两个水位只计一次）
+  // 跨书去重后的变更章数（同一章同时挂多个水位只计一次）
   const changedIds = new Set<string>()
   for (const x of changes) {
     for (const c of x.memoryChanged) changedIds.add(c.id)
     for (const c of x.wikiChanged) changedIds.add(c.id)
+    for (const c of x.plotChanged) changedIds.add(c.id)
   }
   if (changedIds.size === 0) {
     if (syncAlert.value) syncAlert.value = false
@@ -166,7 +177,7 @@ export async function checkOnce(settings?: AutoSyncSettings): Promise<number> {
         (x) =>
           x.book.id +
           ':' +
-          [...x.memoryChanged, ...x.wikiChanged].map((c) => c.id + '@' + c.wordCount).join(',')
+          [...x.memoryChanged, ...x.wikiChanged, ...x.plotChanged].map((c) => c.id + '@' + c.wordCount).join(',')
       )
       .join('|')
     if (sig !== lastAlertSig) {
@@ -183,7 +194,11 @@ export async function checkOnce(settings?: AutoSyncSettings): Promise<number> {
     type Job = { change: BookChange; meta: ChapterMeta }
     const jobs: Job[] = []
     for (const x of changes) {
-      const ids = new Set([...x.memoryChanged.map((c) => c.id), ...x.wikiChanged.map((c) => c.id)])
+      const ids = new Set([
+        ...x.memoryChanged.map((c) => c.id),
+        ...x.wikiChanged.map((c) => c.id),
+        ...x.plotChanged.map((c) => c.id)
+      ])
       for (const meta of x.metas) {
         if (ids.has(meta.id)) jobs.push({ change: x, meta })
       }
@@ -192,18 +207,20 @@ export async function checkOnce(settings?: AutoSyncSettings): Promise<number> {
     const round = jobs.slice(0, SILENT_MAX_CHAPTERS)
     let wikiCreated = 0
     let memCreated = 0
+    let plotCreated = 0
     for (const job of round) {
       try {
         const r = await silentSyncChapter(s, job.change, job.meta)
         wikiCreated += r.wiki
         memCreated += r.memory
+        plotCreated += r.plot
       } catch (err) {
         // 单章失败（多为档案/网络问题）即停本轮，水位未推、下轮重试；toast 节流防刷屏
         throttledError(err)
         break
       }
     }
-    if (wikiCreated + memCreated > 0) {
+    if (wikiCreated + memCreated + plotCreated > 0) {
       const remain = jobs.length - round.length
       toast.success(
         `自动同步：新增词条 ${wikiCreated} · 新增记忆 ${memCreated}` +
@@ -227,14 +244,15 @@ async function silentSyncChapter(
   s: AutoSyncSettings,
   change: BookChange,
   meta: ChapterMeta
-): Promise<{ wiki: number; memory: number }> {
+): Promise<{ wiki: number; memory: number; plot: number }> {
   const chRes = await window.api.chapters.get(meta.id)
   if (!chRes.ok) throw new Error(chRes.error)
   const ch = chRes.data
   const text = ch.content.replace(/<[^>]+>/g, '').trim()
   let wikiCreated = 0
   let memCreated = 0
-  if (!text) return { wiki: 0, memory: 0 }
+  let plotCreated = 0
+  if (!text) return { wiki: 0, memory: 0, plot: 0 }
 
   if (s.targets.wiki) {
     const listRes = await window.api.wiki.list(change.book.id)
@@ -314,7 +332,44 @@ async function silentSyncChapter(
       ch.wordCount
     )
   }
-  return { wiki: wikiCreated, memory: memCreated }
+  if (s.targets.plot) {
+    // 正文→剧情事件（M10.7）：AI 回溯已发生事件，标题 isWikiNameDup 去重后直入画布
+    const evRes = await window.api.plot.list(change.book.id)
+    if (!evRes.ok) throw new Error(evRes.error)
+    const existingEvents = evRes.data
+    const out = await collectAi(
+      buildPlotExtractMessages(change.book, ch.title, ch.sortOrder, text, buildPlotChainText(existingEvents, 800))
+    )
+    const batchSeen: string[] = []
+    for (const p of parsePlotEventGen(out)) {
+      if (
+        !p.title.trim() ||
+        existingEvents.some((e) => isWikiNameDup(p.title, 'plot', e.title, 'plot')) ||
+        batchSeen.some((t) => isWikiNameDup(p.title, 'plot', t, 'plot'))
+      ) {
+        continue
+      }
+      batchSeen.push(p.title)
+      const res = await window.api.plot.create({
+        bookId: change.book.id,
+        title: p.title,
+        description: p.description,
+        tags: p.tags.length ? p.tags : [`第${ch.sortOrder}章`],
+        posX: 160 + plotCreated * 340,
+        posY: 160
+      })
+      if (!res.ok) throw new Error(res.error)
+      existingEvents.push(res.data)
+      plotCreated++
+    }
+    change.plotWatermark = await setWatermarkChapter(
+      PLOT_WATERMARK_KEY,
+      change.plotWatermark,
+      ch.id,
+      ch.wordCount
+    )
+  }
+  return { wiki: wikiCreated, memory: memCreated, plot: plotCreated }
 }
 
 /** 已有记忆清单文本（与 syncService.buildExistingMemoryText 同构；避免额外 import Memory 类型依赖） */

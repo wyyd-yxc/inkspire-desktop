@@ -30,7 +30,7 @@ export function setSetting<T>(key: string, value: T): void {
 }
 
 /** 允许原子合并的水位键白名单 */
-const WATERMARK_KEYS = new Set(['sync.memory_watermark', 'sync.wiki_watermark'])
+const WATERMARK_KEYS = new Set(['sync.memory_watermark', 'sync.wiki_watermark', 'sync.plot_watermark'])
 
 /** 水位单章合并（M10.5 静态审查 §1）：在主进程内同步完成 读→合并→写，
  *  消除渲染层两步 IPC（get→set）之间的交错丢更新窗口；非白名单键拒绝。

@@ -9,10 +9,12 @@ import type { Book } from '../../../shared/book.types'
 import type { Chapter } from '../../../shared/chapter.types'
 import type { WikiEntry } from '../../../shared/wiki.types'
 import type { Memory } from '../../../shared/memory.types'
+import type { PlotEvent } from '../../../shared/plot.types'
 import { isElectron } from '../services/books'
 import { useToast } from '@/composables/useToast'
 import { useMemorySync } from '@/composables/useMemorySync'
 import { useWikiSync } from '@/composables/useWikiSync'
+import { usePlotSync } from '@/composables/usePlotSync'
 import { useAutoSync } from '@/composables/useAutoSync'
 import ChapterSidebar from '@/components/ChapterSidebar.vue'
 import ChapterEditor from '@/components/ChapterEditor.vue'
@@ -31,23 +33,25 @@ const chapters = ref<Chapter[]>([])
 const activeChapter = ref<Chapter | null>(null)
 const wikiEntries = ref<WikiEntry[]>([])
 const memories = ref<Memory[]>([])
+const plotEvents = ref<PlotEvent[]>([])
 const pendingDelete = ref<Chapter | null>(null)
 const loading = ref(true)
 
-// ---- 联动同步（M10.5）：把正文改动推送到百科/记忆；编排细节在两个 composable ----
+// ---- 联动同步（M10.5/M10.7）：把正文改动推送到百科/记忆/剧情；编排细节在各 composable ----
 const memorySync = useMemorySync({ bookId, book, chapters, memories, toast })
 const wikiSync = useWikiSync({ bookId, book, chapters, wikiEntries, toast })
+const plotSync = usePlotSync({ bookId, book, chapters, events: plotEvents, toast })
 const syncDialogVisible = ref(false)
 // 自动同步提醒红点（useAutoSync 提醒档置位；打开同步弹窗即清除）
 const { syncAlert, clearAlert } = useAutoSync()
 
 async function openSyncDialog(): Promise<void> {
-  await Promise.all([memorySync.refreshWatermark(), wikiSync.refreshWatermark()])
+  await Promise.all([memorySync.refreshWatermark(), wikiSync.refreshWatermark(), plotSync.refreshWatermark()])
   clearAlert()
   syncDialogVisible.value = true
 }
 
-function startSync(opts: { wiki: boolean; memory: boolean; scope: 'changed' | 'current' }): void {
+function startSync(opts: { wiki: boolean; memory: boolean; plot: boolean; scope: 'changed' | 'current' }): void {
   syncDialogVisible.value = false
   if (opts.memory) {
     memorySync.extractScope.value = opts.scope === 'current' ? 'single' : 'unextracted'
@@ -63,9 +67,15 @@ function startSync(opts: { wiki: boolean; memory: boolean; scope: 'changed' | 'c
     }
     void wikiSync.startWikiExtract()
   }
+  if (opts.plot) {
+    void plotSync.startExtract(
+      opts.scope === 'current' ? 'single' : 'changed',
+      activeChapter.value?.id
+    )
+  }
 }
 
-const syncBusy = computed(() => memorySync.isBusy.value || wikiSync.isBusy.value)
+const syncBusy = computed(() => memorySync.isBusy.value || wikiSync.isBusy.value || plotSync.isBusy.value)
 
 const editorRef = ref<InstanceType<typeof ChapterEditor> | null>(null)
 
@@ -89,20 +99,23 @@ async function loadAll(): Promise<void> {
     return
   }
   try {
-    const [booksRes, chaptersRes, wikiRes, memRes] = await Promise.all([
+    const [booksRes, chaptersRes, wikiRes, memRes, plotRes] = await Promise.all([
       window.api.books.list(),
       window.api.chapters.list(bookId.value),
       window.api.wiki.list(bookId.value),
-      window.api.memories.list(bookId.value)
+      window.api.memories.list(bookId.value),
+      window.api.plot.list(bookId.value)
     ])
     if (!booksRes.ok) throw new Error(booksRes.error)
     if (!chaptersRes.ok) throw new Error(chaptersRes.error)
     if (!wikiRes.ok) throw new Error(wikiRes.error)
     if (!memRes.ok) throw new Error(memRes.error)
+    if (!plotRes.ok) throw new Error(plotRes.error)
     book.value = booksRes.data.find((b) => b.id === bookId.value) ?? null
     chapters.value = chaptersRes.data
     wikiEntries.value = wikiRes.data
     memories.value = memRes.data
+    plotEvents.value = plotRes.data
     activeChapter.value = chapters.value[0] ?? null
   } catch (err) {
     toast.error(err instanceof Error ? err.message : '加载失败')
@@ -284,12 +297,13 @@ onBeforeUnmount(() => {
       @confirm="doDelete"
     />
 
-    <!-- 联动同步（M10.5）：配置弹窗 + 两条候选确认面板 -->
+    <!-- 联动同步（M10.5/M10.7）：配置弹窗 + 三条候选确认面板 -->
     <SyncDialog
       :visible="syncDialogVisible"
       :busy="syncBusy"
       :changed-wiki-count="wikiSync.unextracted.value.length"
       :changed-memory-count="memorySync.unextracted.value.length"
+      :changed-plot-count="plotSync.unextracted.value.length"
       :can-sync-current="!!(activeChapter && activeChapter.wordCount > 0)"
       @start="startSync"
       @close="syncDialogVisible = false"
@@ -311,6 +325,15 @@ onBeforeUnmount(() => {
       :confirm-text="memorySync.candidateTitle.value.includes('合并') ? '合并所选项' : '入库所选项'"
       @confirm="memorySync.onCandidatesConfirm"
       @close="memorySync.candidateDialogVisible.value = false"
+    />
+    <SyncCandidateDialog
+      :visible="plotSync.candidateDialogVisible.value"
+      title="采纳剧情事件候选"
+      :description="plotSync.candidateDescription.value"
+      :items="plotSync.candidateItems.value"
+      confirm-text="上画布"
+      @confirm="plotSync.onCandidatesConfirm"
+      @close="plotSync.candidateDialogVisible.value = false"
     />
 
     <div v-if="loading" class="fixed inset-0 z-30 flex items-center justify-center bg-paper/60">
