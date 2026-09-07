@@ -4,7 +4,7 @@
 
 /** 候选确认面板条目（SyncCandidateDialog 的 items 契约） */
 export interface SyncCandidateItem {
-  /** 稳定键（同批内唯一；前缀区分用途，如 `merge:`=近似合并） */
+  /** 稳定键（同批内唯一；前缀区分用途，如 `merge:`=近似合并、`rev:`=反向正文修订） */
   key: string
   /** 主文本（词条名/记忆内容/合并结果） */
   title: string
@@ -18,4 +18,8 @@ export interface SyncCandidateItem {
   checked: boolean
   /** 禁用（不可勾选，如已存在将跳过） */
   disabled?: boolean
+  /** 原文对照（M10.7 反向同步：正文修订类候选展示「原文→建议」） */
+  oldText?: string
+  /** 建议替换文本（与 oldText 成对出现） */
+  newText?: string
 }

@@ -23,6 +23,7 @@ import { isElectron } from '../services/books'
 import { useToast } from '@/composables/useToast'
 import { useWikiSync } from '@/composables/useWikiSync'
 import { useWikiCleanup } from '@/composables/useWikiCleanup'
+import { useReverseSync } from '@/composables/useReverseSync'
 import { isWikiNameDup } from '../services/syncService'
 import { buildWikiGenerateMessages, genesisToWorldEntries, parseWikiGenerate } from '../services/wikiPrompts'
 import { generateWriting } from '../services/aiWriting'
@@ -130,6 +131,25 @@ const {
   stopEverything: stopCleanup
 } = useWikiCleanup({ bookId, wikiEntries: entries, chapters, toast })
 
+// 反向受限更新（M10.7）：词条名变更 → 扫描正文与关联模块旧表述（独立面板实例）
+const {
+  scanning: reverseScanning,
+  candidateDialogVisible: reverseDialogVisible,
+  candidateTitle: reverseTitle,
+  candidateDescription: reverseDescription,
+  candidateItems: reverseItems,
+  propagate: reversePropagate,
+  applyEdits: reverseApply
+} = useReverseSync({ bookId, toast })
+/** 待确认的反向传播载荷（用户确认后执行） */
+const pendingReverse = ref<{ oldValue: string; newValue: string; context: string } | null>(null)
+
+function confirmReverse(): void {
+  const p = pendingReverse.value
+  pendingReverse.value = null
+  if (p) void reversePropagate({ kind: 'wiki', ...p })
+}
+
 async function loadAll(): Promise<void> {
   if (!isElectron) {
     loading.value = false
@@ -221,6 +241,14 @@ async function save(): Promise<void> {
     else entries.value.push(res.data)
     panelVisible.value = false
     toast.success(`词条「${res.data.name}」已保存`)
+    // 反向受限更新（M10.7）：改名后询问是否扫描正文与关联模块中的旧表述
+    if (editing.value && editing.value.name !== res.data.name) {
+      pendingReverse.value = {
+        oldValue: editing.value.name,
+        newValue: res.data.name,
+        context: `词条简介：${res.data.summary.slice(0, 60)}`
+      }
+    }
   } catch (err) {
     toast.error(err instanceof Error ? err.message : '保存失败')
   } finally {
@@ -622,6 +650,24 @@ onMounted(() => void loadAll())
       confirm-text="合并所选项"
       @confirm="confirmMerges"
       @close="mergeDialogVisible = false; stopCleanup()"
+    />
+    <!-- 反向受限更新（M10.7）：确认扫描 + 原文→建议勾选面板 -->
+    <ConfirmDialog
+      :model-value="pendingReverse !== null"
+      title="同步旧表述？"
+      :description="`词条名已从「${pendingReverse?.oldValue ?? ''}」改为「${pendingReverse?.newValue ?? ''}」。要扫描正文与记忆/剧情中的旧表述并给出替换建议吗？（逐处勾选，只改你确认的）`"
+      :confirm-text="reverseScanning ? '扫描中…' : '扫描'"
+      @update:model-value="pendingReverse = null"
+      @confirm="confirmReverse"
+    />
+    <SyncCandidateDialog
+      :visible="reverseDialogVisible"
+      :title="reverseTitle"
+      :description="reverseDescription"
+      :items="reverseItems"
+      confirm-text="应用所选项"
+      @confirm="reverseApply"
+      @close="reverseDialogVisible = false"
     />
   </div>
 </template>

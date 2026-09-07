@@ -94,7 +94,11 @@ function confirm(): void {
                 <span class="min-w-0 flex-1 truncate text-sm" :title="it.title">{{ it.title }}</span>
                 <span v-if="it.disabled" class="shrink-0 text-[10px] text-ink-text-muted">已存在，跳过</span>
               </span>
-              <span v-if="it.detail" class="mt-0.5 block text-xs leading-5 text-ink-text-secondary">{{ it.detail }}</span>
+              <span v-if="it.oldText" class="mt-1 block rounded bg-paper px-2 py-1">
+                <span class="block text-[11px] leading-4 text-ink-text-secondary">原文：{{ it.oldText }}</span>
+                <span class="mt-0.5 block text-[11px] leading-4 text-ink-primary">改为：{{ it.newText }}</span>
+              </span>
+              <span v-else-if="it.detail" class="mt-0.5 block text-xs leading-5 text-ink-text-secondary">{{ it.detail }}</span>
               <span v-if="it.source" class="mt-0.5 block text-[10px] text-ink-text-muted">{{ it.source }}</span>
             </span>
           </label>

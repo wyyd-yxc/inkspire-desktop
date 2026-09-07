@@ -20,6 +20,7 @@ import { usePlotAi } from '@/composables/usePlotAi'
 import { usePlotSync } from '@/composables/usePlotSync'
 import { usePlotSearch } from '@/composables/usePlotSearch'
 import { usePlotPanel } from '@/composables/usePlotPanel'
+import { useReverseSync } from '@/composables/useReverseSync'
 import PlotEventNode from '@/components/plot/PlotEventNode.vue'
 import PlotDetailPanel from '@/components/plot/PlotDetailPanel.vue'
 import PlotAiDialog from '@/components/plot/PlotAiDialog.vue'
@@ -169,6 +170,37 @@ const {
   confirmRemove,
   doRemove
 } = usePlotPanel({ bookId, events, plotEdges, selectedEvent, toast })
+
+// 反向受限更新（M10.7）：事件名变更 → 扫描正文与关联模块旧表述
+const {
+  scanning: reverseScanning,
+  candidateDialogVisible: reverseDialogVisible,
+  candidateTitle: reverseTitle,
+  candidateDescription: reverseDescription,
+  candidateItems: reverseItems,
+  propagate: reversePropagate,
+  applyEdits: reverseApply
+} = useReverseSync({ bookId, toast })
+const pendingReverse = ref<{ oldValue: string; newValue: string; context: string } | null>(null)
+
+/** 面板提交包装：编辑且标题实质变更时，弹出反向扫描确认 */
+async function onSubmitPanel(payload: { title: string; description: string; tags: string[]; wikiRefs: string[] }): Promise<void> {
+  const oldTitle = panelEvent.value?.title
+  await savePanel(payload)
+  if (panelEvent.value && oldTitle && oldTitle !== payload.title) {
+    pendingReverse.value = {
+      oldValue: oldTitle,
+      newValue: payload.title,
+      context: '剧情事件描述：' + payload.description.slice(0, 60)
+    }
+  }
+}
+
+function confirmReverse(): void {
+  const p = pendingReverse.value
+  pendingReverse.value = null
+  if (p) void reversePropagate({ kind: 'plot', ...p })
+}
 
 watch(bookId, () => void loadAll())
 onMounted(() => void loadAll())
@@ -325,7 +357,7 @@ onMounted(() => void loadAll())
       :wiki-entries="wikiEntries"
       :default-title="`事件 ${events.length + 1}`"
       @close="panelVisible = false"
-      @submit="savePanel"
+      @submit="onSubmitPanel"
       @remove="panelEvent && confirmRemove(panelEvent)"
     />
 
@@ -337,6 +369,25 @@ onMounted(() => void loadAll())
       confirm-text="删除"
       @update:model-value="pendingDelete = null"
       @confirm="doRemove"
+    />
+
+    <!-- 反向受限更新（M10.7）：确认扫描 + 原文→建议勾选面板 -->
+    <ConfirmDialog
+      :model-value="pendingReverse !== null"
+      title="同步旧表述？"
+      :description="`事件名已从「${pendingReverse?.oldValue ?? ''}」改为「${pendingReverse?.newValue ?? ''}」。要扫描正文与记忆/场景中的旧表述并给出替换建议吗？（逐处勾选，只改你确认的）`"
+      :confirm-text="reverseScanning ? '扫描中…' : '扫描'"
+      @update:model-value="pendingReverse = null"
+      @confirm="confirmReverse"
+    />
+    <SyncCandidateDialog
+      :visible="reverseDialogVisible"
+      :title="reverseTitle"
+      :description="reverseDescription"
+      :items="reverseItems"
+      confirm-text="应用所选项"
+      @confirm="reverseApply"
+      @close="reverseDialogVisible = false"
     />
 
     <!-- 正文→剧情提取候选面板（M10.7） -->
