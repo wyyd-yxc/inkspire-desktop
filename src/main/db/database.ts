@@ -248,14 +248,19 @@ export function getDb(): Database.Database {
       version: number
     }>).map((r) => r.version)
   )
+  const d = db as Database.Database // 闭包内收窄（模块级 let 在事务回调中丢失非空推断）
   for (const m of MIGRATIONS) {
     if (applied.has(m.version)) continue
-    db.exec(m.sql)
-    m.migrate?.(db) // JS 数据迁移（v11+：复杂映射在事务内逐行处理）
-    db.prepare('INSERT INTO schema_migrations (version, applied_at) VALUES (?, ?)').run(
-      m.version,
-      new Date().toISOString()
-    )
+    // 单迁移统一事务（M10.8 静态审查：防 sql 与 migrate 部分生效——版本未记录但数据已改）
+    const run = d.transaction(() => {
+      d.exec(m.sql)
+      m.migrate?.(d) // JS 数据迁移（v11+：复杂映射在嵌套事务/savepoint 内逐行处理）
+      d.prepare('INSERT INTO schema_migrations (version, applied_at) VALUES (?, ?)').run(
+        m.version,
+        new Date().toISOString()
+      )
+    })
+    run()
   }
   return db
 }
