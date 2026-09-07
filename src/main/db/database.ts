@@ -7,8 +7,13 @@ import Database from 'better-sqlite3'
 import { app } from 'electron'
 import { join } from 'node:path'
 
-/** 每个迁移：版本号 + 建表/改表 SQL。禁止修改已发布的历史迁移 */
-const MIGRATIONS: Array<{ version: number; sql: string }> = [
+/** 每个迁移：版本号 + 建表/改表 SQL；v11 起支持可选 migrate（JS 数据迁移，事务内执行）。
+ *  禁止修改已发布的历史迁移 */
+const MIGRATIONS: Array<{
+  version: number
+  sql: string
+  migrate?: (db: Database.Database) => void
+}> = [
   {
     version: 1,
     sql: `
@@ -184,40 +189,38 @@ const MIGRATIONS: Array<{ version: number; sql: string }> = [
       CREATE INDEX IF NOT EXISTS idx_plot_edges_book ON plot_edges(book_id);`
   },
   {
-    // v11 M10.8 严肃写作重命名：题材与标签旧值映射（数据迁移，纯 SQL/JSON1）
+    // v11 M10.8 严肃写作重命名：题材旧值映射（纯 SQL）+ 剧情事件/场景标签旧值映射（JS 逐行，
+    //   UPDATE 相关子查询 + json_each 表值函数在该场景抛 malformed JSON——M10.8 自测实锤，故下沉 JS）
     version: 11,
     sql: `
       UPDATE books SET genre = '奇幻' WHERE genre IN ('玄幻', '仙侠');
       UPDATE books SET genre = '现实主义' WHERE genre IN ('都市', '言情');
-      UPDATE books SET genre = '其他' WHERE genre IN ('游戏', '轻小说');
-      UPDATE plot_events SET tags = (
-        SELECT json_group_array(
-          CASE json_extract(j.value, '$')
-            WHEN '打斗' THEN '对峙'
-            WHEN '感情' THEN '情感'
-            ELSE json_extract(j.value, '$')
-          END
-        )
-        FROM json_each(json(tags)) j
-      )
-      WHERE EXISTS (
-        SELECT 1 FROM json_each(json(tags)) j
-        WHERE json_extract(j.value, '$') IN ('打斗', '感情')
-      );
-      UPDATE scenes SET tags = (
-        SELECT json_group_array(
-          CASE json_extract(j.value, '$')
-            WHEN '打斗' THEN '对峙'
-            WHEN '感情' THEN '情感'
-            ELSE json_extract(j.value, '$')
-          END
-        )
-        FROM json_each(json(tags)) j
-      )
-      WHERE EXISTS (
-        SELECT 1 FROM json_each(json(tags)) j
-        WHERE json_extract(j.value, '$') IN ('打斗', '感情')
-      );`
+      UPDATE books SET genre = '其他' WHERE genre IN ('游戏', '轻小说');`,
+    migrate: (db) => {
+      const TAG_MAP: Record<string, string> = { 打斗: '对峙', 感情: '情感' }
+      const retag = db.transaction((table: string) => {
+        const rows = db.prepare(`SELECT id, tags FROM ${table}`).all() as Array<{
+          id: string
+          tags: string
+        }>
+        const update = db.prepare(`UPDATE ${table} SET tags = ? WHERE id = ?`)
+        for (const row of rows) {
+          let arr: unknown
+          try {
+            arr = JSON.parse(row.tags)
+          } catch {
+            continue // 脏行跳过（保留原值，无害）
+          }
+          if (!Array.isArray(arr)) continue
+          const next = arr.map((t) => (typeof t === 'string' && TAG_MAP[t]) || t)
+          if (JSON.stringify(next) !== JSON.stringify(arr)) {
+            update.run(JSON.stringify(next), row.id)
+          }
+        }
+      })
+      retag('plot_events')
+      retag('scenes')
+    }
   }
 ]
 
@@ -248,6 +251,7 @@ export function getDb(): Database.Database {
   for (const m of MIGRATIONS) {
     if (applied.has(m.version)) continue
     db.exec(m.sql)
+    m.migrate?.(db) // JS 数据迁移（v11+：复杂映射在事务内逐行处理）
     db.prepare('INSERT INTO schema_migrations (version, applied_at) VALUES (?, ?)').run(
       m.version,
       new Date().toISOString()
