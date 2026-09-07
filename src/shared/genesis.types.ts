@@ -40,7 +40,7 @@ export interface Step2Soul {
   }
 }
 
-/** 第 3 步·世界构建：起草生成的设定（M6 迁移至百科前的暂存） */
+/** 第 3 步·世界构建：起草生成的设定（M6 迁移至设定集前的暂存） */
 export interface Step3World {
   /** 全书大纲 */
   bookOutline: string

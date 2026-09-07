@@ -17,7 +17,7 @@ export interface PlotEvent {
   posY: number
   /** 子画布父事件 id（预留，M10 恒为 null） */
   parentId: string | null
-  /** 镶嵌的百科词条 id（详情面板挂接，AI 生成时参考） */
+  /** 镶嵌的设定集词条 id（详情面板挂接，AI 生成时参考） */
   wikiRefs: string[]
   createdAt: string
   updatedAt: string

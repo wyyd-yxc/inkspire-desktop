@@ -23,7 +23,7 @@ export interface Scene {
   sortOrder: number
   posX: number
   posY: number
-  /** 镶嵌的百科词条 id（生成时 AI 参考） */
+  /** 镶嵌的设定集词条 id（生成时 AI 参考） */
   wikiRefs: string[]
   createdAt: string
   updatedAt: string
