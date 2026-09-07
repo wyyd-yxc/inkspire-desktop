@@ -90,7 +90,7 @@ function start(): void {
           >取消</button>
           <button
             class="rounded-lg bg-ink-primary px-5 py-2 text-sm text-white hover:bg-ink-primary-hover disabled:opacity-50"
-            :disabled="busy || (!syncWiki && !syncMemory)"
+            :disabled="busy || (!syncWiki && !syncMemory && !syncPlot)"
             @click="start"
           >{{ busy ? '同步中…' : '开始同步' }}</button>
         </div>
