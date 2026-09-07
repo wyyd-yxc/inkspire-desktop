@@ -99,7 +99,7 @@ function openWiki(): void {
         <button
           class="flex-1 rounded-lg border border-ink-border py-1 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
           @click.stop="openWiki"
-        >百科</button>
+        >设定</button>
       </div>
     </div>
 

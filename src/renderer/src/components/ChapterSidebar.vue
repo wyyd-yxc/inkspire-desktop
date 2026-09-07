@@ -80,17 +80,17 @@ const wordsLabel = computed(() => props.totalWords.toLocaleString('zh-CN'))
             :to="`/book/${bookId}/wiki`"
             class="rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
             title="设定集"
-          >百科</router-link>
+          >设定</router-link>
           <router-link
             :to="`/book/${bookId}/plot`"
             class="rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
             title="情节大纲"
-          >剧情</router-link>
+          >情节</router-link>
           <router-link
             :to="`/book/${bookId}/memory`"
             class="rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
             title="叙事档案"
-          >记忆</router-link>
+          >档案</router-link>
           <button
             class="relative rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
             title="同步：把正文改动推送到百科与叙事档案"
