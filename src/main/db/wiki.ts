@@ -81,7 +81,7 @@ function normNameDup(aName: string, aType: string, bName: string, bType: string)
     s
       .toLowerCase()
       .replace(/\s+/g, '')
-      .replace(/[。，、！？…；：""''「」『』（）,.!?;:()[\]{}'"\-—~·]/g, '')
+      .replace(/[。，、！？…；：“”‘’「」『』【】〔〕《》〈〉（）,.!?;:()[\]{}'"\-—~·]/g, '')
   const na = norm(aName)
   const nb = norm(bName)
   if (!na || !nb) return false

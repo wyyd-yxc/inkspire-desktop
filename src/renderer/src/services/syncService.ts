@@ -13,7 +13,7 @@ export function normText(s: string): string {
   return s
     .toLowerCase()
     .replace(/\s+/g, '')
-    .replace(/[。，、！？…；：""''「」『』（）,.!?;:()[\]{}'"\-—~·]/g, '')
+    .replace(/[。，、！？…；：“”‘’「」『』【】〔〕《》〈〉（）,.!?;:()[\]{}'"\-—~·]/g, '')
 }
 
 /** 实体名重复判定（M10.6 百科词条去重）：规范化全等（跨类型也算）或同类型下
