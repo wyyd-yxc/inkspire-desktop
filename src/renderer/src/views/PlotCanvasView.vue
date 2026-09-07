@@ -18,6 +18,7 @@ import { useToast } from '@/composables/useToast'
 import { usePlotEdges } from '@/composables/usePlotEdges'
 import { usePlotAi } from '@/composables/usePlotAi'
 import { usePlotSync } from '@/composables/usePlotSync'
+import { usePlotSearch } from '@/composables/usePlotSearch'
 import PlotEventNode from '@/components/plot/PlotEventNode.vue'
 import PlotDetailPanel from '@/components/plot/PlotDetailPanel.vue'
 import PlotAiDialog from '@/components/plot/PlotAiDialog.vue'
@@ -53,17 +54,7 @@ const { selectedEdge, edgeForm, flowEdges, onConnect, onEdgeClick, saveEdgeEdit,
   usePlotEdges({ bookId, plotEdges, toast })
 
 // ---- 搜索高亮（照原站：匹配节点高亮描边、不匹配变暗） ----
-const searchKeyword = ref('')
-function isHit(e: PlotEvent): boolean {
-  const k = searchKeyword.value.trim().toLowerCase()
-  if (!k) return true
-  return (
-    e.title.toLowerCase().includes(k) ||
-    e.description.toLowerCase().includes(k) ||
-    e.tags.some((t) => t.toLowerCase().includes(k))
-  )
-}
-const hitCount = computed(() => events.value.filter((e) => isHit(e)).length)
+const { searchKeyword, isHit, hitCount } = usePlotSearch(() => events.value)
 
 const selectedEvent = ref<PlotEvent | null>(null)
 
