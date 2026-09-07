@@ -35,12 +35,18 @@ export function usePlotSync(deps: {
   const { book, events, toast } = deps
   const bookId = () => toValue(deps.bookId)
 
-  // 章节列表由本 composable 自管理（剧情页不加载章节，首次提取时拉取）
+  // 章节列表由本 composable 自管理（剧情页不加载章节，首次提取时拉取）。
+  // 必须按 bookId 失效：Vue Router 跨书导航复用组件实例，陈旧缓存会拿上一本书的章节算水位
+  // （表现为「没有待提取的章节」——M10.7 自测实锤）
   const chapters = ref<Chapter[]>([])
+  let chaptersLoadedFor = ''
   async function ensureChapters(): Promise<void> {
-    if (chapters.value.length > 0) return
+    if (chaptersLoadedFor === bookId() && chapters.value.length > 0) return
     const res = await window.api.chapters.list(bookId())
-    if (res.ok) chapters.value = res.data
+    if (res.ok) {
+      chapters.value = res.data
+      chaptersLoadedFor = bookId()
+    }
   }
 
   const runProgress = ref('')
