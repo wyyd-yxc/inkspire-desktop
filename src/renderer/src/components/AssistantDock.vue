@@ -2,6 +2,7 @@
 /**
  * 写作助手浮球+聊天面板（v1 仅写作台）。
  * 上下文感知：自动携带当前章节与选区；@召唤设定集词条；对话持久化；流式回复。
+ * 浮球支持拖动并记忆位置（清偿 M10.5 黑盒债：定死右下角会遮挡 AI 采纳条）。
  */
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import type { Book } from '../../../shared/book.types'
@@ -243,15 +244,93 @@ onMounted(() => {
   void loadHistory()
   void loadWiki()
 })
+
+// ---------------- 浮球拖拽与位置记忆 ----------------
+const BALL_SIZE = 56
+const BALL_POS_KEY = 'inkspire.assistant_ball_pos'
+const ballPos = ref<{ x: number; y: number }>({ x: 0, y: 0 })
+const isDraggingBall = ref(false)
+let ballDragStart: { px: number; py: number; bx: number; by: number; moved: boolean } | null = null
+let suppressBallClick = false
+
+/** 默认落位：右下角（与原 fixed bottom-6 right-6 等效） */
+function defaultBallPos(): { x: number; y: number } {
+  return { x: window.innerWidth - BALL_SIZE - 24, y: window.innerHeight - BALL_SIZE - 24 }
+}
+
+/** 位置钳制在窗口内（含载入旧位置时窗口已变小的情形） */
+function clampBallPos(p: { x: number; y: number }): { x: number; y: number } {
+  return {
+    x: Math.min(Math.max(8, p.x), window.innerWidth - BALL_SIZE - 8),
+    y: Math.min(Math.max(8, p.y), window.innerHeight - BALL_SIZE - 8)
+  }
+}
+
+function loadBallPos(): void {
+  try {
+    const raw = localStorage.getItem(BALL_POS_KEY)
+    ballPos.value = raw ? clampBallPos(JSON.parse(raw) as { x: number; y: number }) : defaultBallPos()
+  } catch {
+    ballPos.value = defaultBallPos()
+  }
+}
+
+function onBallPointerDown(e: PointerEvent): void {
+  ballDragStart = {
+    px: e.clientX,
+    py: e.clientY,
+    bx: ballPos.value.x,
+    by: ballPos.value.y,
+    moved: false
+  }
+  // 捕获指针：移出按钮仍持续收到 move/up，拖拽不中断
+  ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+}
+
+function onBallPointerMove(e: PointerEvent): void {
+  if (!ballDragStart) return
+  const dx = e.clientX - ballDragStart.px
+  const dy = e.clientY - ballDragStart.py
+  // 位移阈值 4px 内不算拖拽，避免点击被误判（也防手抖微移）
+  if (!ballDragStart.moved && Math.hypot(dx, dy) < 4) return
+  ballDragStart.moved = true
+  isDraggingBall.value = true
+  ballPos.value = clampBallPos({ x: ballDragStart.bx + dx, y: ballDragStart.by + dy })
+}
+
+function onBallPointerUp(): void {
+  if (ballDragStart?.moved) {
+    suppressBallClick = true
+    localStorage.setItem(BALL_POS_KEY, JSON.stringify(ballPos.value))
+  }
+  ballDragStart = null
+  isDraggingBall.value = false
+}
+
+function onBallClick(): void {
+  // 拖拽结束后的 click 不展开面板
+  if (suppressBallClick) {
+    suppressBallClick = false
+    return
+  }
+  toggle()
+}
+
+loadBallPos()
 </script>
 
 <template>
-  <!-- 浮球 -->
+  <!-- 浮球（可拖动，位置记忆在 localStorage） -->
   <button
     v-if="!expanded"
-    class="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-ink-primary text-white shadow-lg transition-transform hover:scale-110"
-    title="写作助手"
-    @click="toggle"
+    class="fixed z-40 flex h-14 w-14 touch-none items-center justify-center rounded-full bg-ink-primary text-white shadow-lg hover:scale-110"
+    :class="isDraggingBall ? 'cursor-grabbing transition-none select-none' : 'cursor-grab transition-transform'"
+    :style="{ left: ballPos.x + 'px', top: ballPos.y + 'px' }"
+    title="写作助手（可拖动到任意位置）"
+    @pointerdown="onBallPointerDown"
+    @pointermove="onBallPointerMove"
+    @pointerup="onBallPointerUp"
+    @click="onBallClick"
   >
     <svg viewBox="0 0 24 24" class="h-7 w-7" fill="currentColor">
       <path d="M12 2C6.48 2 2 5.94 2 10.8c0 2.4 1.06 4.58 2.78 6.18-.16 1.14-.64 2.7-1.66 3.9a.5.5 0 0 0 .44.82c2.14-.16 3.94-.94 5.16-1.66 1.02.28 2.12.44 3.28.44 5.52 0 10-3.94 10-8.8S17.52 2 12 2z" />
