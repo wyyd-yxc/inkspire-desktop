@@ -54,6 +54,11 @@ import type {
   UpdateMemoryInput
 } from '../shared/memory.types'
 import type { AssistantMessage, AssistantRole } from '../shared/assistant.types'
+import type {
+  CreateInspirationInput,
+  Inspiration,
+  UpdateInspirationInput
+} from '../shared/inspiration.types'
 
 const api = {
   /** IPC 通路自检：正常返回 { ok: true, data: 'pong' } */
@@ -175,6 +180,18 @@ const api = {
       ipcRenderer.invoke('plot:update', id, input),
     remove: (id: string): Promise<IpcResult<boolean>> =>
       ipcRenderer.invoke('plot:remove', id)
+  },
+
+  /** 灵感墙便签（五类，含回收站） */
+  inspirations: {
+    list: (bookId: string): Promise<IpcResult<Inspiration[]>> =>
+      ipcRenderer.invoke('inspirations:list', bookId),
+    create: (input: CreateInspirationInput): Promise<IpcResult<Inspiration>> =>
+      ipcRenderer.invoke('inspirations:create', input),
+    update: (id: string, input: UpdateInspirationInput): Promise<IpcResult<Inspiration>> =>
+      ipcRenderer.invoke('inspirations:update', id, input),
+    remove: (id: string): Promise<IpcResult<boolean>> =>
+      ipcRenderer.invoke('inspirations:remove', id)
   },
 
   /** 叙事档案（事实层） */

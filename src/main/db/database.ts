@@ -224,6 +224,29 @@ const MIGRATIONS: Array<{
       retag('plot_events')
       retag('scenes')
     }
+  },
+  {
+    // v12 M11 灵感墙。ref_type/ref_id 为「入画布」回链（'plot'=情节大纲事件 / 'scene'=场景规划场景），
+    // 不加 FK：回链目标分属两张表且解绑是普通编辑操作，用字符串+渲染层校验（删节点不级联删便签，
+    // 便签侧显示「节点已删除」并可重新入画布）。
+    // 注意 plot_events.parent_id 子画布预留列本期仍不落 FK（无消费方，见 M11 任务卡不做清单）。
+    version: 12,
+    sql: `
+      CREATE TABLE IF NOT EXISTS inspirations (
+        id          TEXT PRIMARY KEY,
+        book_id     TEXT NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+        kind        TEXT NOT NULL DEFAULT 'idea',
+        title       TEXT NOT NULL DEFAULT '',
+        content     TEXT NOT NULL DEFAULT '',
+        source      TEXT NOT NULL DEFAULT '',
+        ref_type    TEXT NOT NULL DEFAULT '',
+        ref_id      TEXT NOT NULL DEFAULT '',
+        wiki_refs   TEXT NOT NULL DEFAULT '[]',
+        is_recycled INTEGER NOT NULL DEFAULT 0,
+        created_at  TEXT NOT NULL,
+        updated_at  TEXT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_inspirations_book ON inspirations(book_id, is_recycled);`
   }
 ]
 
