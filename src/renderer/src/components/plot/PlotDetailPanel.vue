@@ -14,6 +14,8 @@ interface Props {
   event: PlotEvent | null
   wikiEntries: WikiEntry[]
   defaultTitle: string
+  /** 来源灵感便签标题（M11 灵感墙回链；null/缺省=无来源） */
+  sourceNote?: string | null
 }
 
 const props = defineProps<Props>()
@@ -74,6 +76,10 @@ function submit(): void {
           <h2 class="font-semibold">{{ event ? '编辑剧情事件' : '新建剧情事件' }}</h2>
           <button class="text-ink-text-muted hover:text-ink-text" @click="emit('close')">✕</button>
         </div>
+        <p
+          v-if="event && sourceNote"
+          class="border-b border-ink-border/60 bg-ink-primary-soft/40 px-5 py-1.5 text-xs text-ink-text-secondary"
+        >来自灵感墙：「{{ sourceNote }}」</p>
         <div class="flex-1 overflow-y-auto px-5 py-4">
           <div class="flex flex-col gap-4">
             <label class="flex flex-col gap-1">

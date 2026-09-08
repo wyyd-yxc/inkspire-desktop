@@ -136,6 +136,8 @@ const api = {
   scenes: {
     list: (chapterId: string): Promise<IpcResult<Scene[]>> =>
       ipcRenderer.invoke('scenes:list', chapterId),
+    get: (id: string): Promise<IpcResult<Scene | null>> =>
+      ipcRenderer.invoke('scenes:get', id),
     create: (input: CreateSceneInput): Promise<IpcResult<Scene>> =>
       ipcRenderer.invoke('scenes:create', input),
     update: (id: string, input: UpdateSceneInput): Promise<IpcResult<Scene>> =>

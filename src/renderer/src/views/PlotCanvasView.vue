@@ -12,6 +12,7 @@ import '@vue-flow/core/dist/style.css'
 import '@vue-flow/core/dist/theme-default.css'
 import type { Book } from '../../../shared/book.types'
 import type { PlotEdge, PlotEvent } from '../../../shared/plot.types'
+import type { Inspiration } from '../../../shared/inspiration.types'
 import type { WikiEntry } from '../../../shared/wiki.types'
 import { isElectron } from '../services/books'
 import { useToast } from '@/composables/useToast'
@@ -47,6 +48,8 @@ const book = ref<Pick<Book, 'title' | 'genre' | 'description'> | null>(null)
 const events = ref<PlotEvent[]>([])
 const plotEdges = ref<PlotEdge[]>([])
 const wikiEntries = ref<WikiEntry[]>([])
+/** 灵感墙便签（M11 回链：refType='plot' 的 refId → 便签标题，供详情面板来源行） */
+const inspirations = ref<Inspiration[]>([])
 const loading = ref(true)
 
 const { fitView } = useVueFlow()
@@ -117,20 +120,23 @@ async function loadAll(): Promise<void> {
     return
   }
   try {
-    const [booksRes, eventsRes, edgesRes, wikiRes] = await Promise.all([
+    const [booksRes, eventsRes, edgesRes, wikiRes, inspirationsRes] = await Promise.all([
       window.api.books.list(),
       window.api.plot.list(bookId.value),
       window.api.plotEdges.list(bookId.value),
-      window.api.wiki.list(bookId.value)
+      window.api.wiki.list(bookId.value),
+      window.api.inspirations.list(bookId.value)
     ])
     if (!booksRes.ok) throw new Error(booksRes.error)
     if (!eventsRes.ok) throw new Error(eventsRes.error)
     if (!edgesRes.ok) throw new Error(edgesRes.error)
     if (!wikiRes.ok) throw new Error(wikiRes.error)
+    if (!inspirationsRes.ok) throw new Error(inspirationsRes.error)
     book.value = booksRes.data.find((b) => b.id === bookId.value) ?? null
     events.value = eventsRes.data
     plotEdges.value = edgesRes.data
     wikiEntries.value = wikiRes.data
+    inspirations.value = inspirationsRes.data
     setTimeout(() => void fitView({ padding: 0.2, maxZoom: 1 }), 120)
   } catch (err) {
     toast.error(err instanceof Error ? err.message : '加载失败')
@@ -204,6 +210,13 @@ function confirmReverse(): void {
 
 watch(bookId, () => void loadAll())
 onMounted(() => void loadAll())
+
+/** 面板事件对应的来源便签标题（渲染层 join，不改 plot_events 表） */
+const panelSourceNote = computed(() => {
+  const id = panelEvent.value?.id
+  if (!id) return null
+  return inspirations.value.find((it) => it.refType === 'plot' && it.refId === id)?.title ?? null
+})
 </script>
 
 <template>
@@ -356,6 +369,7 @@ onMounted(() => void loadAll())
       :event="panelEvent"
       :wiki-entries="wikiEntries"
       :default-title="`事件 ${events.length + 1}`"
+      :source-note="panelSourceNote"
       @close="panelVisible = false"
       @submit="onSubmitPanel"
       @remove="panelEvent && confirmRemove(panelEvent)"

@@ -4,23 +4,27 @@
  * 零 AI：作者主动记录的素材暂存区；「入画布」联动与回链角标见 SendToCanvasDialog（M11）。
  */
 import { computed, onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import type { Book } from '../../../shared/book.types'
 import type { Inspiration, InspirationKind } from '../../../shared/inspiration.types'
 import { INSPIRATION_KIND_LABELS } from '../../../shared/inspiration.types'
+import type { ChapterMeta } from '../../../shared/chapter.types'
 import type { WikiEntry } from '../../../shared/wiki.types'
 import { isElectron } from '../services/books'
 import { useToast } from '@/composables/useToast'
 import { INSPIRATION_KIND_COLORS } from '@/services/inspirationStyle'
 import InspirationEditDialog from '@/components/inspiration/InspirationEditDialog.vue'
+import SendToCanvasDialog from '@/components/inspiration/SendToCanvasDialog.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 
 const route = useRoute()
+const router = useRouter()
 const toast = useToast()
 const bookId = route.params.bookId as string
 
 const book = ref<Pick<Book, 'title' | 'genre' | 'description'> | null>(null)
 const wikiEntries = ref<WikiEntry[]>([])
+const chapters = ref<ChapterMeta[]>([])
 const items = ref<Inspiration[]>([])
 const loading = ref(true)
 
@@ -35,6 +39,10 @@ const purgeVisible = ref(false)
 const pendingPurge = ref<Inspiration | null>(null)
 const clearVisible = ref(false)
 const saving = ref(false)
+/** 入画布弹窗 */
+const sendVisible = ref(false)
+const sendTarget = ref<Inspiration | null>(null)
+const sending = ref(false)
 
 const KINDS = Object.keys(INSPIRATION_KIND_LABELS) as InspirationKind[]
 
@@ -42,16 +50,19 @@ async function load(): Promise<void> {
   if (!isElectron) return
   loading.value = true
   try {
-    const [booksRes, wikiRes, listRes] = await Promise.all([
+    const [booksRes, wikiRes, chaptersRes, listRes] = await Promise.all([
       window.api.books.list(),
       window.api.wiki.list(bookId),
+      window.api.chapters.listMeta(bookId),
       window.api.inspirations.list(bookId)
     ])
     if (!booksRes.ok) throw new Error(booksRes.error)
     if (!wikiRes.ok) throw new Error(wikiRes.error)
+    if (!chaptersRes.ok) throw new Error(chaptersRes.error)
     if (!listRes.ok) throw new Error(listRes.error)
     book.value = booksRes.data.find((b) => b.id === bookId) ?? null
     wikiEntries.value = wikiRes.data
+    chapters.value = chaptersRes.data
     items.value = listRes.data
   } catch (err) {
     toast.error(err instanceof Error ? err.message : '灵感墙加载失败')
@@ -134,6 +145,82 @@ async function setRecycled(item: Inspiration, recycled: boolean): Promise<void> 
   }
   toast.success(recycled ? '已移入回收站' : '已恢复到墙上')
   await load()
+}
+
+/** 打开「入画布」目标选择 */
+function openSend(item: Inspiration): void {
+  sendTarget.value = item
+  sendVisible.value = true
+}
+
+/** 确认送入画布：建节点（标题←便签标题，内容→描述/摘要）→ 便签写回链 */
+async function onSendConfirm(target: { kind: 'plot' | 'scene'; chapterId: string }): Promise<void> {
+  const item = sendTarget.value
+  if (!isElectron || !item || sending.value) return
+  sending.value = true
+  try {
+    let refId = ''
+    if (target.kind === 'plot') {
+      const res = await window.api.plot.create({
+        bookId,
+        title: item.title,
+        description: item.content,
+        wikiRefs: [...item.wikiRefs]
+      })
+      if (!res.ok) throw new Error(res.error)
+      refId = res.data.id
+    } else {
+      const res = await window.api.scenes.create({
+        chapterId: target.chapterId,
+        title: item.title,
+        summary: item.content,
+        wikiRefs: [...item.wikiRefs]
+      })
+      if (!res.ok) throw new Error(res.error)
+      refId = res.data.id
+    }
+    const link = await window.api.inspirations.update(item.id, { refType: target.kind, refId })
+    if (!link.ok) throw new Error(link.error)
+    toast.success('已送入画布，便签标记「已入画布」')
+    sendVisible.value = false
+    await load()
+  } catch (err) {
+    toast.error(err instanceof Error ? err.message : '送入画布失败')
+  } finally {
+    sending.value = false
+  }
+}
+
+/** 解绑回链（节点保留在画布上，仅断开便签与节点的关联） */
+async function unbind(item: Inspiration): Promise<void> {
+  if (!isElectron) return
+  const res = await window.api.inspirations.update(item.id, { refType: '' })
+  if (!res.ok) {
+    toast.error(res.error)
+    return
+  }
+  toast.success('已解绑，可重新送入画布')
+  await load()
+}
+
+/** 跳转查看回链节点（情节大纲直达；场景先反查所在章节） */
+async function openCanvas(item: Inspiration): Promise<void> {
+  if (item.refType === 'plot') {
+    router.push(`/book/${bookId}/plot`)
+    return
+  }
+  if (item.refType === 'scene') {
+    const res = await window.api.scenes.get(item.refId)
+    if (!res.ok) {
+      toast.error(res.error)
+      return
+    }
+    if (!res.data) {
+      toast.error('该场景已不存在，可解绑后重新送入')
+      return
+    }
+    router.push(`/book/${bookId}/canvas/${res.data.chapterId}`)
+  }
 }
 
 /** 彻底删除（仅回收站内，DAO 兜底校验） */
@@ -281,6 +368,13 @@ onMounted(() => {
           <div class="flex items-center gap-2 border-t border-ink-border/50 px-3.5 py-1.5 text-xs">
             <template v-if="!it.isRecycled">
               <button class="text-ink-text-secondary hover:text-ink-primary" @click="openEdit(it)">编辑</button>
+              <template v-if="!it.refType">
+                <button class="text-ink-primary hover:underline" @click="openSend(it)">入画布</button>
+              </template>
+              <template v-else>
+                <button class="text-ink-primary hover:underline" @click="openCanvas(it)">查看</button>
+                <button class="text-ink-text-muted hover:text-ink-danger" @click="unbind(it)">解绑</button>
+              </template>
               <button class="ml-auto text-ink-text-muted hover:text-ink-danger" @click="setRecycled(it, true)">移入回收站</button>
             </template>
             <template v-else>
@@ -300,6 +394,13 @@ onMounted(() => {
       @close="dialogVisible = false"
       @submit="saveDialog"
       @remove="editing && setRecycled(editing, true)"
+    />
+    <SendToCanvasDialog
+      :visible="sendVisible"
+      :inspiration="sendTarget"
+      :chapters="chapters"
+      @close="sendVisible = false"
+      @confirm="onSendConfirm"
     />
     <ConfirmDialog
       v-model="purgeVisible"
