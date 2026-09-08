@@ -463,6 +463,32 @@ function updateSelectionBar(ed: NonNullable<ReturnType<typeof useEditor>['value'
 const SEL_CTX_WINDOW = 1500
 
 /**
+ * 划词存灵感（M11）：把选区原文存为灵感墙便签（idea 类，带章节出处），正文不动。
+ * 与 AI 划词操作互不影响：只读选区，不改编辑器状态。
+ */
+async function saveSelectionAsInspiration(): Promise<void> {
+  const ed = editor.value
+  if (!ed || !props.bookId) return
+  const { from, to, empty } = ed.state.selection
+  if (empty || to - from < 2) return
+  const text = ed.state.doc.textBetween(from, to, '\n').trim()
+  if (!text) return
+  const res = await window.api.inspirations.create({
+    bookId: props.bookId,
+    kind: 'idea',
+    title: text.replace(/\s+/g, ' ').slice(0, 20),
+    content: text,
+    source: props.chapter ? `划自·${props.chapter.title}` : '划自正文'
+  })
+  if (!res.ok) {
+    toast.error(res.error)
+    return
+  }
+  selectionBar.visible = false
+  toast.success('已存为灵感，可到「灵感墙」查看')
+}
+
+/**
  * 截取选区前文窗口：超长时从「最近的段落边界」开始，保证窗口首句完整
  * （否则 AI 看到的上文以半句开头，衔接锚点模糊）。
  */
@@ -593,6 +619,12 @@ const saveLabel = computed(
         <button class="rounded-md px-2 py-1 text-xs text-ink-text-secondary transition-colors hover:bg-ink-primary-soft hover:text-ink-primary" @click="startSelectionAction('polish')">润色</button>
         <button class="rounded-md px-2 py-1 text-xs text-ink-text-secondary transition-colors hover:bg-ink-primary-soft hover:text-ink-primary" @click="startSelectionAction('expand')">扩写</button>
         <button class="rounded-md px-2 py-1 text-xs text-ink-text-secondary transition-colors hover:bg-ink-primary-soft hover:text-ink-primary" @click="startSelectionAction('rewrite')">改写</button>
+        <span class="mx-0.5 h-4 w-px bg-ink-border" />
+        <button
+          class="rounded-md px-2 py-1 text-xs text-ink-text-secondary transition-colors hover:bg-ink-primary-soft hover:text-ink-primary"
+          title="把选中文字存为灵感墙便签"
+          @click="saveSelectionAsInspiration"
+        >存为灵感</button>
       </div>
     </template>
 
