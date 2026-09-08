@@ -127,9 +127,13 @@ export function updateInspiration(id: string, input: UpdateInspirationInput): In
     const d: Database = getDb()
     assertWikiRefsBelongToBook(d, existing.bookId, input.wikiRefs)
   }
-  // 回链必须成对更新（r1 静态审查中-1：单独传 refId 会产生 refType/refId 不一致的悬挂回链）
+  // 回链必须成对更新（r1 静态审查中-1：单独传 refId 会产生 refType/refId 不一致的悬挂回链；
+  // r2 静态审查中-1：反向同样封堵——绑定非空 refType 但无 refId 且原值也为空，会写入 ref_type 有值/ref_id 空的脏数据）
   if (input.refId !== undefined && input.refType === undefined) {
     throw new Error('回链需 refType 与 refId 成对更新')
+  }
+  if (input.refType !== undefined && input.refType !== '' && input.refId === undefined && !existing.refId) {
+    throw new Error('绑定回链需同时提供 refId')
   }
   const next: Inspiration = {
     ...existing,
