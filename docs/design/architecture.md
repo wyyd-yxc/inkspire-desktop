@@ -64,6 +64,7 @@ interface AiProvider {
 /book/:id/wiki    → 万物百科
 /book/:bookId/canvas/:chapterId → 章节画布
 /book/:bookId/plot              → 剧情画布
+/book/:bookId/inspirations      → 灵感墙（M11 追加；模块现名：书房/构思台/设定集/叙事档案/情节大纲/场景规划——M10.8 重命名，上表保留初版名）
 ```
 
 主题：`styles/theme.css` 定义 CSS 变量（浅紫罗兰风：淡紫背景 #f5f3fa、罗兰紫主色 #6c5ce7、白色圆角卡片、柔和阴影，依据 refs/ 官网截图校准）；预留 `[data-theme=dark]`。
