@@ -103,27 +103,123 @@ Electron(main: db/ ai/ ipc/) ←IPC(preload 白名单桥)→ Vue3 渲染层(view
 
 ## 9. 下一步任务卡
 
-### ~~M10.5 跨模块联动与同步~~（✅ 已完成，待用户确认 tag v0.13.0）
+### M11 灵感墙（下一个，零 AI 功能）
 
-交付概要（五条数据流）：A 正文→百科（AI 提取候选→SyncCandidateDialog 勾选→入库 manual 幂等）；
-B 正文→记忆（prompt 注入已有+normText 本地双保险去重；未抽取批量+水位）；C 记忆清理（精确删+AI 近似合并确认）；
-D 剧情↔正文/记忆双向注入（剧情 AI 上下文=创世+词条+**已写进度+既定事实**；正文/场景 AI 注入剧情链预算 1000）；
-E 创世台推送百科幂等。入口：工作台「⟳ 同步」弹窗/百科「从正文提取」/记忆页增强/创世台推送按钮/剧情弹窗联动信息行。
-自动同步两档（提醒=红点零 AI；静默=自动入库 ≤3 章/轮），设置分区即改即生效，App 级 60s 轻节拍。
-验收：静态审查四轮（核心整改：**水位原子合并下沉主进程 sync:watermark-merge + 事务包裹**、水位键移出 settings:set 写白名单（读写拆分）、loadPlot 收敛 buildPlotChainText、白名单收紧登记）；
-黑盒 9/9 通过（2026-09-06-M10.5-sync.md，含白名单收紧实测/10 章并发 merge 零丢失/重启持久逐字节比对）。
-遗留：黑盒 2 条轻微债已挂 roadmap（浮球遮挡 AI 采纳条/白名单机制收紧）；update/remove 归属校验分歧项维持待用户裁决。
-自测修复 3 个真 bug：水位并发竞态、混合场景全重复章节推水缺失、（承接期）useMemorySync bookId 非响应式。
+**背景**：原站灵感墙=便签暂存区（五类）+关联+拖入画布；architecture.md 预留 `inspirations` 表；plot.types.ts/canvas.types.ts 注释「素材组/平行推演依赖灵感墙 M11」；roadmap 验收=灵感→画布联动。技术债「剧情面板被浮球遮挡」登记计划 M11 前清偿。
 
-### M16 重打包（下一个，M10.5 确认后立即做）
+**功能清单**：
+1. 灵感墙页：五类便签卡片墙（网格流），类别筛选 tabs+关键字搜索+回收站切换
+2. 便签 CRUD：新建/编辑弹窗（类别/标题/内容/关联设定集词条多选）；删除=软删入回收站；回收站可恢复/逐条彻底删除/清空
+3. 关联词条：wiki_refs 多选，卡片角标显示；词条删除后显示降级不报错
+4. 入画布：便签卡「入画布」→弹窗选目标（情节大纲事件 / 场景规划场景+选章节）→复用 plot:create / scenes:create 建节点（标题←便签标题，描述/摘要←便签内容）→便签回链 ref_type/ref_id+「已入画布」角标+可跳转对应画布；已入画布不可重复入、可解绑后重入
+5. 画布来源行：PlotDetailPanel 增「来自灵感墙」信息行（渲染层按 ref_id join，不改表）
+6. 划词存灵感：写作台划词浮条增「存为灵感」，自动带章节出处
 
-- 版本号升 **0.14.0**（package.json + electron-builder.yml；注意 v0.13.0 已预留给 M10.5），`npm run dist` 出 NSIS 安装包
-- 验收：全新 Windows 安装即用（黑盒 12/12 口径不变，报告 2026-08-30-M16-package.md 可参考）
-- 注意：本机已装 0.6.0 版（%LOCALAPPDATA%/Programs/InkSpire/），与 dev 共享 userData
+**数据与 IPC 设计草案**：
+- migration v12 单表 `inspirations(id TEXT PK, book_id TEXT NOT NULL REFERENCES books(id) ON DELETE CASCADE, kind TEXT NOT NULL DEFAULT 'idea', title TEXT NOT NULL DEFAULT '', content TEXT NOT NULL DEFAULT '', ref_type TEXT NOT NULL DEFAULT '', ref_id TEXT NOT NULL DEFAULT '', wiki_refs TEXT NOT NULL DEFAULT '[]', is_recycled INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)` + `idx_inspirations_book(book_id)`（不加 pos 列：墙面=网格流非自由画布）
+- `src/shared/inspiration.types.ts`：Inspiration / InspirationKind='idea'|'foreshadow'|'fragment'|'memo'|'todo'（中文标签 灵感/伏笔/片段/备忘/待办）/ Create / Update 入参
+- IPC 四通道（仿 plot.ts：UUID 校验+wrap）：`inspirations:list(bookId)`（含回收站，渲染层筛）/ `create(input)` / `update(id, input)` / `remove(id)`（物理删，仅回收站内允许）；preload 增 `inspirations` 组
+- 入画布不改既有通道：plot:create / scenes:create 原样复用
 
-### 后续
-- M11 灵感墙（plot_events.parent_id 子画布预留列届时以 migration v11+ 落 FK）→ M12 风格包 → M13 统计 → M14 拆书 → M15 Agent 偏好
-- 技术债：见 roadmap 技术债登记区（M10.5 新增 2 条：浮球遮挡/白名单机制收紧）
+**入口**：写作台侧栏 pill「灵感」（档案与同步之间，title=灵感墙）；路由 `/book/:bookId/inspirations`；划词浮条「存为灵感」
+
+**设计决策**：
+- 「拖入画布」以「入画布」按钮+弹窗实现：两张画布是独立路由，HTML5 跨路由拖拽不可行，语义等价
+- 灵感墙=作者主动素材区（零 AI），与 AI 维护的设定集/叙事档案分工；伏笔便签不与叙事档案「开放线索」自动互通、不入自动同步三目标（不加第四水位）
+- plot_events.parent_id 预留列 **FK 不落地**：本期无子画布消费方，SQLite 加约束需重建表，零收益；列继续闲置
+- ref_type/ref_id 仅作「入画布回链」（来源追踪）；关联设定集走 wiki_refs 数组（与 scenes/plot_events 同构）
+- 类别色卡沿用案头纸墨主题降饱和令牌（M10.8）
+
+**不做清单**：自由拖拽定位的墙面/便签间连线/子画布与 parent_id FK/AI 生成灵感或从便签扩写/情节「素材组合」「平行推演」生成模式/灵感墙入自动同步/移动端适配
+
+**验收点**：
+1. 五类便签新建/编辑/软删/恢复/彻底删除/清空回收站，重启持久
+2. 回收站切换正确；软删便签不出现在正式墙
+3. 关联词条可选可显，词条删除后卡片不报错
+4. 入画布→情节大纲：节点创建成功、内容/落位正确、便签回链+角标+跳转
+5. 入画布→场景规划（选章节）：同上
+6. 已入画布便签禁重复入；解绑后可重入
+7. 划词存灵感：墙上出现便签且出处章节正确
+8. PlotDetailPanel 显示「来自灵感墙」来源行
+9. 删书级联清理 inspirations；全程零 AI 调用
+
+**tag 号**：v0.16.0-m11-wall。**依赖**：无上游（可立即开工）；第 0 步顺带清偿浮球遮挡债（浮球可拖动+位置记忆）。
+
+---
+
+### M12 作品风格（风格包）
+
+**背景**：现状文风注入仅构思台「基调」步预设 5 包的 promptHint（src/shared/presetStyles.ts，注释明言 M14 后换真实风格包）；roadmap 要求文笔调性/叙事规则/字数目标+风格包管理；architecture.md 预留 `style_profiles` 表（含 source_type）。**M14 拆书产出的风格包落本表（M14 依赖本卡）**。
+
+**功能清单**：风格包 CRUD（名称/文笔调性/叙事规则条目/每章字数目标区间/样例片段/来源）；风格包管理页；书籍绑定风格包（一书一包，可换可解绑）；写作注入：systemPrompt 增「作品风格」块，优先级 书绑定包>基调步预设>无；构思台基调步可选用户风格包；顺带清偿技术债「封面自定义上传」（roadmap 标注 M12 附近）。
+
+**数据与 IPC 设计草案**：migration 建 `style_profiles(id, name, tone, rules TEXT JSON 数组, word_target_min INTEGER, word_target_max INTEGER, sample, source_type TEXT DEFAULT 'manual'（'digest' 为 M14 预留）, created_at, updated_at)`；books 加 `style_profile_id TEXT REFERENCES style_profiles(id) ON DELETE SET NULL`；IPC：styles:list/create/update/remove 四通道；绑定走既有 books:update 增字段；WritingContext 增 style 字段由 ChapterEditor 组装。
+
+**入口**：设置中心「风格包」分区管理+绑定（书房卡片/构思台基调步）；写作时自动注入无独立入口。
+
+**设计决策**：预设 5 包保持常量不入库（表只存用户包）；字数目标为提示词软目标不做硬切分；风格包全局库不挂书（books 侧绑定），拆书产出全局可复用。
+
+**不做清单**：按章节切换风格/风格 A/B 对比/导入导出与市场/AI 生成风格包（归 M14）/段落级风格重写
+
+**验收点**：绑定风格包后生成正文体现调性与叙事规则（对比实验）；字数目标出现在提示词；CRUD+重启持久+删包后书绑定自动置空；基调步可选用户包；封面可自定义。**依赖**：无上游；被 M14 依赖。**tag 号**：v0.17.0-m12-style。
+
+---
+
+### M13 创作统计
+
+**背景**：chapters.word_count 只有当前值（前端逐章求和得总字数），无历史序列，热力图/趋势/里程碑无从谈起。**快照自上线日起积累——本卡宜早交付**。
+
+**功能清单**：统计页：按日字数热力图（近 12 月格子）/近 30 天趋势折线/累计字数+总字数目标进度条（目标可设）/里程碑自动打点（首章完稿、1 万/10 万字等）；保存章节时上报当日快照。
+
+**数据与 IPC 设计草案**：migration 建 `word_count_snapshots(book_id TEXT, day TEXT 'YYYY-MM-DD', words INTEGER 当日末字数, delta INTEGER 当日新增, updated_at, PRIMARY KEY(book_id, day))`；IPC：`stats:snapshot(bookId, day, words)` upsert（**delta 由主进程对比当日已存值计算**防竞态）+ `stats:list(bookId)` 返回快照序列；ChapterEditor 保存成功后调用。
+
+**入口**：写作台侧栏 pill「统计」（灵感墙旁）；路由 `/book/:bookId/stats`。
+
+**设计决策**：渲染层只报当前字数，增量主进程算；未打开应用的天无快照（如实空白，不补数据）；零 AI。
+
+**不做清单**：历史回填/按章节粒度图表/写作时长统计/导出报表/跨书聚合页
+
+**验收点**：编辑保存后热力图当日格子更新；重启后快照在；跨天保存两条记录且增量正确；目标进度与里程碑打点准确。**依赖**：无。**tag 号**：v0.18.0-m13-stats。
+
+---
+
+### M14 拆书
+
+**背景**：用户上传参考文本，AI 拆解出可复用的风格包（供 M12 表消费）；refs/landing_book-analysis-material-library.webp 为原站参考；presetStyles.ts 注释「M14 后换真实风格包」由此兑现。
+
+**功能清单**：导入 txt（UTF-8，超长截取前 2 万字）→AI 拆解（调性总结/叙事规则条目/样例句段）→SyncCandidateDialog 勾选→落风格包（source_type='digest'）；入口挂 M12 风格包管理页「从参考文本拆解」。
+
+**数据与 IPC 设计草案**：零新表零新通道——产出直写 M12 的 styles:create；AI 走 ai:chat-stream+lenientParse（复用提取范式：严格 JSON+宽容解析+白名单过滤+长度钳制）。
+
+**入口**：设置中心风格包管理页按钮。
+
+**设计决策**：参考文本不落库不持久（隐私：拆完即弃，仅内存传递）；一次拆解一个包；只拆文风不拆情节结构/人物（那是设定集的事）。
+
+**不做清单**：epub/pdf/mobi 格式/整本书无截取拆解/素材库（原站概念）/批量拆解/拆情节大纲
+
+**验收点**：导入参考 txt→AI 拆解→勾选→风格包生成且来源=拆书；该包绑定新书后生成正文风格可感知；未选任何候选不落库。**依赖**：**M12 的 style_profiles 表与管理页必须先落地**。**tag 号**：v0.19.0-m14-digest。
+
+---
+
+### M15 Agent 模型偏好（功能槽位）
+
+**背景**：architecture.md ModelBinding 设计（功能槽位绑定档案，未绑定回落默认）；现状 resolveProfile 两处（aiWriting.ts / AssistantDock.vue）固定读默认档案；原站「23 个 Agent」收敛为功能域槽位。
+
+**功能清单**：定义 8 个槽位：正文写作（续写/整章润色）/划词改写/构思台/情节大纲 AI/场景规划 AI/提取同步（设定集+叙事档案+情节三目标）/助手聊天/拆书；设置中心「功能槽位」分区：每槽位下拉（跟随默认/各档案）；调用时按槽位解析档案。
+
+**数据与 IPC 设计草案**：migration 建 `agent_bindings(slot TEXT PRIMARY KEY, profile_id TEXT NOT NULL)`；IPC：`bindings:list` + `bindings:set(slot, profileId|'')`；渲染层抽 `resolveProfileForSlot(slot)` 收敛两处 resolveProfile；槽位常量入 src/shared/agent.types.ts。
+
+**入口**：设置中心新分区。
+
+**设计决策**：槽位=功能域非 Agent 实体（不建 23 行）；「跟随默认」=表内无行（删绑定即回落）；删除档案级联清绑定（deleteProfile 增清理）；params/温度跟档案走，不做槽位级覆盖。
+
+**不做清单**：23 Agent 实体与自定义提示词/槽位级温度覆盖/按书绑定（全局槽位）
+
+**验收点**：两档案不同模型时，情节大纲 AI 与助手各走各的档案（抓请求模型名验证）；未绑定槽位回落默认；删除档案后对应槽位回落默认不报错。**依赖**：无硬依赖，建议最后做（覆盖全部 AI 功能面，回归面最大）。**tag 号**：v0.20.0-m15-bindings。
+
+---
+
+**技术债**：见 roadmap 技术债登记区（浮球遮挡由 M11 第 0 步清偿；settings 白名单收紧/封面自定义/书籍卡片删除键可达性等仍挂账）。
 
 ## 10. 快速命令
 
