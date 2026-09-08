@@ -3,7 +3,7 @@
  * 灵感墙页：五类便签卡片墙（灵感/伏笔/片段/备忘/待办）+ 回收站。
  * 零 AI：作者主动记录的素材暂存区；「入画布」联动与回链角标见 SendToCanvasDialog（M11）。
  */
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { Book } from '../../../shared/book.types'
 import type { Inspiration, InspirationKind } from '../../../shared/inspiration.types'
@@ -20,7 +20,9 @@ import ConfirmDialog from '@/components/ConfirmDialog.vue'
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
-const bookId = route.params.bookId as string
+// 响应式路由参数：同路由跨书导航时 Vue Router 复用组件实例，静态捕获会停留在旧书数据
+//（M10.5 承接期 useMemorySync 同款真 bug，照 PlotCanvasView 惯例修）
+const bookId = computed(() => route.params.bookId as string)
 
 const book = ref<Pick<Book, 'title' | 'genre' | 'description'> | null>(null)
 const wikiEntries = ref<WikiEntry[]>([])
@@ -52,15 +54,15 @@ async function load(): Promise<void> {
   try {
     const [booksRes, wikiRes, chaptersRes, listRes] = await Promise.all([
       window.api.books.list(),
-      window.api.wiki.list(bookId),
-      window.api.chapters.listMeta(bookId),
-      window.api.inspirations.list(bookId)
+      window.api.wiki.list(bookId.value),
+      window.api.chapters.listMeta(bookId.value),
+      window.api.inspirations.list(bookId.value)
     ])
     if (!booksRes.ok) throw new Error(booksRes.error)
     if (!wikiRes.ok) throw new Error(wikiRes.error)
     if (!chaptersRes.ok) throw new Error(chaptersRes.error)
     if (!listRes.ok) throw new Error(listRes.error)
-    book.value = booksRes.data.find((b) => b.id === bookId) ?? null
+    book.value = booksRes.data.find((b) => b.id === bookId.value) ?? null
     wikiEntries.value = wikiRes.data
     chapters.value = chaptersRes.data
     items.value = listRes.data
@@ -123,7 +125,7 @@ async function saveDialog(payload: {
   try {
     const res = editing.value
       ? await window.api.inspirations.update(editing.value.id, payload)
-      : await window.api.inspirations.create({ bookId, ...payload })
+      : await window.api.inspirations.create({ bookId: bookId.value, ...payload })
     if (!res.ok) throw new Error(res.error)
     toast.success(editing.value ? '便签已保存' : '便签已贴上墙')
     dialogVisible.value = false
@@ -162,7 +164,7 @@ async function onSendConfirm(target: { kind: 'plot' | 'scene'; chapterId: string
     let refId = ''
     if (target.kind === 'plot') {
       const res = await window.api.plot.create({
-        bookId,
+        bookId: bookId.value,
         title: item.title,
         description: item.content,
         wikiRefs: [...item.wikiRefs]
@@ -206,7 +208,7 @@ async function unbind(item: Inspiration): Promise<void> {
 /** 跳转查看回链节点（情节大纲直达；场景先反查所在章节） */
 async function openCanvas(item: Inspiration): Promise<void> {
   if (item.refType === 'plot') {
-    router.push(`/book/${bookId}/plot`)
+    router.push(`/book/${bookId.value}/plot`)
     return
   }
   if (item.refType === 'scene') {
@@ -219,9 +221,11 @@ async function openCanvas(item: Inspiration): Promise<void> {
       toast.error('该场景已不存在，可解绑后重新送入')
       return
     }
-    router.push(`/book/${bookId}/canvas/${res.data.chapterId}`)
+    router.push(`/book/${bookId.value}/canvas/${res.data.chapterId}`)
   }
 }
+
+watch(bookId, () => void load())
 
 /** 彻底删除（仅回收站内，DAO 兜底校验） */
 async function purge(): Promise<void> {
