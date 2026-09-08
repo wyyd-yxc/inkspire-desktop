@@ -47,6 +47,29 @@
 - 回收站不自动过期清理（无保留天数策略）
 - 浮球位置为全局记忆（跨书共享，窗口内钳制；窗口尺寸变小后载入位置会被钳制回界内）
 
+## 静态审查整改记录（r1 → 2aa37d8）
+
+r1（glm-5，2026-09-08）提出中 2 / 低 3 / 无法判定 5。整改与裁定：
+
+| 项 | 裁定 | 处理 |
+|---|---|---|
+| 中-1 回链可单独更新 refId 致悬挂 | 采纳 | DAO update 强制 refType/refId 成对，单独传 refId 抛「回链需 refType 与 refId 成对更新」 |
+| 中-2 清空回收站非原子 | 采纳 | 新通道 `inspirations:clear-recycled(bookId)`，DAO 单条 SQL 原子删除返回删除数；视图弃循环删；toast 带张数 |
+| 低-3 词条逐 id 查询 | 采纳 | 抽 `assertWikiRefsBelongToBook`：`WHERE id IN (...)` 单次查询+Map 比对（create/update 共用） |
+| 低-4 IPC 未校验 refType | 采纳 | `assertRefType` 白名单（''/'plot'/'scene'）IPC 层拦截，DAO 白名单兜底 |
+| 低-5 浮球状态残留 | 半采纳 | 变量实为组件 setup 作用域（非模块级，审查误读）；但切页卸载时拖拽确可能未收到 pointerup——补 onUnmounted 重置 |
+| 无法判定 ×5 | — | 均因 diff 截断未渲染层源码；实现俱在（见下方附录），r2 复审以附录为准 |
+
+**整改回归**：tmp/m11-r2-regression.mjs **6/6**（成对校验拒绝/原子清空含张数提示/DB 终态 2 张正式墙/清理）；T1 全量重跑 21/21。
+
+## 附录：r1 无法判定项对应源码事实
+
+1. **词条删除后卡片降级**：`InspirationsWallView.vue` `wikiName(id)` 返回 `wikiEntries.find(...)?.name ?? '已删词条'`；卡片角标 class `wikiEntries.some((w) => w.id === rid) ? '' : 'line-through opacity-60'`。
+2. **情节事件落位**：入画布不传 posX/posY，走 `src/main/db/plot.ts` 既有默认 `posX ?? maxX + 340`、`posY ?? 240`（M10 三轮审查 P2 逻辑原样复用）；场景走 `count+1)*320`。
+3. **来源行渲染**：`PlotCanvasView.vue` `panelSourceNote` computed = `inspirations.find(it => it.refType === 'plot' && it.refId === panelEvent.id)?.title ?? null`，传 `PlotDetailPanel` prop `sourceNote`，面板 header 下条件渲染「来自灵感墙：〈title〉」。
+4. **划词选区**：`ChapterEditor.saveSelectionAsInspiration()` 直读 TipTap `ed.state.selection`（from/to/textBetween），与浮条同一选区来源，无独立获取路径。
+5. **跨书导航修复**：`InspirationsWallView.vue` `const bookId = computed(() => route.params.bookId as string)` + `watch(bookId, () => void load())`，全部调用点 `bookId.value`。
+
 ## 实现定位
 
 - shared：`src/shared/inspiration.types.ts`（Inspiration/五类 kind 中文标签/入参）
