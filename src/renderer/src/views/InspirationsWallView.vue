@@ -243,14 +243,13 @@ async function purge(): Promise<void> {
 
 async function clearRecycleBin(): Promise<void> {
   if (!isElectron) return
-  for (const item of recycledItems.value) {
-    const res = await window.api.inspirations.remove(item.id)
-    if (!res.ok) {
-      toast.error(res.error)
-      break
-    }
+  // 原子清空下沉主进程（r1 静态审查中-2：逐条循环删非原子）
+  const res = await window.api.inspirations.clearRecycled(bookId.value)
+  if (!res.ok) {
+    toast.error(res.error)
+    return
   }
-  toast.success('回收站已清空')
+  toast.success(`回收站已清空（${res.data} 张）`)
   await load()
 }
 

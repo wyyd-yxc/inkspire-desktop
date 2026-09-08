@@ -4,7 +4,7 @@
  * 上下文感知：自动携带当前章节与选区；@召唤设定集词条；对话持久化；流式回复。
  * 浮球支持拖动并记忆位置（清偿 M10.5 黑盒债：定死右下角会遮挡 AI 采纳条）。
  */
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { Book } from '../../../shared/book.types'
 import type { WikiEntry } from '../../../shared/wiki.types'
 import { isElectron } from '../services/books'
@@ -317,6 +317,13 @@ function onBallClick(): void {
 }
 
 loadBallPos()
+
+// 组件卸载（切页面）时拖拽可能未收到 pointerup：重置残留状态，防止重进后首次点击被吞（r1 静态审查低-5）
+onUnmounted(() => {
+  ballDragStart = null
+  isDraggingBall.value = false
+  suppressBallClick = false
+})
 </script>
 
 <template>

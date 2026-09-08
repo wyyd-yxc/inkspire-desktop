@@ -193,7 +193,10 @@ const api = {
     update: (id: string, input: UpdateInspirationInput): Promise<IpcResult<Inspiration>> =>
       ipcRenderer.invoke('inspirations:update', id, input),
     remove: (id: string): Promise<IpcResult<boolean>> =>
-      ipcRenderer.invoke('inspirations:remove', id)
+      ipcRenderer.invoke('inspirations:remove', id),
+    /** 清空回收站（主进程单条 SQL 原子删除），返回删除数 */
+    clearRecycled: (bookId: string): Promise<IpcResult<number>> =>
+      ipcRenderer.invoke('inspirations:clear-recycled', bookId)
   },
 
   /** 叙事档案（事实层） */

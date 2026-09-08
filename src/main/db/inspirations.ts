@@ -74,18 +74,27 @@ export function getInspiration(id: string): Inspiration | undefined {
   return row ? toInspiration(row) : undefined
 }
 
+/** 关联词条批量归属校验：单次 IN 查询（r1 静态审查低-3，替代逐 id 查询） */
+function assertWikiRefsBelongToBook(d: Database, bookId: string, refs: string[]): void {
+  if (refs.length === 0) return
+  const placeholders = refs.map(() => '?').join(',')
+  const rows = d
+    .prepare(`SELECT id, book_id FROM wiki_entries WHERE id IN (${placeholders})`)
+    .all(...refs) as Array<{ id: string; book_id: string }>
+  const found = new Map(rows.map((r) => [r.id, r.book_id]))
+  for (const rid of refs) {
+    const owner = found.get(rid)
+    if (!owner) throw new Error('关联的设定集词条不存在')
+    if (owner !== bookId) throw new Error('关联的设定集词条必须属于本书')
+  }
+}
+
 export function createInspiration(input: CreateInspirationInput): Inspiration {
   if (!input.bookId) throw new Error('缺少书籍 id')
   if (input.kind !== undefined && !VALID_KINDS.has(input.kind)) throw new Error('非法的便签类别')
   const d: Database = getDb()
   // 关联词条必须存在且属于本书（与 plot_events 同口径）
-  for (const rid of input.wikiRefs ?? []) {
-    const w = d.prepare('SELECT book_id FROM wiki_entries WHERE id = ?').get(rid) as
-      | { book_id: string }
-      | undefined
-    if (!w) throw new Error('关联的设定集词条不存在')
-    if (w.book_id !== input.bookId) throw new Error('关联的设定集词条必须属于本书')
-  }
+  assertWikiRefsBelongToBook(d, input.bookId, input.wikiRefs ?? [])
   const now = new Date().toISOString()
   const row: InspirationRow = {
     id: randomUUID(),
@@ -116,13 +125,11 @@ export function updateInspiration(id: string, input: UpdateInspirationInput): In
     throw new Error('非法的回链类型')
   if (input.wikiRefs !== undefined) {
     const d: Database = getDb()
-    for (const rid of input.wikiRefs) {
-      const w = d.prepare('SELECT book_id FROM wiki_entries WHERE id = ?').get(rid) as
-        | { book_id: string }
-        | undefined
-      if (!w) throw new Error('关联的设定集词条不存在')
-      if (w.book_id !== existing.bookId) throw new Error('关联的设定集词条必须属于本书')
-    }
+    assertWikiRefsBelongToBook(d, existing.bookId, input.wikiRefs)
+  }
+  // 回链必须成对更新（r1 静态审查中-1：单独传 refId 会产生 refType/refId 不一致的悬挂回链）
+  if (input.refId !== undefined && input.refType === undefined) {
+    throw new Error('回链需 refType 与 refId 成对更新')
   }
   const next: Inspiration = {
     ...existing,
@@ -166,4 +173,12 @@ export function removeInspiration(id: string): boolean {
   if (!row) throw new Error('便签不存在')
   if (row.is_recycled !== 1) throw new Error('仅回收站内的便签可彻底删除')
   return d.prepare('DELETE FROM inspirations WHERE id = ?').run(id).changes > 0
+}
+
+/** 清空回收站：单条 SQL 原子删除（r1 静态审查中-2，替代渲染层逐条循环的非原子删除），返回删除数 */
+export function clearRecycledInspirations(bookId: string): number {
+  const d: Database = getDb()
+  return d
+    .prepare('DELETE FROM inspirations WHERE book_id = ? AND is_recycled = 1')
+    .run(bookId).changes
 }

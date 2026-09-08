@@ -5,6 +5,7 @@
 import { ipcMain } from 'electron'
 import { wrap } from './wrap'
 import {
+  clearRecycledInspirations,
   createInspiration,
   listInspirations,
   removeInspiration,
@@ -12,6 +13,7 @@ import {
 } from '../db/inspirations'
 import type {
   CreateInspirationInput,
+  InspirationRefType,
   UpdateInspirationInput
 } from '../../shared/inspiration.types'
 
@@ -28,6 +30,13 @@ function assertUuid(...ids: string[]): void {
 function assertWikiRefs(input: { wikiRefs?: string[] }): void {
   for (const rid of input.wikiRefs ?? []) {
     if (!UUID_RE.test(rid)) throw new Error('词条引用格式非法')
+  }
+}
+
+/** 回链类型白名单（r1 静态审查低-4：IPC 层提前拦截，DAO 白名单兜底） */
+function assertRefType(refType?: InspirationRefType): void {
+  if (refType !== undefined && !['', 'plot', 'scene'].includes(refType)) {
+    throw new Error('非法的回链类型')
   }
 }
 
@@ -49,6 +58,7 @@ export function registerInspirationIpc(): void {
     wrap(() => {
       assertUuid(id)
       assertWikiRefs(input)
+      assertRefType(input.refType)
       // 回链目标 id 同样做格式校验（防污染 id 落库）
       if (input.refId) assertUuid(input.refId)
       return updateInspiration(id, input)
@@ -59,6 +69,13 @@ export function registerInspirationIpc(): void {
     wrap(() => {
       assertUuid(id)
       return removeInspiration(id)
+    })
+  )
+
+  ipcMain.handle('inspirations:clear-recycled', (_e, bookId: string) =>
+    wrap(() => {
+      assertUuid(bookId)
+      return clearRecycledInspirations(bookId)
     })
   )
 }
