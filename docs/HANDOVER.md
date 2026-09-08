@@ -2,13 +2,14 @@
 
 > **新会话/新模型开工第一入口**。本文件始终保持「随时可交接」状态，每次里程碑收尾后更新。
 > 最后更新：2026-09-08 · 会话 37 续 · **M10.6/M10.7/M10.8 全部完成（tag v0.14.0/v0.15.0）；0.15.0 已打包并覆盖安装验证；产品更名「墨笺」**
+> docs 收尾提交（ae541f9）已补收尾 tag **v0.15.1-m10.8-final**——静态审查 `--base` 请用此 tag。
 
 ## 0. 移交摘要（新模型 60 秒读完）
 
-- **M0-M10.8 全部完成并通过双轨验收**，14 个版本 tag（最新 v0.14.0-m10.6-m10.7 / v0.15.0-m10.8-restyle）
+- **M0-M10.8 全部完成并通过双轨验收**，16 个版本 tag（最新 v0.15.0-m10.8-restyle / v0.15.1-m10.8-final 收尾）
 - **产品已更名「墨笺」**（appId/数据目录/可执行名 InkSpire 不变）；题材与标签旧值经 migration v11 映射；GMI 额度耗尽后 AI 档案切 TokenRhythm glm-5
 - **下一步**：M11 灵感墙（可选：OpenDesign 桌面版接入 od CLI/MCP、浮球遮挡等技术债见 roadmap）
-- git：12 tag、工作区 clean（验收文档已随收尾提交）
+- git：16 tag、工作区 clean（验收文档已随收尾提交）
 - 你能跑 `npm run dev` 验证环境；测试方法见第 5 节；所有坑见第 6 节（**18 条，必读**）
 
 ## 1. 项目是什么
@@ -32,10 +33,10 @@
 | M9 | 墨灵助手（浮球+聊天+流式+@召唤） | ✅ tag v0.11.0-m9-assistant |
 | M10 | 剧情画布（事件+四类连线+AI 三模式+搜索高亮） | ✅ tag v0.12.0（静态四轮整改闭环+黑盒 14/14） |
 | M10.5 | 跨模块联动与同步（正文→百科提取/记忆去重/剧情双向注入/各页同步入口/自动同步） | ✅ 静态四轮整改闭环（原子水位通道+白名单读写拆分）+黑盒 9/9 通过，tag v0.13.0-m10.5-sync |
-| M11-M15 | 灵感墙/风格/统计/拆书/Agent偏好 | ⬜ |
-| M16 | 重打包（版本升 0.14.0） | ⬜ **M10.5 确认后优先** |
+| M11-M15 | 灵感墙/风格/统计/拆书/Agent偏好 | ⬜（任务卡见第 9 节） |
+| M16 | 重打包 | ✅ 0.15.0 已打包并覆盖安装验证（2026-09-08） |
 
-**数据库 migration 当前版本 = 10**（books/api_profiles+settings/chapters/genesis_steps/wiki_entries/scenes/scene_edges/memories/assistant_messages/plot_events+plot_edges）。
+**数据库 migration 当前版本 = 11**（books/api_profiles+settings/chapters/genesis_steps/wiki_entries/scenes/scene_edges/memories/assistant_messages/plot_events+plot_edges；v11 为 genre+tags 旧值数据映射，无结构变更）。
 
 ## 3. 新会话开工 SOP（按序执行）
 
@@ -51,7 +52,7 @@
 ```
 Electron(main: db/ ai/ ipc/) ←IPC(preload 白名单桥)→ Vue3 渲染层(views/components/services)
 ```
-- 数据：better-sqlite3 v13（NAPI prebuilds 跨 ABI），库文件在 %APPDATA%/inkspire-desktop/inkspire.sqlite，migration v9
+- 数据：better-sqlite3 v13（NAPI prebuilds 跨 ABI），库文件在 %APPDATA%/inkspire-desktop/inkspire.sqlite，migration v11
 - AI：`src/main/ai/` Provider 抽象+注册表；openaiCompatible.ts（SSE 流式+429 自动重试+AbortSignal 中止）
 - 注入链路：ChapterEditor.loadGenesis/loadWiki/loadMemory → caches → writingContext → systemPrompt
 - UI：Tailwind 4 @theme 紫罗兰令牌（#6c5ce7），弹窗/Toast/确认框/AiWritingPanel 可复用
