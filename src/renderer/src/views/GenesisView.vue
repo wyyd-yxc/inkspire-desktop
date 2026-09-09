@@ -423,12 +423,14 @@ onMounted(() => void loadAll())
                 规则 {{ s.rules.length }} 条：{{ s.rules.slice(0, 2).join('；') }}{{ s.rules.length > 2 ? '…' : '' }}
               </p>
               <p class="mt-3 flex items-center justify-between text-xs">
-                <span v-if="boundStyle?.id === s.id" class="text-ink-primary">当前生效（优先于预设）✓</span>
-                <button
-                  v-else-if="book?.styleProfileId"
-                  class="text-ink-text-muted hover:text-ink-danger"
-                  @click.stop="unbindUserStyle"
-                >解绑当前包</button>
+                <template v-if="boundStyle?.id === s.id">
+                  <span class="text-ink-primary">当前生效（优先于预设）✓</span>
+                  <!-- 黑盒缺陷#2 修复：绑定态卡片本身要有解绑入口（此前仅渲染在未绑定卡上） -->
+                  <button
+                    class="text-ink-text-muted hover:text-ink-danger"
+                    @click.stop="unbindUserStyle"
+                  >解绑</button>
+                </template>
                 <span v-else class="text-ink-text-muted">点击绑定</span>
               </p>
             </div>
