@@ -59,3 +59,27 @@
 - 预设 5 包常量不入库；style_profiles 只存用户包；'digest' 留 M14（拆书产出直写 styles:create）
 - 风格包全局库，books 侧绑定；删包 FK SET NULL 自动解绑
 - 不做：导入导出/按章切换/AI 生成风格包/段落级重写/封面裁剪编辑器
+
+## 附录 A：r1 整改与裁定（2026-09-09）
+
+| 项 | 裁定 | 依据 |
+|---|---|---|
+| 严重：FK 语义依赖 PRAGMA foreign_keys 开关 | **已有，无需改码** | `src/main/db/database.ts` getDb() 内自 M0 起即有 `db.pragma('foreign_keys = ON')`（注释「启用外键级联」）——diff 截断未及该段；T1 的「SET NULL 自动置空」DB 实证即运行时开启的直接证据 |
+| 一般：diff 截断缺渲染层 | 补附录 B | 关键源码全文随材料提交，供 r2 复审 |
+| 提示：normalizeWordTarget 浮点取整 | 合理兜底 | 前端 number input；取整行为符合预期，不改动 |
+
+## 附录 B：核心源码事实（r1 无法判定项对应）
+
+1. **FK 开关**（database.ts getDb）：`db.pragma('journal_mode = WAL')` 之后紧跟 `db.pragma('foreign_keys = ON') // 启用外键级联（删书连带删章节）`。
+2. **注入优先级**（`src/renderer/src/services/styleContext.ts` 全文逻辑）：
+   ```ts
+   export function resolveEffectiveStyle(bound, presetHint) {
+     if (bound) return buildStyleProfileHint(bound)
+     return presetHint || undefined
+   }
+   // buildStyleProfileHint: tone 行 + rules 逐条「- xxx」+ 字数行「单章篇幅约 X-Y 字（软目标，内容完整优先）」
+   ```
+3. **写作管线接入**（ChapterEditor）：`loadBoundStyle(bookId)`（books.list+styles.list，genesisLoadSeq 同款 seq 防竞态）→ `writingContext()` 中 `genesis: { ...genesisCache.value, styleHint: resolveEffectiveStyle(boundStyle.value, genesisCache.value.styleHint) }` → aiWriting.systemPrompt 既有 `目标文风：${styleHint}` 行消费。
+4. **场景正文接入**（CanvasView loadAll 并行 8 请求含 genesis.get+styles.list）：`styleHint.value = resolveEffectiveStyle(bound, presetHint)` → `buildSceneProseMessages(..., relationTextFor(scene), styleHint.value)` → system 注入 `目标文风：${styleHint}`（scenePrompts.ts 新增可选参数）。
+5. **节点生成隔离**：`sceneSystemPrompt(book)` 与 plotPrompts 的 system 均无 style 参数——M12 未触碰（git diff 可证 scenePrompts.ts 仅 buildSceneProseMessages 增参）。
+6. **基调步双列表**（GenesisView step1）：`userStyles`（styles.list）+ `PRESET_STYLES` 双区块；用户包卡点击 `bindUserStyle`（books.update styleProfileId=s.id）；`selectStyle`（预设）末尾 `if (book.value?.styleProfileId) books.update(styleProfileId: null)`；预设卡「已绑定 ✓」条件为 `!boundStyle && step1.styleId === s.id`。
