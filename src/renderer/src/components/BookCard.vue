@@ -1,16 +1,32 @@
 <script setup lang="ts">
 /**
- * 书籍卡片：封面（默认渐变+书名首字）+ 书名 + 分类标签 + 简介 + 更新时间。
+ * 书籍卡片：封面（自定义图或渐变+书名首字）+ 书名 + 分类标签 + 简介 + 更新时间。
  * hover 显示操作按钮（删除）；点击卡片进入创作（M3 接路由）。
+ * M12：文风绑定（徽标显示 + 绑定弹窗）。
  */
-import { computed } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import type { Book } from '../../../shared/book.types'
 import { BOOK_GENRES } from '../../../shared/book.types'
+import { isElectron } from '../services/books'
+import StyleBindDialog from './StyleBindDialog.vue'
 
 const props = defineProps<{ book: Book }>()
-const emit = defineEmits<{ delete: [book: Book] }>()
+const emit = defineEmits<{ delete: [book: Book]; changed: [] }>()
 const router = useRouter()
+
+/** 绑定风格包名（徽标展示；解绑/删除包后降级为空不显示） */
+const styleName = ref('')
+async function resolveStyleName(): Promise<void> {
+  styleName.value = ''
+  if (!isElectron || !props.book.styleProfileId) return
+  const res = await window.api.styles.list()
+  if (res.ok) styleName.value = res.data.find((s) => s.id === props.book.styleProfileId)?.name ?? ''
+}
+watch(() => props.book.styleProfileId, () => void resolveStyleName(), { immediate: false })
+onMounted(() => void resolveStyleName())
+
+const bindVisible = ref(false)
 
 /** 封面渐变按书名 hash 稳定取色，避免每次渲染闪变 */
 const coverStyle = computed(() => {
@@ -86,7 +102,14 @@ function openWiki(): void {
       <p class="line-clamp-2 min-h-8 text-sm text-ink-text-secondary">
         {{ book.description || '暂无简介' }}
       </p>
-      <p class="mt-auto pt-1 text-xs text-ink-text-muted">更新于 {{ formatDate(book.updatedAt) }}</p>
+      <p class="mt-auto flex items-center gap-1.5 pt-1 text-xs text-ink-text-muted">
+        <span
+          v-if="styleName"
+          class="max-w-[45%] truncate rounded-full bg-ink-primary-soft px-1.5 py-0.5 text-[10px] text-ink-primary"
+          :title="`文风：${styleName}`"
+        >文风·{{ styleName }}</span>
+        <span class="truncate">更新于 {{ formatDate(book.updatedAt) }}</span>
+      </p>
       <div class="mt-2 flex gap-1.5">
         <button
           class="flex-1 rounded-lg bg-ink-primary-soft py-1 text-xs text-ink-primary transition-colors hover:bg-ink-primary hover:text-white"
@@ -100,8 +123,14 @@ function openWiki(): void {
           class="flex-1 rounded-lg border border-ink-border py-1 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
           @click.stop="openWiki"
         >设定</button>
+        <button
+          class="flex-1 rounded-lg border border-ink-border py-1 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
+          @click.stop="bindVisible = true"
+        >风格</button>
       </div>
     </div>
+
+    <StyleBindDialog v-model="bindVisible" :book="book" @saved="emit('changed', $event)" />
 
     <!-- hover 删除按钮 -->
     <button

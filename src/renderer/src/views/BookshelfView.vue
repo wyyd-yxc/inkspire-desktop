@@ -46,6 +46,12 @@ async function doDelete(): Promise<void> {
   }
 }
 
+/** 书卡内联变更（文风绑定等）：就地替换，免整列表刷新闪变 */
+function onBookChanged(updated: Book): void {
+  const i = books.value.findIndex((b) => b.id === updated.id)
+  if (i >= 0) books.value[i] = updated
+}
+
 onMounted(refresh)
 </script>
 
@@ -109,6 +115,7 @@ onMounted(refresh)
           :key="b.id"
           :book="b"
           @delete="pendingDelete = $event"
+          @changed="onBookChanged"
         />
       </div>
     </main>

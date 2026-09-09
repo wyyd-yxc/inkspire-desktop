@@ -17,6 +17,7 @@ import type {
   Step5Write
 } from '../../../shared/genesis.types'
 import { PRESET_STYLES } from '../../../shared/presetStyles'
+import type { StyleProfile } from '../../../shared/style.types'
 import { isElectron } from '../services/books'
 import { useToast } from '@/composables/useToast'
 import { generateWriting } from '../services/aiWriting'
@@ -36,10 +37,16 @@ const toast = useToast()
 // 响应式 bookId（防同路由跨书导航时组件复用拿旧 id，M6 自测教训）
 const bookId = computed(() => route.params.bookId as string)
 
-const book = ref<Pick<Book, 'title' | 'genre' | 'description'> | null>(null)
+const book = ref<Pick<Book, 'title' | 'genre' | 'description' | 'styleProfileId'> | null>(null)
 const steps = ref<Record<number, GenesisStepRecord>>({})
 const activeStep = ref<GenesisStep>(1)
 const loading = ref(true)
+
+/** 用户自建风格包（M12）：基调步与预设并列展示，书绑定优先于预设注入 */
+const userStyles = ref<StyleProfile[]>([])
+const boundStyle = computed(
+  () => userStyles.value.find((s) => s.id === book.value?.styleProfileId) ?? null
+)
 
 // 各步本地编辑态（与 DB 双向，保存后同步）
 const step1 = ref<Step1Style>({ styleId: '', styleName: '' })
@@ -88,13 +95,16 @@ async function loadAll(): Promise<void> {
     return
   }
   try {
-    const [booksRes, genesisRes] = await Promise.all([
+    const [booksRes, genesisRes, stylesRes] = await Promise.all([
       window.api.books.list(),
-      window.api.genesis.get(bookId.value)
+      window.api.genesis.get(bookId.value),
+      window.api.styles.list()
     ])
     if (!booksRes.ok) throw new Error(booksRes.error)
     if (!genesisRes.ok) throw new Error(genesisRes.error)
+    if (!stylesRes.ok) throw new Error(stylesRes.error)
     book.value = booksRes.data.find((b) => b.id === bookId.value) ?? null
+    userStyles.value = stylesRes.data
     for (const r of genesisRes.data) steps.value[r.step] = r
     // 回填本地编辑态
     if (steps.value[1]?.data) step1.value = steps.value[1].data as Step1Style
@@ -126,9 +136,38 @@ async function selectStyle(styleId: string, styleName: string): Promise<void> {
   step1.value = { styleId, styleName }
   try {
     await saveStep(1, step1.value, true)
+    // 书绑定包优先于预设：改选预设时清掉书绑定，让本次选择真正生效
+    if (book.value?.styleProfileId) {
+      const res = await window.api.books.update(bookId.value, { styleProfileId: null })
+      if (res.ok) book.value = res.data
+    }
     toast.success(`已绑定文风：${styleName}`)
   } catch (err) {
     toast.error(err instanceof Error ? err.message : '保存失败')
+  }
+}
+
+/** 绑定用户风格包（M12）：写 books.style_profile_id，注入时优先于预设 */
+async function bindUserStyle(s: StyleProfile): Promise<void> {
+  try {
+    const res = await window.api.books.update(bookId.value, { styleProfileId: s.id })
+    if (!res.ok) throw new Error(res.error)
+    book.value = res.data
+    toast.success(`已绑定文风包：${s.name}（优先于预设生效）`)
+  } catch (err) {
+    toast.error(err instanceof Error ? err.message : '绑定失败')
+  }
+}
+
+/** 解绑用户风格包，回落预设 */
+async function unbindUserStyle(): Promise<void> {
+  try {
+    const res = await window.api.books.update(bookId.value, { styleProfileId: null })
+    if (!res.ok) throw new Error(res.error)
+    book.value = res.data
+    toast.success('已解绑文风包')
+  } catch (err) {
+    toast.error(err instanceof Error ? err.message : '解绑失败')
   }
 }
 
@@ -360,17 +399,54 @@ onMounted(() => void loadAll())
       <div v-else-if="activeStep === 1" class="mx-auto max-w-3xl">
         <h2 class="mb-1 text-lg font-semibold">基调 · 选择文风</h2>
         <p class="mb-6 text-sm text-ink-text-secondary">{{ STEP_HINTS[0] }}——绑定后，AI 写作会自动贴近这个调性。</p>
+
+        <!-- 我的风格包（用户自建，绑定优先于预设） -->
+        <template v-if="userStyles.length">
+          <h3 class="mb-2 text-sm font-semibold text-ink-text-secondary">我的风格包</h3>
+          <div class="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div
+              v-for="s in userStyles"
+              :key="s.id"
+              class="cursor-pointer rounded-card border-2 p-4 transition-all hover:shadow-card"
+              :class="boundStyle?.id === s.id ? 'border-ink-primary bg-ink-primary-soft/50' : 'border-ink-border'"
+              @click="bindUserStyle(s)"
+            >
+              <div class="flex items-center justify-between">
+                <h3 class="font-semibold">{{ s.name }}</h3>
+                <span
+                  class="rounded-full px-1.5 py-0.5 text-[10px]"
+                  :class="s.sourceType === 'digest' ? 'bg-ink-warning/10 text-ink-warning' : 'bg-ink-primary-soft text-ink-text-secondary'"
+                >{{ s.sourceType === 'digest' ? '拆书' : '我的' }}</span>
+              </div>
+              <p v-if="s.tone" class="mt-1 text-sm text-ink-text-secondary">{{ s.tone }}</p>
+              <p v-if="s.rules.length" class="mt-1 text-xs leading-5 text-ink-text-muted">
+                规则 {{ s.rules.length }} 条：{{ s.rules.slice(0, 2).join('；') }}{{ s.rules.length > 2 ? '…' : '' }}
+              </p>
+              <p class="mt-3 flex items-center justify-between text-xs">
+                <span v-if="boundStyle?.id === s.id" class="text-ink-primary">当前生效（优先于预设）✓</span>
+                <button
+                  v-else-if="book?.styleProfileId"
+                  class="text-ink-text-muted hover:text-ink-danger"
+                  @click.stop="unbindUserStyle"
+                >解绑当前包</button>
+                <span v-else class="text-ink-text-muted">点击绑定</span>
+              </p>
+            </div>
+          </div>
+          <h3 class="mb-2 text-sm font-semibold text-ink-text-secondary">预设文风<span v-if="boundStyle" class="ml-2 font-normal text-xs text-ink-text-muted">（已绑定风格包时预设不生效）</span></h3>
+        </template>
+
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div
             v-for="s in PRESET_STYLES"
             :key="s.id"
             class="cursor-pointer rounded-card border-2 p-4 transition-all hover:shadow-card"
-            :class="step1.styleId === s.id ? 'border-ink-primary bg-ink-primary-soft/50' : 'border-ink-border'"
+            :class="!boundStyle && step1.styleId === s.id ? 'border-ink-primary bg-ink-primary-soft/50' : 'border-ink-border'"
             @click="selectStyle(s.id, s.name)"
           >
             <div class="flex items-center justify-between">
               <h3 class="font-semibold">{{ s.name }}</h3>
-              <span v-if="step1.styleId === s.id" class="text-xs text-ink-primary">已绑定 ✓</span>
+              <span v-if="!boundStyle && step1.styleId === s.id" class="text-xs text-ink-primary">已绑定 ✓</span>
             </div>
             <p class="mt-1 text-sm text-ink-text-secondary">{{ s.description }}</p>
             <p class="mt-3 rounded-lg bg-paper px-3 py-2 text-sm italic text-ink-text-muted">「{{ s.sample }}」</p>
