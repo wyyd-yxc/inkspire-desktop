@@ -77,7 +77,16 @@ const api = {
     update: (id: string, input: UpdateBookInput): Promise<IpcResult<Book>> =>
       ipcRenderer.invoke('books:update', id, input),
     remove: (id: string): Promise<IpcResult<boolean>> =>
-      ipcRenderer.invoke('books:delete', id)
+      ipcRenderer.invoke('books:delete', id),
+    /** 选择并上传封面（主进程弹文件对话框，落盘 userData/covers/），返回更新后的书 */
+    setCover: (id: string): Promise<IpcResult<Book>> =>
+      ipcRenderer.invoke('books:set-cover', id),
+    /** 移除自定义封面（回落渐变占位；物理文件保留） */
+    removeCover: (id: string): Promise<IpcResult<Book>> =>
+      ipcRenderer.invoke('books:remove-cover', id),
+    /** 读封面文件为 data URL（合 CSP img-src data:） */
+    readCover: (filename: string): Promise<IpcResult<string>> =>
+      ipcRenderer.invoke('books:read-cover', filename)
   },
 
   /** 章节管理（写作台） */

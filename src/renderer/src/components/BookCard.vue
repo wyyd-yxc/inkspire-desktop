@@ -9,11 +9,44 @@ import { useRouter } from 'vue-router'
 import type { Book } from '../../../shared/book.types'
 import { BOOK_GENRES } from '../../../shared/book.types'
 import { isElectron } from '../services/books'
+import { useToast } from '@/composables/useToast'
 import StyleBindDialog from './StyleBindDialog.vue'
 
 const props = defineProps<{ book: Book }>()
 const emit = defineEmits<{ delete: [book: Book]; changed: [] }>()
 const router = useRouter()
+const toast = useToast()
+
+/** 自定义封面 data URL（空=渐变占位）；watch book.cover 变化重载（上传/移除后父层就地替换实体） */
+const coverUrl = ref('')
+async function loadCover(): Promise<void> {
+  coverUrl.value = ''
+  if (!isElectron || !props.book.cover) return
+  const res = await window.api.books.readCover(props.book.cover)
+  if (res.ok) coverUrl.value = res.data
+}
+watch(() => props.book.cover, () => void loadCover(), { immediate: true })
+
+async function setCover(): Promise<void> {
+  if (!isElectron) return
+  const res = await window.api.books.setCover(props.book.id)
+  if (!res.ok) {
+    toast.error(res.error)
+    return
+  }
+  emit('changed', res.data)
+}
+
+async function removeCover(): Promise<void> {
+  if (!isElectron) return
+  const res = await window.api.books.removeCover(props.book.id)
+  if (!res.ok) {
+    toast.error(res.error)
+    return
+  }
+  toast.success('已移除自定义封面')
+  emit('changed', res.data)
+}
 
 /** 绑定风格包名（徽标展示；解绑/删除包后降级为空不显示） */
 const styleName = ref('')
@@ -82,13 +115,31 @@ function openWiki(): void {
   >
     <!-- 封面区 -->
     <div class="relative flex h-40 items-center justify-center text-white" :style="coverStyle">
-      <span class="text-5xl font-bold drop-shadow-md">{{ book.title.slice(0, 1) }}</span>
+      <img
+        v-if="coverUrl"
+        :src="coverUrl"
+        class="absolute inset-0 h-full w-full object-cover"
+        alt=""
+      />
+      <span v-else class="text-5xl font-bold drop-shadow-md">{{ book.title.slice(0, 1) }}</span>
       <span
         v-if="book.status !== 'writing'"
         class="absolute left-2 top-2 rounded-full bg-black/25 px-2 py-0.5 text-xs"
       >
         {{ statusLabel[book.status] }}
       </span>
+      <!-- hover 封面工具（上传/更换/移除） -->
+      <div class="absolute bottom-2 right-2 hidden gap-1.5 group-hover:flex">
+        <button
+          class="rounded-full bg-black/35 px-2 py-0.5 text-[10px] text-white transition-colors hover:bg-black/60"
+          @click.stop="setCover"
+        >{{ book.cover ? '换封面' : '上传封面' }}</button>
+        <button
+          v-if="book.cover"
+          class="rounded-full bg-black/35 px-2 py-0.5 text-[10px] text-white transition-colors hover:bg-ink-danger"
+          @click.stop="removeCover"
+        >移除</button>
+      </div>
     </div>
 
     <!-- 信息区 -->
