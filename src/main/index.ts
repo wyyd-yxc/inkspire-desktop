@@ -16,6 +16,7 @@ import { registerSceneIpc } from './ipc/scenes'
 import { registerSceneEdgeIpc } from './ipc/sceneEdges'
 import { registerPlotIpc } from './ipc/plot'
 import { registerInspirationIpc } from './ipc/inspirations'
+import { registerStyleIpc } from './ipc/styles'
 import { registerMemoryIpc } from './ipc/memories'
 import { registerAssistantIpc } from './ipc/assistant'
 import { registerSyncIpc } from './ipc/sync'
@@ -98,6 +99,7 @@ registerSceneIpc()
 registerSceneEdgeIpc()
 registerPlotIpc()
 registerInspirationIpc()
+registerStyleIpc()
 registerMemoryIpc()
 registerAssistantIpc()
 registerSyncIpc()

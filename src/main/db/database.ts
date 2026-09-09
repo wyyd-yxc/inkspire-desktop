@@ -247,6 +247,28 @@ const MIGRATIONS: Array<{
         updated_at  TEXT NOT NULL
       );
       CREATE INDEX IF NOT EXISTS idx_inspirations_book ON inspirations(book_id, is_recycled);`
+  },
+  {
+    // v13 M12 作品风格。style_profiles 全局风格包库——预设 5 包保持 presetStyles.ts 常量不入库，
+    // 本表只存用户包（source_type 'digest' 为 M14 拆书产出预留）。rules 为叙事规则条目 JSON 数组，
+    // 逐条注入提示词；word_target_min/max 为单章字数软目标（可空）。
+    // books.style_profile_id 书侧绑定（一书一包），FK ON DELETE SET NULL=删包自动解绑回落。
+    // 项目首个 ALTER TABLE 先例：SQLite ADD COLUMN 带 REFERENCES 合法，存量行默认 NULL=未绑定。
+    version: 13,
+    sql: `
+      CREATE TABLE IF NOT EXISTS style_profiles (
+        id              TEXT PRIMARY KEY,
+        name            TEXT NOT NULL,
+        tone            TEXT NOT NULL DEFAULT '',
+        rules           TEXT NOT NULL DEFAULT '[]',
+        word_target_min INTEGER,
+        word_target_max INTEGER,
+        sample          TEXT NOT NULL DEFAULT '',
+        source_type     TEXT NOT NULL DEFAULT 'manual',
+        created_at      TEXT NOT NULL,
+        updated_at      TEXT NOT NULL
+      );
+      ALTER TABLE books ADD COLUMN style_profile_id TEXT REFERENCES style_profiles(id) ON DELETE SET NULL;`
   }
 ]
 

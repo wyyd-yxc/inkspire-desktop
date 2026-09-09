@@ -27,6 +27,7 @@ const mock = (() => {
       description: '这是一条仅在普通浏览器中显示的示例数据，用于调 UI。',
       cover: '',
       status: 'writing',
+      styleProfileId: null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     }
@@ -42,6 +43,7 @@ const mock = (() => {
         description: input.description,
         cover: input.cover ?? '',
         status: 'writing',
+        styleProfileId: input.styleProfileId ?? null,
         createdAt: now,
         updatedAt: now
       }

@@ -14,6 +14,7 @@ interface BookRow {
   description: string
   cover: string
   status: string
+  style_profile_id: string | null
   created_at: string
   updated_at: string
 }
@@ -27,9 +28,17 @@ function toBook(r: BookRow): Book {
     description: r.description,
     cover: r.cover,
     status: r.status as Book['status'],
+    styleProfileId: r.style_profile_id,
     createdAt: r.created_at,
     updatedAt: r.updated_at
   }
+}
+
+/** 绑定的风格包必须存在（防脏 id 落库；null=解绑放行） */
+function assertStyleProfileExists(d: Database, styleProfileId: string | null | undefined): void {
+  if (styleProfileId == null) return
+  const row = d.prepare('SELECT id FROM style_profiles WHERE id = ?').get(styleProfileId)
+  if (!row) throw new Error('绑定的风格包不存在')
 }
 
 /** 列出全部书籍（按更新时间倒序，封存的排最后） */
@@ -57,6 +66,7 @@ export function createBook(input: CreateBookInput): Book {
   if (!title) throw new Error('书名不能为空')
 
   const d: Database = getDb()
+  assertStyleProfileExists(d, input.styleProfileId ?? null)
   const now = new Date().toISOString()
   const book: Book = {
     id: randomUUID(),
@@ -65,12 +75,13 @@ export function createBook(input: CreateBookInput): Book {
     description: input.description.trim(),
     cover: input.cover ?? '',
     status: 'writing',
+    styleProfileId: input.styleProfileId ?? null,
     createdAt: now,
     updatedAt: now
   }
   d.prepare(
-    `INSERT INTO books (id, title, genre, description, cover, status, created_at, updated_at)
-     VALUES (@id, @title, @genre, @description, @cover, @status, @created_at, @updated_at)`
+    `INSERT INTO books (id, title, genre, description, cover, status, style_profile_id, created_at, updated_at)
+     VALUES (@id, @title, @genre, @description, @cover, @status, @style_profile_id, @created_at, @updated_at)`
   ).run({
     id: book.id,
     title: book.title,
@@ -78,6 +89,7 @@ export function createBook(input: CreateBookInput): Book {
     description: book.description,
     cover: book.cover,
     status: book.status,
+    style_profile_id: book.styleProfileId,
     created_at: book.createdAt,
     updated_at: book.updatedAt
   })
@@ -91,6 +103,9 @@ export function updateBook(id: string, input: UpdateBookInput): Book {
 
   if (input.title !== undefined && !input.title.trim()) throw new Error('书名不能为空')
 
+  const d: Database = getDb()
+  assertStyleProfileExists(d, input.styleProfileId)
+
   const next: Book = {
     ...existing,
     ...(input.title !== undefined ? { title: input.title.trim() } : {}),
@@ -98,12 +113,12 @@ export function updateBook(id: string, input: UpdateBookInput): Book {
     ...(input.description !== undefined ? { description: input.description.trim() } : {}),
     ...(input.cover !== undefined ? { cover: input.cover } : {}),
     ...(input.status !== undefined ? { status: input.status } : {}),
+    ...(input.styleProfileId !== undefined ? { styleProfileId: input.styleProfileId } : {}),
     updatedAt: new Date().toISOString()
   }
-  const d: Database = getDb()
   d.prepare(
     `UPDATE books SET title=@title, genre=@genre, description=@description,
-     cover=@cover, status=@status, updated_at=@updated_at WHERE id=@id`
+     cover=@cover, status=@status, style_profile_id=@style_profile_id, updated_at=@updated_at WHERE id=@id`
   ).run({
     id: next.id,
     title: next.title,
@@ -111,6 +126,7 @@ export function updateBook(id: string, input: UpdateBookInput): Book {
     description: next.description,
     cover: next.cover,
     status: next.status,
+    style_profile_id: next.styleProfileId,
     updated_at: next.updatedAt
   })
   return next

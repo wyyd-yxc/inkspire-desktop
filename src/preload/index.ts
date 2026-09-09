@@ -55,6 +55,11 @@ import type {
 } from '../shared/memory.types'
 import type { AssistantMessage, AssistantRole } from '../shared/assistant.types'
 import type {
+  CreateStyleProfileInput,
+  StyleProfile,
+  UpdateStyleProfileInput
+} from '../shared/style.types'
+import type {
   CreateInspirationInput,
   Inspiration,
   UpdateInspirationInput
@@ -234,6 +239,16 @@ const api = {
       ipcRenderer.invoke('api-profiles:update', id, input),
     remove: (id: string): Promise<IpcResult<boolean>> =>
       ipcRenderer.invoke('api-profiles:delete', id)
+  },
+
+  /** 作品风格包（全局用户库；预设 5 包不在此列） */
+  styles: {
+    list: (): Promise<IpcResult<StyleProfile[]>> => ipcRenderer.invoke('styles:list'),
+    create: (input: CreateStyleProfileInput): Promise<IpcResult<StyleProfile>> =>
+      ipcRenderer.invoke('styles:create', input),
+    update: (id: string, input: UpdateStyleProfileInput): Promise<IpcResult<StyleProfile>> =>
+      ipcRenderer.invoke('styles:update', id, input),
+    remove: (id: string): Promise<IpcResult<boolean>> => ipcRenderer.invoke('styles:remove', id)
   },
 
   /** 应用设置（键受主进程白名单约束） */

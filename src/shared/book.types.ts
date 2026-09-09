@@ -30,6 +30,8 @@ export interface Book {
   /** 封面图片文件名（存于 userData/covers/）；空串表示使用默认渐变封面 */
   cover: string
   status: BookStatus
+  /** 绑定的用户风格包 id；null=未绑定（注入回落到构思台基调步预设） */
+  styleProfileId: string | null
   createdAt: string
   updatedAt: string
 }
@@ -40,6 +42,7 @@ export interface CreateBookInput {
   genre: BookGenre | ''
   description: string
   cover?: string
+  styleProfileId?: string | null
 }
 
 /** 更新书籍输入（全部可选，仅更新给定字段） */
@@ -49,4 +52,6 @@ export interface UpdateBookInput {
   description?: string
   cover?: string
   status?: BookStatus
+  /** 绑定风格包；传 null=解绑 */
+  styleProfileId?: string | null
 }
