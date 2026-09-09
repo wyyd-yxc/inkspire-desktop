@@ -168,7 +168,8 @@ export function parseSceneGen(
   }
 }
 
-/** 按场景顺序生成正文的单场景提示词（逐场景调用，带上文衔接与场景关系） */
+/** 按场景顺序生成正文的单场景提示词（逐场景调用，带上文衔接与场景关系）。
+ *  styleHint：生效风格块内容（M12，调用方经 resolveEffectiveStyle 解析，注入「目标文风」；缺省不注入） */
 export function buildSceneProseMessages(
   book: Pick<Book, 'title' | 'genre' | 'description'>,
   chapterTitle: string,
@@ -177,7 +178,8 @@ export function buildSceneProseMessages(
   isLast: boolean,
   wikiText: string,
   targetWords: number,
-  relationText?: string
+  relationText?: string,
+  styleHint?: string
 ): ChatMessage[] {
   const meta: string[] = []
   if (book.title) meta.push(`书名《${book.title}》`)
@@ -188,6 +190,7 @@ export function buildSceneProseMessages(
       content: [
         '你是一位资深长篇小说写作助手，正在为一部长篇小说开笔。',
         meta.length ? `作品信息——${meta.join('；')}。` : '',
+        styleHint ? `目标文风：${styleHint}` : '',
         wikiText ? `本章关联设定（必须严格遵守）：\n${wikiText}` : '',
         relationText ? `场景关系（叙事走向必须遵守，不得写反因果）：${relationText}` : '',
         '要求：直接输出小说正文本身；不要任何解释、前言、标题或引号包裹；保持文风、人称与时态一致；中文书写，段落自然分段。'

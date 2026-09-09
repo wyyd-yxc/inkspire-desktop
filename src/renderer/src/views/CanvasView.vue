@@ -16,6 +16,9 @@ import type { PlotEvent } from '../../../shared/plot.types'
 import type { WikiEntry } from '../../../shared/wiki.types'
 import { isElectron } from '../services/books'
 import { buildPlotChainText } from '../services/syncService'
+import { resolveEffectiveStyle } from '../services/styleContext'
+import { getPresetStyle } from '../../../shared/presetStyles'
+import type { Step1Style } from '../../../shared/genesis.types'
 import { useToast } from '@/composables/useToast'
 import {
   buildSceneGenMessages,
@@ -34,12 +37,15 @@ const toast = useToast()
 const bookId = computed(() => route.params.bookId as string)
 const chapterId = computed(() => route.params.chapterId as string)
 
-const book = ref<Pick<Book, 'title' | 'genre' | 'description'> | null>(null)
+const book = ref<Pick<Book, 'title' | 'genre' | 'description' | 'styleProfileId'> | null>(null)
 const chapter = ref<Chapter | null>(null)
 const scenes = ref<Scene[]>([])
 const wikiEntries = ref<WikiEntry[]>([])
 const plotEvents = ref<PlotEvent[]>([])
 const loading = ref(true)
+
+/** 生效风格块（M12：书绑定包>基调步预设>无），供「按场景生成正文」注入；节点生成不注入 */
+const styleHint = ref<string | undefined>(undefined)
 
 const { fitView } = useVueFlow()
 
@@ -117,26 +123,38 @@ async function loadAll(): Promise<void> {
     return
   }
   try {
-    const [booksRes, chaptersRes, scenesRes, wikiRes, edgeRes, plotRes] = await Promise.all([
-      window.api.books.list(),
-      window.api.chapters.list(bookId.value),
-      window.api.scenes.list(chapterId.value),
-      window.api.wiki.list(bookId.value),
-      window.api.sceneEdges.list(chapterId.value),
-      window.api.plot.list(bookId.value)
-    ])
+    const [booksRes, chaptersRes, scenesRes, wikiRes, edgeRes, plotRes, genesisRes, stylesRes] =
+      await Promise.all([
+        window.api.books.list(),
+        window.api.chapters.list(bookId.value),
+        window.api.scenes.list(chapterId.value),
+        window.api.wiki.list(bookId.value),
+        window.api.sceneEdges.list(chapterId.value),
+        window.api.plot.list(bookId.value),
+        window.api.genesis.get(bookId.value),
+        window.api.styles.list()
+      ])
     if (!booksRes.ok) throw new Error(booksRes.error)
     if (!chaptersRes.ok) throw new Error(chaptersRes.error)
     if (!scenesRes.ok) throw new Error(scenesRes.error)
     if (!wikiRes.ok) throw new Error(wikiRes.error)
     if (!edgeRes.ok) throw new Error(edgeRes.error)
     if (!plotRes.ok) throw new Error(plotRes.error)
+    if (!genesisRes.ok) throw new Error(genesisRes.error)
+    if (!stylesRes.ok) throw new Error(stylesRes.error)
     book.value = booksRes.data.find((b) => b.id === bookId.value) ?? null
     chapter.value = chaptersRes.data.find((c) => c.id === chapterId.value) ?? null
     scenes.value = scenesRes.data
     wikiEntries.value = wikiRes.data
     sceneEdges.value = edgeRes.data
     plotEvents.value = plotRes.data
+    // 生效风格（M12）：书绑定包优先，回落基调步预设 promptHint
+    const step1 = genesisRes.data.find((r) => r.step === 1)?.data as Step1Style | undefined
+    const presetHint = step1?.styleId ? getPresetStyle(step1.styleId)?.promptHint : undefined
+    const bound = book.value?.styleProfileId
+      ? stylesRes.data.find((s) => s.id === book.value?.styleProfileId) ?? null
+      : null
+    styleHint.value = resolveEffectiveStyle(bound, presetHint)
     setTimeout(() => void fitView({ padding: 0.2, maxZoom: 1 }), 120)
   } catch (err) {
     toast.error(err instanceof Error ? err.message : '加载失败')
@@ -558,7 +576,8 @@ function generateOneScene(
     isLast,
     wikiText,
     proseTargetWords.value,
-    relationTextFor(scene)
+    relationTextFor(scene),
+    styleHint.value
   )
   return new Promise<string>((resolve, reject) => {
     void (async () => {

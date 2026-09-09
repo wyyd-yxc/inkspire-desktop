@@ -20,7 +20,9 @@ import { WIKI_TYPE_LABELS } from '../../../shared/wiki.types'
 import { MEMORY_KIND_LABELS } from '../../../shared/memory.types'
 import type { Memory } from '../../../shared/memory.types'
 import { getPresetStyle } from '../../../shared/presetStyles'
+import type { StyleProfile } from '../../../shared/style.types'
 import { isElectron } from '../services/books'
+import { resolveEffectiveStyle } from '../services/styleContext'
 import { useToast } from '@/composables/useToast'
 import AiWritingPanel from '@/components/AiWritingPanel.vue'
 
@@ -77,6 +79,29 @@ async function loadGenesis(bookId: string): Promise<void> {
 /** 确保 genesis 已加载完成（发起 AI 生成前调用，防竞态） */
 async function ensureGenesisLoaded(): Promise<void> {
   await genesisLoadingPromise
+}
+
+// ---------------- 书绑定风格包解析（M12：绑定包 > 基调步预设 > 无） ----------------
+
+const boundStyle = ref<StyleProfile | null>(null)
+let styleLoadSeq = 0
+
+/** 加载本书绑定的风格包实体（books.list + styles.list，解析留待 writingContext 合并） */
+async function loadBoundStyle(bookId: string): Promise<void> {
+  if (!isElectron) return
+  const mySeq = ++styleLoadSeq
+  boundStyle.value = null
+  try {
+    const [booksRes, stylesRes] = await Promise.all([window.api.books.list(), window.api.styles.list()])
+    if (mySeq !== styleLoadSeq) return
+    if (!booksRes.ok || !stylesRes.ok) return
+    const book = booksRes.data.find((b) => b.id === bookId)
+    boundStyle.value = book?.styleProfileId
+      ? stylesRes.data.find((s) => s.id === book.styleProfileId) ?? null
+      : null
+  } catch (err) {
+    console.warn('[ChapterEditor] 风格包绑定加载失败:', err)
+  }
 }
 
 // ---------------- 设定集词条注入（M6，与 genesisCache 同款三件套） ----------------
@@ -188,6 +213,7 @@ watch(
       wikiLoadingPromise = loadWiki(id)
       memoryLoadingPromise = loadMemory(id)
       plotLoadingPromise = loadPlot(id)
+      void loadBoundStyle(id)
     }
   },
   { immediate: true }
@@ -197,6 +223,7 @@ onBeforeUnmount(() => {
   wikiLoadSeq++ // 组件销毁后到达的加载结果直接作废
   memoryLoadSeq++
   plotLoadSeq++
+  styleLoadSeq++
 })
 
 /** 按当前章过滤拼装注入文本 */
@@ -281,7 +308,11 @@ function writingContext() {
     book: props.book,
     chapterTitle: props.chapter?.title ?? '',
     contextTail: editor.value?.getText() ?? '',
-    genesis: genesisCache.value,
+    // 风格优先级（M12）：书绑定风格包 > 基调步预设 promptHint > 无
+    genesis: {
+      ...genesisCache.value,
+      styleHint: resolveEffectiveStyle(boundStyle.value, genesisCache.value.styleHint)
+    },
     wiki: wikiCache.value.entries ? wikiCache.value : undefined,
     memory: memoryCache.value.facts ? memoryCache.value : undefined,
     plot: plotCache.value.events ? plotCache.value : undefined
