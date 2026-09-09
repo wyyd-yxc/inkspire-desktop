@@ -1,15 +1,16 @@
 # 项目交接文档（HANDOVER）
 
 > **新会话/新模型开工第一入口**。本文件始终保持「随时可交接」状态，每次里程碑收尾后更新。
-> 最后更新：2026-09-08 · 会话 37 续 · **M10.6/M10.7/M10.8 全部完成（tag v0.14.0/v0.15.0）；0.15.0 已打包并覆盖安装验证；产品更名「墨笺」**
-> docs 收尾提交（ae541f9）已补收尾 tag **v0.15.1-m10.8-final**——静态审查 `--base` 请用此 tag。
+> 最后更新：2026-09-08 · 会话 38 · **M11 灵感墙完成（tag v0.16.0-m11-wall）；下一步 M12 作品风格（执行版任务卡见第 9 节）**
+> 此前：M10.6/M10.7/M10.8（v0.14.0/v0.15.0）+ 0.15.0 打包验证 + 产品更名「墨笺」；docs 收尾 tag v0.15.1-m10.8-final。静态审查 `--base`：M12 起用 v0.16.0-m11-wall。
 
 ## 0. 移交摘要（新模型 60 秒读完）
 
-- **M0-M10.8 全部完成并通过双轨验收**，16 个版本 tag（最新 v0.15.0-m10.8-restyle / v0.15.1-m10.8-final 收尾）
-- **产品已更名「墨笺」**（appId/数据目录/可执行名 InkSpire 不变）；题材与标签旧值经 migration v11 映射；GMI 额度耗尽后 AI 档案切 TokenRhythm glm-5
-- **下一步**：M11 灵感墙（可选：OpenDesign 桌面版接入 od CLI/MCP、浮球遮挡等技术债见 roadmap）
-- git：16 tag、工作区 clean（验收文档已随收尾提交）
+- **M0-M11 全部完成并通过双轨验收**，17 个版本 tag（最新 v0.16.0-m11-wall）
+- **产品已更名「墨笺」**（appId/数据目录/可执行名 InkSpire 不变）；GMI 额度耗尽（402）后 AI 档案切 TokenRhythm glm-5
+- **M11 灵感墙**：五类便签卡墙（筛选/搜索/回收站）+关联词条+入画布联动（情节事件/场景场景+回链/查看/解绑）+划词存灵感+浮球拖动债清偿；migration v12；零 AI
+- **下一步**：M12 作品风格（执行版任务卡见第 9 节，注入面与封面已用户拍板；可选：OpenDesign 桌面版接入 od CLI/MCP）
+- git：17 tag、工作区 clean（验收文档已随收尾提交）
 - 你能跑 `npm run dev` 验证环境；测试方法见第 5 节；所有坑见第 6 节（**18 条，必读**）
 
 ## 1. 项目是什么
@@ -33,10 +34,11 @@
 | M9 | 墨灵助手（浮球+聊天+流式+@召唤） | ✅ tag v0.11.0-m9-assistant |
 | M10 | 剧情画布（事件+四类连线+AI 三模式+搜索高亮） | ✅ tag v0.12.0（静态四轮整改闭环+黑盒 14/14） |
 | M10.5 | 跨模块联动与同步（正文→百科提取/记忆去重/剧情双向注入/各页同步入口/自动同步） | ✅ 静态四轮整改闭环（原子水位通道+白名单读写拆分）+黑盒 9/9 通过，tag v0.13.0-m10.5-sync |
-| M11-M15 | 灵感墙/风格/统计/拆书/Agent偏好 | ⬜（任务卡见第 9 节） |
+| M11 | 灵感墙（五类便签+入画布联动+划词存灵感） | ✅（静态三轮+黑盒 13/13，报告 2026-09-08-M11-wall.md；tag v0.16.0-m11-wall） |
+| M12-M15 | 风格/统计/拆书/Agent偏好 | ⬜（任务卡见第 9 节；下一个 M12，口径已用户拍板） |
 | M16 | 重打包 | ✅ 0.15.0 已打包并覆盖安装验证（2026-09-08） |
 
-**数据库 migration 当前版本 = 11**（books/api_profiles+settings/chapters/genesis_steps/wiki_entries/scenes/scene_edges/memories/assistant_messages/plot_events+plot_edges；v11 为 genre+tags 旧值数据映射，无结构变更）。
+**数据库 migration 当前版本 = 12**（books/api_profiles+settings/chapters/genesis_steps/wiki_entries/scenes/scene_edges/memories/assistant_messages/plot_events+plot_edges/inspirations；v11 为 genre+tags 旧值数据映射，v12 为灵感墙建表）。
 
 ## 3. 新会话开工 SOP（按序执行）
 
@@ -52,7 +54,7 @@
 ```
 Electron(main: db/ ai/ ipc/) ←IPC(preload 白名单桥)→ Vue3 渲染层(views/components/services)
 ```
-- 数据：better-sqlite3 v13（NAPI prebuilds 跨 ABI），库文件在 %APPDATA%/inkspire-desktop/inkspire.sqlite，migration v11
+- 数据：better-sqlite3 v13（NAPI prebuilds 跨 ABI），库文件在 %APPDATA%/inkspire-desktop/inkspire.sqlite，migration v12
 - AI：`src/main/ai/` Provider 抽象+注册表；openaiCompatible.ts（SSE 流式+429 自动重试+AbortSignal 中止）
 - 注入链路：ChapterEditor.loadGenesis/loadWiki/loadMemory → caches → writingContext → systemPrompt
 - UI：Tailwind 4 @theme 紫罗兰令牌（#6c5ce7），弹窗/Toast/确认框/AiWritingPanel 可复用
@@ -61,12 +63,12 @@ Electron(main: db/ ai/ ipc/) ←IPC(preload 白名单桥)→ Vue3 渲染层(view
 
 1. 开发自测：`npm run dev -- --remote-debugging-port=9222`，node+WebSocket 连 CDP 驱动真实 Electron（参考 tmp/ 下脚本）
 2. 双轨验收：
-   - **静态审查**：`node scripts/accept-via-llm.mjs <材料.md> --base <tag> --model MiniMaxAI/MiniMax-M3 --provider-name "GMI Cloud"`（输出存 docs/acceptance/llm-review-*.md）
+   - **静态审查**：`node scripts/accept-via-llm.mjs <材料.md> --base <tag> --model glm-5 --base-url https://tokenrhythm.studio/v1 --key-env TOKENRHYTHM_API_KEY`（GMI 已 402 勿用；输出存 docs/acceptance/llm-review-*.md）
    - **黑盒子代理**：Agent(general-purpose)，提示词含验收点+CDP 方法+自建自清纪律。**AI 用例重试≤3；代理报错超 3 次取消黑盒**
 3. 任一不通过即不通过；整改后复验；用户确认 → tag
 4. 验收报告、材料全部入库
 
-## 6. 踩坑速查（18 条，新模型必读）
+## 6. 踩坑速查（19 条，新模型必读）
 
 1. npm allow-scripts 拦截安装脚本：`npm approve-scripts <pkg>`；Electron 二进制被拦后 `ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ node node_modules/electron/install.js`
 2. TS7：`include` 不能写进 compilerOptions；`baseUrl` 已移除；.vue/.css 需 env.d.ts 声明
@@ -86,6 +88,7 @@ Electron(main: db/ ai/ ipc/) ←IPC(preload 白名单桥)→ Vue3 渲染层(view
 16. **提示词禁用内部流程术语**（定风/定魂等）——AI 会当故事概念写进输出
 17. **Vue Flow 事件单参数载荷** `{event, node}` `{event, edge}`——不是双参数（四处踩坑）
 18. **watch(immediate) TDZ**：watch immediate 引用的资源必须先声明（M8 TDZ 教训）
+19. **Vue Router 同路由记录复用组件实例**：`route.params` 必须响应式取（computed）+watch 重载；静态捕获跨书导航停留旧书数据（M11 灵感墙真 bug 2a22898，M10.5 承接期 useMemorySync 同型）。另两条测试流程坑见 worklog 会话 38：TaskStop 杀不净 electron.exe（须 taskkill //F //IM）、黑盒运行期间禁改 src/（HMR 打断测试流）
 
 ## 7. 凭据与外部资源
 
@@ -103,9 +106,11 @@ Electron(main: db/ ai/ ipc/) ←IPC(preload 白名单桥)→ Vue3 渲染层(view
 
 ## 9. 下一步任务卡
 
-### M11 灵感墙（下一个，零 AI 功能）
+### ~~M11 灵感墙~~（✅ 已完成 2026-09-08，tag v0.16.0-m11-wall）
 
-**背景**：原站灵感墙=便签暂存区（五类）+关联+拖入画布；architecture.md 预留 `inspirations` 表；plot.types.ts/canvas.types.ts 注释「素材组/平行推演依赖灵感墙 M11」；roadmap 验收=灵感→画布联动。技术债「剧情面板被浮球遮挡」登记计划 M11 前清偿。
+交付概要：五类便签卡墙（筛选/搜索/回收站）+关联设定集词条+入画布（情节大纲事件/场景规划场景，回链/查看跳转/解绑重入）+PlotDetailPanel「来自灵感墙」来源行+划词存灵感+浮球拖动债清偿；migration v12 `inspirations`；全程零 AI。双轨：静态审查 glm-5 三轮整改闭环（成对回链双向校验/清空回收站原子化/批量词条校验/refType 白名单）+黑盒 13/13（报告 2026-09-08-M11-wall.md）；自测 47 项全过，修 1 真 bug（同路由跨书导航组件复用，踩坑 #19）。以下为原任务卡存档。
+
+**原任务卡（存档）**——原站灵感墙=便签暂存区（五类）+关联+拖入画布；architecture.md 预留 `inspirations` 表；roadmap 验收=灵感→画布联动。技术债「剧情面板被浮球遮挡」已于第 0 步清偿。
 
 **功能清单**：
 1. 灵感墙页：五类便签卡片墙（网格流），类别筛选 tabs+关键字搜索+回收站切换
@@ -147,21 +152,27 @@ Electron(main: db/ ai/ ipc/) ←IPC(preload 白名单桥)→ Vue3 渲染层(view
 
 ---
 
-### M12 作品风格（风格包）
+### M12 作品风格（风格包）（下一个，执行版——口径已经用户确认 2026-09-08）
 
-**背景**：现状文风注入仅构思台「基调」步预设 5 包的 promptHint（src/shared/presetStyles.ts，注释明言 M14 后换真实风格包）；roadmap 要求文笔调性/叙事规则/字数目标+风格包管理；architecture.md 预留 `style_profiles` 表（含 source_type）。**M14 拆书产出的风格包落本表（M14 依赖本卡）**。
+**背景（代码事实已探明）**：风格现状唯一持久化=构思台基调步 step1 JSON（genesis_steps 表，`{styleId, styleName}`），唯一消费=写作管线 systemPrompt（ChapterEditor 预解析 `getPresetStyle(styleId).promptHint` 存 genesisCache）+构思台 step2/3 提示词（genesisPrompts）；**场景规划「按场景生成正文」（buildSceneProseMessages）与剧情事件链/场景节点生成均不注入风格**；books 表无风格字段（updateBook 为全列覆写，扩列需同步 DAO/类型/IPC 三层）；预设 5 包为常量（presetStyles.ts，PresetStyle= id/name/description/sample/promptHint）；封面 cover 字段 DB/类型/DAO 已端到端存在但 UI 未用（BookCard 走书名 hash 渐变占位），主进程无任何文件/对话框 IPC（全目录 grep 零命中），CSP img-src 允许 data: 不允许 file://。**M14 拆书产出的风格包落本表（M14 依赖本卡）**。
 
-**功能清单**：风格包 CRUD（名称/文笔调性/叙事规则条目/每章字数目标区间/样例片段/来源）；风格包管理页；书籍绑定风格包（一书一包，可换可解绑）；写作注入：systemPrompt 增「作品风格」块，优先级 书绑定包>基调步预设>无；构思台基调步可选用户风格包；顺带清偿技术债「封面自定义上传」（roadmap 标注 M12 附近）。
+**用户已拍板决策**：①注入面=写作管线（续写/划词/整章润色，现状已有）+「按场景生成正文」（本次补齐）；剧情事件链/场景节点生成**不注入**（结构规划与文风无关）；②封面上传纳入本里程碑（清偿 roadmap 技术债「封面自定义上传」）；③优先级=书绑定包>基调步预设>无；④预设 5 包保持常量不入库，style_profiles 只存用户包（source_type 'manual'，'digest' 留 M14）；⑤风格包全局库，books 侧绑定（一书一包）。
 
-**数据与 IPC 设计草案**：migration 建 `style_profiles(id, name, tone, rules TEXT JSON 数组, word_target_min INTEGER, word_target_max INTEGER, sample, source_type TEXT DEFAULT 'manual'（'digest' 为 M14 预留）, created_at, updated_at)`；books 加 `style_profile_id TEXT REFERENCES style_profiles(id) ON DELETE SET NULL`；IPC：styles:list/create/update/remove 四通道；绑定走既有 books:update 增字段；WritingContext 增 style 字段由 ChapterEditor 组装。
+**步骤分解**（SOP：小步提交，每步 typecheck 三重闸门；dev 起停注意踩坑 #19 附注 electron.exe 残留）：
+1. **数据层**：migration v13——`style_profiles(id PK, name, tone 文笔调性, rules TEXT JSON 数组, word_target_min/max INTEGER, sample, source_type DEFAULT 'manual', created_at, updated_at)` + **`ALTER TABLE books ADD COLUMN style_profile_id TEXT REFERENCES style_profiles(id) ON DELETE SET NULL`**（项目首个 ALTER 先例；SQLite ADD COLUMN 带 REFERENCES 合法，存量行默认 NULL）；`src/shared/style.types.ts`；Book/CreateBookInput/UpdateBookInput 增 styleProfileId；books DAO/types/ipc 同步扩列；styles DAO+IPC 四通道（styles:list/create/update/remove，UUID+wrap 仿 inspirations）；preload 增 styles 组
+2. **管理分区**：SettingsView 增「风格包」section——为守单文件 ≤400 行规，抽 `components/settings/StylePackagesSection.vue`（列表卡+来源徽标）+`StyleProfileDialog.vue`（名称/调性/规则条目增删行/单章字数区间/样例；删除确认提示「已绑定的书将自动解绑」）
+3. **书绑定**：BookCard 增「风格」绑定（小弹窗：不绑定/用户包下拉；卡片显示绑定包名徽标）；构思台基调步列表=用户包（标「我的」）+预设（标「预设」）——选预设照旧写 step1，选用户包写 books.style_profile_id（两处存储，解析时书绑定胜）
+4. **注入改造**：抽 `services/styleContext.ts` 纯函数（effectiveStyle：书绑定包→多行 hint「目标文风：{tone}｜叙事规则逐条｜单章字数约 min-max 字（软目标）」；预设→promptHint 原样；皆无→undefined）；ChapterEditor（写作管线）与 CanvasView 场景正文并行加载书+styles 解析接入；buildSceneProseMessages 增风格块；buildSceneGenMessages 不动
+5. **封面上传**：IPC `books:set-cover(bookId)`（dialog.showOpenDialog 图片过滤→copy 到 userData/covers/<uuid>.<ext>→books:update 落文件名）+`books:read-cover(filename)`（读文件回 data URL，合 CSP img-src data:）；BookCard 有 cover 经 composable 异步渲染 data URL，无则维持 hash 渐变；卡片工具「换封面/移除封面」
+6. **开发自测** tmp/m12-*.mjs（CDP 自建自清，AI 真调用 ≤2 次）：CRUD/绑定/优先级三档/删包 SET NULL 回落/封面 data URL 渲染+移除回退/重启持久/删书级联/console 零报错
+7. **双轨验收**：材料 `docs/acceptance/material-M12-style.md` → 静态审查 `--base v0.16.0-m11-wall --model glm-5 --base-url https://tokenrhythm.studio/v1 --key-env TOKENRHYTHM_API_KEY`（GMI 402 勿用）→ 整改轮 → 黑盒子代理（AI 用例重试≤3、脚手架报错超 3 取消）→ 报告入库
+8. **交付亲手验证指引 → 用户确认 → tag v0.17.0-m12-style** → worklog 会话 39/roadmap/HANDOVER 收尾
 
-**入口**：设置中心「风格包」分区管理+绑定（书房卡片/构思台基调步）；写作时自动注入无独立入口。
+**验收点**：1) 风格包 CRUD+重启持久；2) 绑定后续写 systemPrompt 含调性/规则/字数目标且压过预设；3) 仅基调预设时维持现状注入；4) 皆无则无风格块；5) 删包→书绑定自动解绑（FK SET NULL）+注入回落+UI 无残留；6) 基调步可选用户包；7) 场景正文注入、节点生成不注入；8) 封面上传显示/移除回渐变/重启持久；9) 删书无孤儿+console 零报错+AI≤2 次。
 
-**设计决策**：预设 5 包保持常量不入库（表只存用户包）；字数目标为提示词软目标不做硬切分；风格包全局库不挂书（books 侧绑定），拆书产出全局可复用。
+**不做清单**：风格包导入导出/按章节切换风格/AI 生成风格包与拆书（归 M14）/段落级风格重写/封面裁剪编辑器/剧情与节点生成注入文风/删书时清理 covers 物理文件（无害小文件，登记已知边界）。
 
-**不做清单**：按章节切换风格/风格 A/B 对比/导入导出与市场/AI 生成风格包（归 M14）/段落级风格重写
-
-**验收点**：绑定风格包后生成正文体现调性与叙事规则（对比实验）；字数目标出现在提示词；CRUD+重启持久+删包后书绑定自动置空；基调步可选用户包；封面可自定义。**依赖**：无上游；被 M14 依赖。**tag 号**：v0.17.0-m12-style。
+**依赖**：无上游（可立即开工）；**被 M14 依赖**（拆书产出落本表）。**tag 号**：v0.17.0-m12-style。
 
 ---
 
@@ -227,6 +238,6 @@ Electron(main: db/ ai/ ipc/) ←IPC(preload 白名单桥)→ Vue3 渲染层(view
 npm run dev                                        # 开发
 npm run dev -- --remote-debugging-port=9222        # CDP 自动化
 npm run typecheck                                  # 三重闸门（tsc×2+build）
-node scripts/accept-via-llm.mjs <材料.md> --base <tag> --model MiniMaxAI/MiniMax-M3 --provider-name "GMI Cloud"
+node scripts/accept-via-llm.mjs <材料.md> --base v0.16.0-m11-wall --model glm-5 --base-url https://tokenrhythm.studio/v1 --key-env TOKENRHYTHM_API_KEY
 npm run dist                                       # 打包 NSIS
 ```

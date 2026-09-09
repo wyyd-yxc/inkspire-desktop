@@ -588,3 +588,23 @@
 - **阶段 D（M16 重打包）**：版本 0.15.0 → InkSpire-Setup-0.15.0.exe（117MB）→ 辅助模式安装（/S 对 assisted 未全静默，CDP 点击通过）→ 覆盖安装验证：窗口「墨笺」/新主题/新命名/两本旧书数据完整、安装器明示版本 0.15.0。
 - **环境**：GMI 额度耗尽（402）切 TokenRhythm glm-5；「百科」「百科」短词与「工作台」等残留在走查/黑盒中多轮发现即清。
 - **技术债新增**：剧情面板被浮球遮挡、settings 白名单收紧、findDuplicate 全表扫、反向替换跨标签安全跳过（均 roadmap 登记）。dev 保持 9222 运行。
+
+---
+
+## [2026-09-08 18:40] 会话 38：任务卡规划（M11-M15）+ M11 灵感墙全量交付（双轨验收通过，tag v0.16.0-m11-wall）
+
+- **任务 1（tag 收尾）**：M10.8 docs 收尾提交补 tag `v0.15.1-m10.8-final`（ae541f9，此后静态审查 --base 用它）；HANDOVER 过时状态修正（tag 计数/M16 已完成/migration=11）。
+- **任务 2（任务卡规划）**：HANDOVER §9 重写为 M11-M15 五张任务卡（背景/功能清单/数据与 IPC 草案/入口/设计决策/不做清单/验收点/tag 号），依赖标注：M14 拆书依赖 M12 的 style_profiles 表；M13 统计快照自上线日积累宜早；M15 建议最后做。
+- **M11 实现**（6 提交）：
+  - 数据层：shared/inspiration.types.ts（五类 kind：灵感/伏笔/片段/备忘/待办）+ migration v12 `inspirations` 单表（ref_type/ref_id 入画布回链，不加 FK；plot_events.parent_id 子画布列继续闲置——无消费方不加约束）+ DAO（kind/refType 白名单、词条归属校验、仅回收站可物理删兜底）+ IPC 四通道（UUID 校验+wrap）+ scenes:get 单查 + preload 桥
+  - 墙页：/book/:id/inspirations + InspirationsWallView（五类筛选/搜索/回收站切换）+ InspirationEditDialog + SendToCanvasDialog（入画布目标弹窗）+ 侧栏「灵感」pill
+  - 联动：入画布→plot:create/scenes:create（标题←便签标题、内容→描述/摘要、wikiRefs 随迁）→回链+「已入画布」角标+查看跳转（场景经 scenes:get 反查章节）+解绑重入；PlotDetailPanel「来自灵感墙」来源行（渲染层 join）
+  - 划词存灵感：ChapterEditor 划词浮条增「存为灵感」（idea 类，出处=划自·章节名，正文零改动）
+  - 债清偿（第 0 步）：浮球可拖动+localStorage 位置记忆（inkspire.assistant_ball_pos）+4px 阈值防拖后误弹面板（ec25019，清偿 M10.5 黑盒债）
+- **自测修复 1 个真 bug**（2a22898）：InspirationsWallView 静态捕获 route.params.bookId，Vue Router 对同一路由记录复用组件实例——跨书导航停留旧书数据。computed+watch 重载修复（M10.5 承接期 useMemorySync 同型，升格踩坑 #19）。
+- **开发自测**（CDP 9222，零 AI，自建自清）：T1 21/21（CRUD/回收站/筛选搜索/级联）+ T2 20/20（入画布双目标/回链/来源行/划词/浮球）+ T3 重启持久 5/5 + 侧栏入口探针。脚本教训沿用 M10.5：API 直写后必须重载组件；另发现 CDP 中文双击仅选单字（浮条要求 ≥2 字）——改 Range 定位+Shift+→ 键盘扩选。
+- **双轨验收**：
+  - **静态审查 glm-5（TokenRhythm）三轮**：r1 中2/低3 全整改（回链成对更新校验+清空回收站下沉主进程原子删除 clear-recycled+词条 IN 批量归属校验+IPC refType 白名单+浮球卸载状态重置，2aa37d8，回归 6/6）；r2 反向成对漏洞（非空 refType 无 refId 且原值空）整改（16ddf9f，回归 7/7 含双向断言）；r3 有条件通过——余项为惯例分歧留档（版本号仅在重打包里程碑升 vs tag 名语义化；list 全量拉取系任务卡既定「渲染层筛」），材料附裁定表。
+  - **黑盒 13/13**（独立代理，报告入库 2026-09-08-M11-wall.md）：断言 64/65（唯一 FAIL 为脚本自身），脚手架报错 2/3 限额内，疑似应用缺陷无，console 零错误，重启持久逐字段 no-diff，5 册测试书级联清零+浮球键复位。
+- **测试流程坑（新增）**：①TaskStop 只杀 npm 包装进程，electron.exe 残留继续占 9222——重启 dev 前须 `taskkill //F //IM electron.exe`；②黑盒运行期间禁改 src/（HMR 会打断其测试流）——静态整改排在黑盒结束后。
+- **状态**：双轨通过；用户确认后 tag **v0.16.0-m11-wall**（已打，指向 49f090c）。dev 9222 保持运行。
