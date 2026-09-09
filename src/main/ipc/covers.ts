@@ -52,6 +52,8 @@ export function registerCoverIpc(): void {
 
   ipcMain.handle('books:read-cover', (_e, filename: string) =>
     wrap(async () => {
+      // 空文件名提前阻断（新书默认 cover=''，防无意义 ENOENT——r2 静态审查一般项）
+      if (!filename) throw new Error('该书籍没有自定义封面')
       // 只接受本进程生成的纯文件名（uuid.ext），防路径穿越
       const base = path.basename(filename)
       if (base !== filename || base.includes('..')) throw new Error('非法的封面文件名')
