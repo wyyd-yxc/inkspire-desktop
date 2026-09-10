@@ -96,6 +96,11 @@ const wordsLabel = computed(() => props.totalWords.toLocaleString('zh-CN'))
             class="rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
             title="灵感墙"
           >灵感</router-link>
+          <router-link
+            :to="`/book/${bookId}/stats`"
+            class="rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
+            title="创作统计"
+          >统计</router-link>
           <button
             class="relative rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
             title="同步：把正文改动推送到设定集与叙事档案"

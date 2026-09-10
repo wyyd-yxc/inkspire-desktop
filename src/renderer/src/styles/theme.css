@@ -27,6 +27,13 @@
   --color-ink-warning: #a8813c;
   --color-ink-success: #4a7d5b;
 
+  /* 创作统计热力图 5 档（M13）：纸灰 → 炭墨 */
+  --color-heat-0: #ece6d9;
+  --color-heat-1: #d8cdb4;
+  --color-heat-2: #b3a485;
+  --color-heat-3: #87795c;
+  --color-heat-4: #3a352e;
+
   /* 圆角与阴影（收敛圆角，阴影更轻） */
   --radius-card: 8px;
   --shadow-card: 0 1px 2px rgb(43 39 33 / 0.05), 0 3px 12px rgb(43 39 33 / 0.05);
