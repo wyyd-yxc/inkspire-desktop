@@ -49,6 +49,23 @@
 
 ## 实现定位
 
+> 审查模型变更披露：任务卡口径 glm-5 已被 TokenRhythm 下线（HTTP 400 MODEL_DISABLED），静态审查改用其继任 **glm-5.1**（同平台同 key，2026-09-10 起）。
+
+## 附录 A：r1 整改与裁定（glm-5.1，2026-09-10）
+
+| 项 | 裁定 | 处理 |
+|---|---|---|
+| 严重：删章路径漏报快照（chapters:delete 未触发，总字数与快照脱节） | **采纳，真问题** | 已修复：delete 成功后对 target.bookId 调 recordWordSnapshot（同 update 挂钩的吞错策略）；同日删章 last 下降→delta 缩小/转负，跨日删章当日新基线（语义边界见已知边界）——3c0203d+4029241 |
+| 中等：normalizeWordTarget 严苛类型致字符串静默失败 | **采纳（防御性）** | 已放宽接受数字字符串（Number 转换+同校验链）——3c0203d |
+| 轻微：chapters:create 无快照触发 | **误报** | CreateChapterInput 仅 bookId/title/summary，不含 wordCount——建空章不改全书总量，无可记录变化；未来若支持带字数导入再挂钩 |
+| 无法判定 5 项（computeMilestones/StatsView/books IPC/saveTarget 修复/运行时） | 黑盒+自测覆盖 | computeMilestones 与 saveTarget 修复已由 T1 直插历史断言+硬刷新单点复验实证；其余为黑盒范围 |
+
+**整改回归**：删章入账用例随黑盒结束后补跑（双轨并行期间不重启 dev——会话 39 纪律），结果记于附录 C。
+
+## 附录 B：核心源码事实（r1 无法判定项对应）
+
+## 实现定位
+
 - shared：`stats.types.ts`（WordSnapshot/WordMilestone）、`book.types.ts`（wordTarget 三处）
 - main：`database.ts`（migration v14）、`db/stats.ts`（recordWordSnapshot 事务/localDayString/listWordSnapshots）、`db/books.ts`（word_target 扩列+normalizeWordTarget）、`ipc/stats.ts`（stats:list UUID 校验）、`ipc/chapters.ts`（update 挂钩，快照失败不回滚保存）、`index.ts` 注册
 - preload：stats 组
