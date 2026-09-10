@@ -108,7 +108,8 @@ async function load(): Promise<void> {
 
 async function saveTarget(): Promise<void> {
   if (!isElectron || savingTarget.value) return
-  const raw = targetInput.value.trim()
+  // type=number 的 v-model 绑定为 number（空串除外）——先归一为字符串再校验（自测 T1 抓到的真 bug）
+  const raw = String(targetInput.value ?? '').trim()
   const n = raw ? Number(raw) : null
   if (raw && (!n || !Number.isFinite(n) || n <= 0)) {
     toast.error('目标需为正整数')
