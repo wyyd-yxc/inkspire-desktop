@@ -46,9 +46,11 @@ export function recordWordSnapshot(bookId: string): void {
         .get(bookId) as { t: number }
     ).t
     const existing = d
-      .prepare('SELECT book_id FROM word_count_snapshots WHERE book_id = ? AND day = ?')
-      .get(bookId, day)
+      .prepare('SELECT last_total FROM word_count_snapshots WHERE book_id = ? AND day = ?')
+      .get(bookId, day) as { last_total: number } | undefined
     if (existing) {
+      // 同值跳过（r2 低危：防无变更的冗余写；updated_at 保留最后真实变化时间）
+      if (existing.last_total === total) return
       d.prepare(
         'UPDATE word_count_snapshots SET last_total = ?, updated_at = ? WHERE book_id = ? AND day = ?'
       ).run(total, new Date().toISOString(), bookId, day)
