@@ -59,6 +59,7 @@ import type {
   StyleProfile,
   UpdateStyleProfileInput
 } from '../shared/style.types'
+import type { WordSnapshot } from '../shared/stats.types'
 import type {
   CreateInspirationInput,
   Inspiration,
@@ -258,6 +259,12 @@ const api = {
     update: (id: string, input: UpdateStyleProfileInput): Promise<IpcResult<StyleProfile>> =>
       ipcRenderer.invoke('styles:update', id, input),
     remove: (id: string): Promise<IpcResult<boolean>> => ipcRenderer.invoke('styles:remove', id)
+  },
+
+  /** 创作统计（快照由主进程内嵌记录，本组只读） */
+  stats: {
+    list: (bookId: string): Promise<IpcResult<WordSnapshot[]>> =>
+      ipcRenderer.invoke('stats:list', bookId)
   },
 
   /** 应用设置（键受主进程白名单约束） */

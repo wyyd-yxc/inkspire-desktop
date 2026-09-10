@@ -28,6 +28,7 @@ const mock = (() => {
       cover: '',
       status: 'writing',
       styleProfileId: null,
+      wordTarget: null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     }
@@ -44,6 +45,7 @@ const mock = (() => {
         cover: input.cover ?? '',
         status: 'writing',
         styleProfileId: input.styleProfileId ?? null,
+        wordTarget: input.wordTarget ?? null,
         createdAt: now,
         updatedAt: now
       }

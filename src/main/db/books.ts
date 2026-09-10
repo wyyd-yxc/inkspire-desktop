@@ -15,6 +15,7 @@ interface BookRow {
   cover: string
   status: string
   style_profile_id: string | null
+  word_target: number | null
   created_at: string
   updated_at: string
 }
@@ -29,6 +30,7 @@ function toBook(r: BookRow): Book {
     cover: r.cover,
     status: r.status as Book['status'],
     styleProfileId: r.style_profile_id,
+    wordTarget: r.word_target,
     createdAt: r.created_at,
     updatedAt: r.updated_at
   }
@@ -76,12 +78,13 @@ export function createBook(input: CreateBookInput): Book {
     cover: input.cover ?? '',
     status: 'writing',
     styleProfileId: input.styleProfileId ?? null,
+    wordTarget: normalizeWordTarget(input.wordTarget),
     createdAt: now,
     updatedAt: now
   }
   d.prepare(
-    `INSERT INTO books (id, title, genre, description, cover, status, style_profile_id, created_at, updated_at)
-     VALUES (@id, @title, @genre, @description, @cover, @status, @style_profile_id, @created_at, @updated_at)`
+    `INSERT INTO books (id, title, genre, description, cover, status, style_profile_id, word_target, created_at, updated_at)
+     VALUES (@id, @title, @genre, @description, @cover, @status, @style_profile_id, @word_target, @created_at, @updated_at)`
   ).run({
     id: book.id,
     title: book.title,
@@ -90,10 +93,17 @@ export function createBook(input: CreateBookInput): Book {
     cover: book.cover,
     status: book.status,
     style_profile_id: book.styleProfileId,
+    word_target: book.wordTarget,
     created_at: book.createdAt,
     updated_at: book.updatedAt
   })
   return book
+}
+
+/** 字数目标归一化：正整数取整，非法/非正→null（可空字段，静默降级不抛错） */
+function normalizeWordTarget(v: number | null | undefined): number | null {
+  if (typeof v !== 'number' || !Number.isFinite(v) || v <= 0) return null
+  return Math.round(v)
 }
 
 /** 更新书籍字段；返回更新后的实体，不存在时抛错 */
@@ -114,11 +124,12 @@ export function updateBook(id: string, input: UpdateBookInput): Book {
     ...(input.cover !== undefined ? { cover: input.cover } : {}),
     ...(input.status !== undefined ? { status: input.status } : {}),
     ...(input.styleProfileId !== undefined ? { styleProfileId: input.styleProfileId } : {}),
+    ...(input.wordTarget !== undefined ? { wordTarget: normalizeWordTarget(input.wordTarget) } : {}),
     updatedAt: new Date().toISOString()
   }
   d.prepare(
     `UPDATE books SET title=@title, genre=@genre, description=@description,
-     cover=@cover, status=@status, style_profile_id=@style_profile_id, updated_at=@updated_at WHERE id=@id`
+     cover=@cover, status=@status, style_profile_id=@style_profile_id, word_target=@word_target, updated_at=@updated_at WHERE id=@id`
   ).run({
     id: next.id,
     title: next.title,
@@ -127,6 +138,7 @@ export function updateBook(id: string, input: UpdateBookInput): Book {
     cover: next.cover,
     status: next.status,
     style_profile_id: next.styleProfileId,
+    word_target: next.wordTarget,
     updated_at: next.updatedAt
   })
   return next

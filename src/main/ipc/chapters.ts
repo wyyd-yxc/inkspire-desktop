@@ -13,6 +13,7 @@ import {
   updateChapter
 } from '../db/chapters'
 import type { CreateChapterInput, UpdateChapterInput } from '../../shared/chapter.types'
+import { recordWordSnapshot } from '../db/stats'
 
 export function registerChapterIpc(): void {
   ipcMain.handle('chapters:list', (_e, bookId: string) => wrap(() => listChapters(bookId)))
@@ -26,7 +27,19 @@ export function registerChapterIpc(): void {
   )
 
   ipcMain.handle('chapters:update', (_e, id: string, input: UpdateChapterInput) =>
-    wrap(() => updateChapter(id, input))
+    wrap(() => {
+      const updated = updateChapter(id, input)
+      // M13 字数快照：一切改字数的写入（保存/AI 采纳/反向替换）都经此通道且传 wordCount——
+      // 内嵌于此防漏报；快照失败不回滚保存（保存已成功，失败仅记日志）
+      if (input.wordCount !== undefined) {
+        try {
+          recordWordSnapshot(updated.bookId)
+        } catch (err) {
+          console.warn('[stats] 字数快照记录失败:', err)
+        }
+      }
+      return updated
+    })
   )
 
   ipcMain.handle('chapters:delete', (_e, id: string) => wrap(() => deleteChapter(id)))

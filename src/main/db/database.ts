@@ -269,6 +269,23 @@ const MIGRATIONS: Array<{
         updated_at      TEXT NOT NULL
       );
       ALTER TABLE books ADD COLUMN style_profile_id TEXT REFERENCES style_profiles(id) ON DELETE SET NULL;`
+  },
+  {
+    // v14 M13 创作统计。word_count_snapshots 按日字数快照（PK(book_id, day) 同日 upsert）：
+    // base_total=当日首次上报的全书总字数（基线），last_total=当日末次值，当日净增=last-base（可负=净删，如实）。
+    // 上报内嵌 chapters:update（wordCount 传入时），渲染层零改动。
+    // books.word_target 全书字数目标（整数，可空=不设目标）；NULL 不参与 UPDATE 覆写问题——全列覆写由 DAO 显式带值。
+    version: 14,
+    sql: `
+      CREATE TABLE IF NOT EXISTS word_count_snapshots (
+        book_id    TEXT NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+        day        TEXT NOT NULL,
+        base_total INTEGER NOT NULL,
+        last_total INTEGER NOT NULL,
+        updated_at TEXT NOT NULL,
+        PRIMARY KEY (book_id, day)
+      );
+      ALTER TABLE books ADD COLUMN word_target INTEGER;`
   }
 ]
 

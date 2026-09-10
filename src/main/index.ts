@@ -18,6 +18,7 @@ import { registerPlotIpc } from './ipc/plot'
 import { registerInspirationIpc } from './ipc/inspirations'
 import { registerStyleIpc } from './ipc/styles'
 import { registerCoverIpc } from './ipc/covers'
+import { registerStatsIpc } from './ipc/stats'
 import { registerMemoryIpc } from './ipc/memories'
 import { registerAssistantIpc } from './ipc/assistant'
 import { registerSyncIpc } from './ipc/sync'
@@ -102,6 +103,7 @@ registerPlotIpc()
 registerInspirationIpc()
 registerStyleIpc()
 registerCoverIpc()
+registerStatsIpc()
 registerMemoryIpc()
 registerAssistantIpc()
 registerSyncIpc()

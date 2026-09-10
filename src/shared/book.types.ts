@@ -32,6 +32,8 @@ export interface Book {
   status: BookStatus
   /** 绑定的用户风格包 id；null=未绑定（注入回落到构思台基调步预设） */
   styleProfileId: string | null
+  /** 全书字数目标（整数）；null=未设目标（统计页不显示进度条） */
+  wordTarget: number | null
   createdAt: string
   updatedAt: string
 }
@@ -43,6 +45,7 @@ export interface CreateBookInput {
   description: string
   cover?: string
   styleProfileId?: string | null
+  wordTarget?: number | null
 }
 
 /** 更新书籍输入（全部可选，仅更新给定字段） */
@@ -54,4 +57,6 @@ export interface UpdateBookInput {
   status?: BookStatus
   /** 绑定风格包；传 null=解绑 */
   styleProfileId?: string | null
+  /** 全书字数目标；传 null=清除目标 */
+  wordTarget?: number | null
 }
