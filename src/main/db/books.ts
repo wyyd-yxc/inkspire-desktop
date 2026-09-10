@@ -100,10 +100,13 @@ export function createBook(input: CreateBookInput): Book {
   return book
 }
 
-/** 字数目标归一化：正整数取整，非法/非正→null（可空字段，静默降级不抛错） */
-function normalizeWordTarget(v: number | null | undefined): number | null {
-  if (typeof v !== 'number' || !Number.isFinite(v) || v <= 0) return null
-  return Math.round(v)
+/** 字数目标归一化：正整数取整，空/非法/非正→null；
+ *  接受数字字符串（r1 静态审查中等项：防渲染层 type=number 通道传字符串被静默降级） */
+function normalizeWordTarget(v: number | string | null | undefined): number | null {
+  if (v === null || v === undefined || v === '') return null
+  const n = typeof v === 'number' ? v : Number(v)
+  if (!Number.isFinite(n) || n <= 0) return null
+  return Math.round(n)
 }
 
 /** 更新书籍字段；返回更新后的实体，不存在时抛错 */
