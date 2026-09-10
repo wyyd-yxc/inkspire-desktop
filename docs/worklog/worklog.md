@@ -608,3 +608,19 @@
   - **黑盒 13/13**（独立代理，报告入库 2026-09-08-M11-wall.md）：断言 64/65（唯一 FAIL 为脚本自身），脚手架报错 2/3 限额内，疑似应用缺陷无，console 零错误，重启持久逐字段 no-diff，5 册测试书级联清零+浮球键复位。
 - **测试流程坑（新增）**：①TaskStop 只杀 npm 包装进程，electron.exe 残留继续占 9222——重启 dev 前须 `taskkill //F //IM electron.exe`；②黑盒运行期间禁改 src/（HMR 会打断其测试流）——静态整改排在黑盒结束后。
 - **状态**：双轨通过；用户确认后 tag **v0.16.0-m11-wall**（已打，指向 49f090c）。dev 9222 保持运行。
+
+---
+
+## [2026-09-09 19:30] 会话 39：M12 作品风格全量交付（双轨验收通过，tag v0.17.0-m12-style）
+
+- **实现**（5 feat + 2 fix，自 v0.16.0-m11-wall 起 10 提交）：
+  - 数据层：migration v13——style_profiles 全局风格包表 + **项目首个 ALTER TABLE**（books.style_profile_id FK ON DELETE SET NULL）；Book 三类型扩列；styles DAO（规则 20×100 字钳制/字数归一化 min>max 交换/绑定存在性校验）+ IPC 四通道；preload
+  - 管理分区：设置中心「作品风格包」（抽 StylePackagesSection+StyleProfileDialog 守 400 行；规则动态行/字数区间/来源徽标）；预设 5 包保持常量不入库
+  - 书绑定：BookCard「风格」按钮+StyleBindDialog+「文风·包名」徽标；构思台基调步双列表（我的包绑定优先，改选预设自动清绑定）
+  - 注入：services/styleContext.ts 纯函数（绑定包>基调预设>无）；写作管线（ChapterEditor）与「按场景生成正文」（buildSceneProseMessages 增参）接入；节点/剧情生成不注入（拍板口径）
+  - 封面：books:set-cover/remove-cover/read-cover IPC（对话框+落盘 userData/covers+data URL 合 CSP+路径穿越拒+空值防御）；BookCard 封面渲染与 hover 工具；封面债清偿
+- **开发自测 37 项断言全过，外部 AI 额度消耗 0**——方法突破：**本地假 OpenAI 服务器**（127.0.0.1:18923，建临时档案指向它）捕获主进程真实发出的请求体，逐字实证注入三态（绑定包含调性/规则/字数且压过预设、解绑回落预设、皆无无风格块）；contextBridge 暴露对象只读（hook 方案不可行，探针实锤后转假服务器）。
+- **双轨**：静态 r1——严重项「FK 依赖 PRAGMA」系 diff 截断误报（getDb 自 M0 起 foreign_keys=ON，附录引源码+T1 SET NULL 实证裁定）；r2 唯一一般项（read-cover 空文件名防御）修复回归。黑盒 **10/10**（脚手架 3/3 限额内；AI 调用 4 次达上限；**真实风格可感知断言 100% 达标**：特征包「每段以『墨测』开头+无感叹号」两次生成全符合；测试数据自清+档案 params 复位）。缺陷处置：#2 单包绑定态无解绑入口已修复回归（绑定卡增「解绑」按钮）；#1 停止非瞬时截断、#3 AI 偶发静默无提示登记技术债。
+- **测试坑新增**：①弹窗容器定位必须排除 #app 根节点（`d.id !== 'app'`——页面自身含同名按钮/text 会先命中应用根）；②hash 同值导航不触发组件重挂载，绕过 UI 改数据后须双跳导航（第三次实锤，升格常规纪律）；③脚本直调 IPC 不触发 UI 事件链（emit changed 的刷新链路需 reload 等价模拟）。
+- **流程自察（如实记录）**：静态整改回归时 taskkill electron 重启 dev，一度打断并行中的黑盒代理——黑盒任务书自愈条款（自行重启）兜底未造成损失；后续里程碑双轨并行期间一律禁碰 dev 进程。
+- **状态**：双轨通过；用户确认后 tag **v0.17.0-m12-style**（已打，指向 4abfb09）。下一步 M13 创作统计（执行版任务卡已入 HANDOVER）。dev 9222 保持运行。

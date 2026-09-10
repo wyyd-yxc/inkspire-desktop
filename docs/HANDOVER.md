@@ -1,16 +1,16 @@
 # 项目交接文档（HANDOVER）
 
 > **新会话/新模型开工第一入口**。本文件始终保持「随时可交接」状态，每次里程碑收尾后更新。
-> 最后更新：2026-09-08 · 会话 38 · **M11 灵感墙完成（tag v0.16.0-m11-wall）；下一步 M12 作品风格（执行版任务卡见第 9 节）**
-> 此前：M10.6/M10.7/M10.8（v0.14.0/v0.15.0）+ 0.15.0 打包验证 + 产品更名「墨笺」；docs 收尾 tag v0.15.1-m10.8-final。静态审查 `--base`：M12 起用 v0.16.0-m11-wall。
+> 最后更新：2026-09-09 · 会话 39 · **M12 作品风格完成（tag v0.17.0-m12-style）；下一步 M13 创作统计（执行版任务卡见第 9 节）**
+> 此前：M10.8/M11（v0.15.x/v0.16.0）已收尾。静态审查 `--base`：M13 起用 v0.17.0-m12-style。
 
 ## 0. 移交摘要（新模型 60 秒读完）
 
-- **M0-M11 全部完成并通过双轨验收**，17 个版本 tag（最新 v0.16.0-m11-wall）
-- **产品已更名「墨笺」**（appId/数据目录/可执行名 InkSpire 不变）；GMI 额度耗尽（402）后 AI 档案切 TokenRhythm glm-5
-- **M11 灵感墙**：五类便签卡墙（筛选/搜索/回收站）+关联词条+入画布联动（情节事件/场景场景+回链/查看/解绑）+划词存灵感+浮球拖动债清偿；migration v12；零 AI
-- **下一步**：M12 作品风格（执行版任务卡见第 9 节，注入面与封面已用户拍板；可选：OpenDesign 桌面版接入 od CLI/MCP）
-- git：17 tag、工作区 clean（验收文档已随收尾提交）
+- **M0-M12 全部完成并通过双轨验收**，18 个版本 tag（最新 v0.17.0-m12-style）
+- **产品已更名「墨笺」**（appId/数据目录/可执行名 InkSpire 不变）；GMI 额度耗尽（402）后 AI 档案切 TokenRhythm
+- **M12 作品风格**：风格包管理（设置分区）+书绑定+优先级注入（书绑定包>基调预设>无，写作管线+场景正文）+封面上传（封面债清偿）；migration v13（首个 ALTER TABLE）；真实 AI 风格可感知黑盒实证
+- **下一步**：M13 创作统计（执行版任务卡见第 9 节，快照内嵌主进程方案已定）
+- git：18 tag、工作区 clean（验收文档已随收尾提交）
 - 你能跑 `npm run dev` 验证环境；测试方法见第 5 节；所有坑见第 6 节（**18 条，必读**）
 
 ## 1. 项目是什么
@@ -35,10 +35,11 @@
 | M10 | 剧情画布（事件+四类连线+AI 三模式+搜索高亮） | ✅ tag v0.12.0（静态四轮整改闭环+黑盒 14/14） |
 | M10.5 | 跨模块联动与同步（正文→百科提取/记忆去重/剧情双向注入/各页同步入口/自动同步） | ✅ 静态四轮整改闭环（原子水位通道+白名单读写拆分）+黑盒 9/9 通过，tag v0.13.0-m10.5-sync |
 | M11 | 灵感墙（五类便签+入画布联动+划词存灵感） | ✅（静态三轮+黑盒 13/13，报告 2026-09-08-M11-wall.md；tag v0.16.0-m11-wall） |
-| M12-M15 | 风格/统计/拆书/Agent偏好 | ⬜（任务卡见第 9 节；下一个 M12，口径已用户拍板） |
+| M12 | 作品风格（风格包+绑定+优先级注入+封面） | ✅（静态两轮+黑盒 10/10，报告 2026-09-09-M12-style.md；tag v0.17.0-m12-style） |
+| M13-M15 | 统计/拆书/Agent偏好 | ⬜（任务卡见第 9 节；下一个 M13，执行版已定稿） |
 | M16 | 重打包 | ✅ 0.15.0 已打包并覆盖安装验证（2026-09-08） |
 
-**数据库 migration 当前版本 = 12**（books/api_profiles+settings/chapters/genesis_steps/wiki_entries/scenes/scene_edges/memories/assistant_messages/plot_events+plot_edges/inspirations；v11 为 genre+tags 旧值数据映射，v12 为灵感墙建表）。
+**数据库 migration 当前版本 = 13**（…plot_events+plot_edges/inspirations/style_profiles+books.style_profile_id；v12 灵感墙建表，v13 风格包+项目首个 ALTER TABLE）。
 
 ## 3. 新会话开工 SOP（按序执行）
 
@@ -54,7 +55,7 @@
 ```
 Electron(main: db/ ai/ ipc/) ←IPC(preload 白名单桥)→ Vue3 渲染层(views/components/services)
 ```
-- 数据：better-sqlite3 v13（NAPI prebuilds 跨 ABI），库文件在 %APPDATA%/inkspire-desktop/inkspire.sqlite，migration v12
+- 数据：better-sqlite3 v13（NAPI prebuilds 跨 ABI），库文件在 %APPDATA%/inkspire-desktop/inkspire.sqlite，migration v13
 - AI：`src/main/ai/` Provider 抽象+注册表；openaiCompatible.ts（SSE 流式+429 自动重试+AbortSignal 中止）
 - 注入链路：ChapterEditor.loadGenesis/loadWiki/loadMemory → caches → writingContext → systemPrompt
 - UI：Tailwind 4 @theme 紫罗兰令牌（#6c5ce7），弹窗/Toast/确认框/AiWritingPanel 可复用
@@ -152,7 +153,11 @@ Electron(main: db/ ai/ ipc/) ←IPC(preload 白名单桥)→ Vue3 渲染层(view
 
 ---
 
-### M12 作品风格（风格包）（下一个，执行版——口径已经用户确认 2026-09-08）
+### ~~M12 作品风格（风格包）~~（✅ 已完成 2026-09-09，tag v0.17.0-m12-style）
+
+交付概要：风格包管理（设置分区，规则条目/字数区间）+ 书绑定（BookCard+基调步双列表）+ 优先级注入（书绑定包>基调预设>无；写作管线+场景正文，节点/剧情不注入）+ 封面上传（债清偿）；migration v13（首个 ALTER TABLE）；删包 SET NULL 自动解绑。双轨：静态两轮收敛+黑盒 10/10（**真实 AI 风格特征 100% 达标**，报告 2026-09-09-M12-style.md）；自测 37 项断言（本地假 OpenAI 服务器实证注入三态，外部额度 0）。黑盒缺陷#2 已修，#1/#3 登记技术债。以下为原执行卡存档。
+
+**原执行卡（存档）**——口径已经用户确认 2026-09-08。
 
 **背景（代码事实已探明）**：风格现状唯一持久化=构思台基调步 step1 JSON（genesis_steps 表，`{styleId, styleName}`），唯一消费=写作管线 systemPrompt（ChapterEditor 预解析 `getPresetStyle(styleId).promptHint` 存 genesisCache）+构思台 step2/3 提示词（genesisPrompts）；**场景规划「按场景生成正文」（buildSceneProseMessages）与剧情事件链/场景节点生成均不注入风格**；books 表无风格字段（updateBook 为全列覆写，扩列需同步 DAO/类型/IPC 三层）；预设 5 包为常量（presetStyles.ts，PresetStyle= id/name/description/sample/promptHint）；封面 cover 字段 DB/类型/DAO 已端到端存在但 UI 未用（BookCard 走书名 hash 渐变占位），主进程无任何文件/对话框 IPC（全目录 grep 零命中），CSP img-src 允许 data: 不允许 file://。**M14 拆书产出的风格包落本表（M14 依赖本卡）**。
 
@@ -176,21 +181,32 @@ Electron(main: db/ ai/ ipc/) ←IPC(preload 白名单桥)→ Vue3 渲染层(view
 
 ---
 
-### M13 创作统计
+### M13 创作统计（下一个，执行版——探索实证已固化 2026-09-09）
 
-**背景**：chapters.word_count 只有当前值（前端逐章求和得总字数），无历史序列，热力图/趋势/里程碑无从谈起。**快照自上线日起积累——本卡宜早交付**。
+**背景（代码事实已探明）**：chapters.word_count 由调用方计算传入（DAO 透传）；全书字数=渲染层逐章求和（WorkspaceView.totalWords）；**一切改字数的落盘全部经主进程 chapters:update**（防抖自动保存唯一汇聚点 flushSave、CanvasView AI 采纳、useReverseSync 反向替换均传 wordCount；renameChapter 不传→不触发）；无任何历史字数快照（自 M13 起积累——宜早交付）；无图表库且零 canvas 先例（热力图=纯 CSS grid，趋势=内联 SVG polyline）；books 表已有 v13 ALTER 先例；settings 双白名单（水位键只读）——**每书字数目标不入 settings**，走 books 加列；mergeWatermarkChapter 主进程事务读改写为可参照范式。
 
-**功能清单**：统计页：按日字数热力图（近 12 月格子）/近 30 天趋势折线/累计字数+总字数目标进度条（目标可设）/里程碑自动打点（首章完稿、1 万/10 万字等）；保存章节时上报当日快照。
+**设计决策（经探索修正原卡两处）**：
+1. **快照上报内嵌主进程**（替代原卡独立 stats:snapshot 通道）：chapters:update handler 内当 `input.wordCount !== undefined` 时，UPDATE 成功后同库执行 `recordWordSnapshot(bookId, SUM(word_count))`——覆盖一切写入点含未来新增，渲染层零改动，天然防漏报；仅保留 `stats:list(bookId)` 查询通道
+2. 快照语义（防竞态，事务参照水位范式）：表 PK(book_id, day)，列 base_total（当日首报全书总量）/last_total/updated_at；当日 delta=last_total−base_total（可负=净删，如实展示）；day=本地时区 YYYY-MM-DD
+3. 字数目标：migration v14 `ALTER TABLE books ADD COLUMN word_target INTEGER`（v13 同款）+ Book/UpdateBookInput 扩 wordTarget；统计页内编辑
+4. 里程碑查询时从快照序列推导不落库：首次创作日/1万/5万/10万/20万/50万/100万字（首次 last_total≥阈值之日）+首章完稿（有 wordCount>0 的章节）
+5. 视觉：热力图近 12 月 GitHub 式 7×N 格（纯 CSS，墨系 5 档渐进新 @theme 令牌）+趋势近 30 天内联 SVG polyline；零 AI
 
-**数据与 IPC 设计草案**：migration 建 `word_count_snapshots(book_id TEXT, day TEXT 'YYYY-MM-DD', words INTEGER 当日末字数, delta INTEGER 当日新增, updated_at, PRIMARY KEY(book_id, day))`；IPC：`stats:snapshot(bookId, day, words)` upsert（**delta 由主进程对比当日已存值计算**防竞态）+ `stats:list(bookId)` 返回快照序列；ChapterEditor 保存成功后调用。
+**步骤分解**（SOP 小步提交+typecheck 三重闸门；双轨并行期间禁碰 dev 进程——会话 39 自察纪律）：
+1. 数据层：migration v14（word_count_snapshots(book_id FK CASCADE, day, base_total, last_total, updated_at, PK(book_id,day)) + books ADD word_target）+ shared/stats.types + DAO stats.ts（recordWordSnapshot 事务+listSnapshots）+ chapters DAO 挂钩（wordCount 传入时）+ IPC stats:list + preload
+2. 统计页：路由 /book/:bookId/stats + StatsView.vue（InspirationsWallView 骨架）：今日净增/总字数+目标进度条（可编辑）/近 30 天趋势 SVG/近 12 月热力图（月标签+档位图例）/里程碑列表（达成✓+日期，未达成+差距字数）
+3. 侧栏 pill「统计」（灵感与同步之间）
+4. 自测 tmp/m13-*.mjs（零 AI 零外部额度）：migration 断言/真实编辑→快照 delta/同日多次保存 upsert/跨天直插历史行验证统计计算（热力图格数/趋势/里程碑达成日）/目标编辑/重启持久/删书级联/console 零报错
+5. 双轨：材料 material-M13-stats.md → 静态 `--base v0.17.0-m12-style --model glm-5 --base-url https://tokenrhythm.studio/v1 --key-env TOKENRHYTHM_API_KEY`（GMI 402 勿用）→ 整改轮 → 黑盒（零 AI 用例，脚手架超 3 取消）
+6. 交付亲手验证指引 → 用户确认 → tag v0.18.0-m13-stats → 收尾
 
-**入口**：写作台侧栏 pill「统计」（灵感墙旁）；路由 `/book/:bookId/stats`。
+**验收点**：1) 保存后快照 upsert（多次保存 delta 正确，AI 采纳/反向替换同入账）；2) 统计页总字数/今日净增/目标进度+编辑持久；3) 热力图近 12 月渲染（档位/空白灰格）；4) 近 30 天趋势；5) 里程碑达成日正确（插造历史验证）；6) 重启持久；7) 删书级联清快照；8) 零 AI/零额度/console 零报错。
 
-**设计决策**：渲染层只报当前字数，增量主进程算；未打开应用的天无快照（如实空白，不补数据）；零 AI。
+**不做清单**：写作时长/streak 连续天数/按章粒度图表/跨书聚合页/历史回填（上线前写作量不补录，如实空白）/导出报表/周目标。
 
-**不做清单**：历史回填/按章节粒度图表/写作时长统计/导出报表/跨书聚合页
+**已知边界**：删章当日 delta 可为负（如实净变化）；跨午夜首报重新基线；目标空=不显示进度条。
 
-**验收点**：编辑保存后热力图当日格子更新；重启后快照在；跨天保存两条记录且增量正确；目标进度与里程碑打点准确。**依赖**：无。**tag 号**：v0.18.0-m13-stats。
+**依赖**：无上游。**tag 号**：v0.18.0-m13-stats。
 
 ---
 
