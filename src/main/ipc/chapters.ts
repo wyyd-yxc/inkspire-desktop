@@ -42,7 +42,21 @@ export function registerChapterIpc(): void {
     })
   )
 
-  ipcMain.handle('chapters:delete', (_e, id: string) => wrap(() => deleteChapter(id)))
+  ipcMain.handle('chapters:delete', (_e, id: string) =>
+    wrap(() => {
+      const target = getChapter(id)
+      const ok = deleteChapter(id)
+      // M13：删章改变全书字数总量，同样入账快照（r1 静态审查严重项）；失败不阻断删除
+      if (ok && target) {
+        try {
+          recordWordSnapshot(target.bookId)
+        } catch (err) {
+          console.warn('[stats] 字数快照记录失败:', err)
+        }
+      }
+      return ok
+    })
+  )
 
   ipcMain.handle('chapters:move', (_e, id: string, dir: -1 | 1) =>
     wrap(() => moveChapter(id, dir))
