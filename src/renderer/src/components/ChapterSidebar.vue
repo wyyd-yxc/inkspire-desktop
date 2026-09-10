@@ -61,7 +61,7 @@ const wordsLabel = computed(() => props.totalWords.toLocaleString('zh-CN'))
 
 <template>
   <aside class="flex h-full w-60 shrink-0 flex-col border-r border-ink-border/60 bg-surface">
-    <!-- 书籍信息 -->
+    <!-- 书籍信息（M13 黑盒缺陷#1 修复：pill 增至 7 个后单行溢出遮挡「+ 新章节」，改两行布局） -->
     <div class="border-b border-ink-border/60 px-4 py-3">
       <div class="flex items-center justify-between gap-2">
         <router-link
@@ -70,51 +70,51 @@ const wordsLabel = computed(() => props.totalWords.toLocaleString('zh-CN'))
         >
           ← 书房
         </router-link>
-        <div class="flex items-center gap-1.5">
-          <router-link
-            :to="`/book/${bookId}/genesis`"
-            class="rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
-            title="构思台"
-          >构思台</router-link>
-          <router-link
-            :to="`/book/${bookId}/wiki`"
-            class="rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
-            title="设定集"
-          >设定</router-link>
-          <router-link
-            :to="`/book/${bookId}/plot`"
-            class="rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
-            title="情节大纲"
-          >情节</router-link>
-          <router-link
-            :to="`/book/${bookId}/memory`"
-            class="rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
-            title="叙事档案"
-          >档案</router-link>
-          <router-link
-            :to="`/book/${bookId}/inspirations`"
-            class="rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
-            title="灵感墙"
-          >灵感</router-link>
-          <router-link
-            :to="`/book/${bookId}/stats`"
-            class="rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
-            title="创作统计"
-          >统计</router-link>
-          <button
-            class="relative rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
-            title="同步：把正文改动推送到设定集与叙事档案"
-            aria-label="同步正文到设定集与叙事档案"
-            @click="emit('sync')"
-          >同步<span
-            v-if="props.syncAlert"
-            class="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-ink-danger"
-          /></button>
-          <button
-            class="rounded-full bg-ink-primary px-3 py-1 text-xs text-white transition-colors hover:bg-ink-primary-hover"
-            @click="emit('create')"
-          >+ 新章节</button>
-        </div>
+        <button
+          class="rounded-full bg-ink-primary px-3 py-1 text-xs text-white transition-colors hover:bg-ink-primary-hover"
+          @click="emit('create')"
+        >+ 新章节</button>
+      </div>
+      <div class="mt-2 flex flex-wrap items-center gap-1.5">
+        <router-link
+          :to="`/book/${bookId}/genesis`"
+          class="rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
+          title="构思台"
+        >构思台</router-link>
+        <router-link
+          :to="`/book/${bookId}/wiki`"
+          class="rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
+          title="设定集"
+        >设定</router-link>
+        <router-link
+          :to="`/book/${bookId}/plot`"
+          class="rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
+          title="情节大纲"
+        >情节</router-link>
+        <router-link
+          :to="`/book/${bookId}/memory`"
+          class="rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
+          title="叙事档案"
+        >档案</router-link>
+        <router-link
+          :to="`/book/${bookId}/inspirations`"
+          class="rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
+          title="灵感墙"
+        >灵感</router-link>
+        <router-link
+          :to="`/book/${bookId}/stats`"
+          class="rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
+          title="创作统计"
+        >统计</router-link>
+        <button
+          class="relative rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
+          title="同步：把正文改动推送到设定集与叙事档案"
+          aria-label="同步正文到设定集与叙事档案"
+          @click="emit('sync')"
+        >同步<span
+          v-if="props.syncAlert"
+          class="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-ink-danger"
+        /></button>
       </div>
       <p class="mt-2 truncate text-sm font-semibold" :title="bookTitle">{{ bookTitle }}</p>
     </div>

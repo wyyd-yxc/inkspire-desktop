@@ -34,11 +34,11 @@ const loading = ref(true)
 const targetInput = ref('')
 const savingTarget = ref(false)
 
-/** 历史中最早有字数的章节 updatedAt ≈ 首章完稿日 */
+/** 历史中最早有字数的章节 updatedAt ≈ 首章完稿日（转本地日期，与快照口径一致——黑盒缺陷#2 修复） */
 const firstChapterDay = computed(() => {
   const done = chapters.value.filter((c) => c.wordCount > 0)
   if (!done.length) return undefined
-  return done.map((c) => c.updatedAt.slice(0, 10)).sort()[0]
+  return done.map((c) => localDay(new Date(c.updatedAt))).sort()[0]
 })
 
 const totalWords = computed(() => chapters.value.reduce((s, c) => s + c.wordCount, 0))
