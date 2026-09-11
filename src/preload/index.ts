@@ -60,6 +60,7 @@ import type {
   UpdateStyleProfileInput
 } from '../shared/style.types'
 import type { WordSnapshot } from '../shared/stats.types'
+import type { DigestPickResult } from '../shared/digest.types'
 import type {
   CreateInspirationInput,
   Inspiration,
@@ -265,6 +266,12 @@ const api = {
   stats: {
     list: (bookId: string): Promise<IpcResult<WordSnapshot[]>> =>
       ipcRenderer.invoke('stats:list', bookId)
+  },
+
+  /** 拆书（M14）：选参考 txt 并读取（只读；文本仅内存传递，不落库不持久）。取消返回 null */
+  digest: {
+    pickText: (): Promise<IpcResult<DigestPickResult | null>> =>
+      ipcRenderer.invoke('digest:pick-text')
   },
 
   /** 应用设置（键受主进程白名单约束） */

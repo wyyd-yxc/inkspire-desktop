@@ -22,6 +22,7 @@ import { registerStatsIpc } from './ipc/stats'
 import { registerMemoryIpc } from './ipc/memories'
 import { registerAssistantIpc } from './ipc/assistant'
 import { registerSyncIpc } from './ipc/sync'
+import { registerDigestIpc } from './ipc/digest'
 
 /** 创建应用主窗口（1280x800，中文标题「墨笺」）。 */
 function createWindow(): void {
@@ -107,6 +108,7 @@ registerStatsIpc()
 registerMemoryIpc()
 registerAssistantIpc()
 registerSyncIpc()
+registerDigestIpc()
 
 app.whenReady().then(() => {
   createWindow()
