@@ -69,7 +69,7 @@
 | 低：delete 时序耦合（getChapter 先读后删） | 不采纳 | better-sqlite3 同步无并发窗口；wrap 兜底，理论性建议记录在案 |
 | console.warn≠零报错的措辞 | 裁定说明 | warn 非 error 级；黑盒实测 console error=0 |
 
-## 附录 C：黑盒验收结果（2026-09-10，报告 tmp/m13-blackbox-result.md 待入库 docs/）
+## 附录 C：黑盒验收结果（2026-09-10，报告已入库 docs/acceptance/2026-09-10-M13-stats.md）
 
 **10/10 验收点通过**（快照自动记录含真实键盘防抖时序鉴别、AI 采纳入账同通道验证、指标/目标 50%/热力档位/趋势 30 点/里程碑达成日与差距/重启持久逐字段一致/删书级联终审计/console 零报错）。**外部 AI 消耗 0**。
 

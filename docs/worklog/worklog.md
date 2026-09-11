@@ -624,3 +624,21 @@
 - **测试坑新增**：①弹窗容器定位必须排除 #app 根节点（`d.id !== 'app'`——页面自身含同名按钮/text 会先命中应用根）；②hash 同值导航不触发组件重挂载，绕过 UI 改数据后须双跳导航（第三次实锤，升格常规纪律）；③脚本直调 IPC 不触发 UI 事件链（emit changed 的刷新链路需 reload 等价模拟）。
 - **流程自察（如实记录）**：静态整改回归时 taskkill electron 重启 dev，一度打断并行中的黑盒代理——黑盒任务书自愈条款（自行重启）兜底未造成损失；后续里程碑双轨并行期间一律禁碰 dev 进程。
 - **状态**：双轨通过；用户确认后 tag **v0.17.0-m12-style**（已打，指向 4abfb09）。下一步 M13 创作统计（执行版任务卡已入 HANDOVER）。dev 9222 保持运行。
+
+---
+
+## [2026-09-11 23:15] 会话 40：M13 创作统计全量交付（双轨验收通过，tag v0.18.0-m13-stats）
+
+> 注：M13 开发与验收主体在 2026-09-09～09-10 完成（2 feat+5 fix+4 docs 共 11 提交，自 v0.17.0-m12-style 起），本节据验收材料与提交史回补归档。
+
+- **实现**：
+  - 数据层：migration v14——word_count_snapshots（PK(book_id,day)：base_total 当日基线/last_total 末值/updated_at，FK CASCADE）+ `ALTER TABLE books ADD COLUMN word_target`（v13 ALTER 先例第二例）；shared/stats.types.ts + stats DAO（recordWordSnapshot 事务：SUM→建基线或覆盖末值→**同值跳过**防冗余写）+ stats:list 只读通道 + preload
+  - 快照上报内嵌主进程（渲染层零改动）：chapters:update（wordCount 传入时 UPDATE 成功后同库上报，覆盖防抖自动保存/AI 采纳/反向替换一切写入点）+ chapters:delete（静态 r1 整改补挂，删章如实入账，当日 delta 可为负）
+  - 统计页：/book/:bookId/stats + StatsView（今日净增/总字数+目标进度条内联编辑/近 30 天内联 SVG 趋势/近 12 月纯 CSS 热力图 heat-0..4 新 @theme 令牌/里程碑阶梯：首次创作/首章完稿/1万~100万字，达成日从快照序列推导不落库）+ 侧栏「统计」pill + statsCalc.ts 纯函数（localDay/buildTrend/buildHeatCells/computeMilestones）；全程零 AI
+- **开发自测** T1 21/21（CDP，零 AI 零外部额度），修 1 真 bug：saveTarget 对 number 值调 .trim() 抛错——字数目标永远存不上（8953e55）。
+- **双轨验收**：
+  - **静态审查**：glm-5 被 TokenRhythm 下线（400 MODEL_DISABLED，两次空返回实证入库）→ 换 **glm-5.1**；r1 严重项「chapters:delete 漏挂快照」整改（3c0203d+4029241，回归含删章入账/删破基线负 delta 实证）+ normalizeWordTarget 防御放宽，chapters:create 判误报；r2 采纳「同值快照跳过防冗余写」+材料 delta 语义双方各修正一半，delete 时序耦合不采纳——两轮有条件通过，无法判定项（diff 截断）由黑盒覆盖。
+  - **黑盒 10/10**（独立代理，报告入库 2026-09-10-M13-stats.md；外部 AI 消耗 0；脚手架报错偏差披露归并 4 类归零留档材料附录 C）。疑似缺陷 2 项修复（4c405d9）：①中高危——侧栏顶栏 7 pill 单行溢出遮挡「+新章节」→ 顶栏改两行布局；②低——「首章完稿」UTC 口径与快照本地日不一 → 转 localDay。
+- **观察项登记技术债**：toast 动画结束后实体未从 DOM 移除（innerText 残留至重启，无功能影响）。
+- **流程坑沿用**：双轨并行期间禁碰 dev 进程（会话 39 纪律），黑盒所需的一次 dev 重启按验收点 8 流程执行并留档。
+- **状态**：双轨通过；经用户确认 tag **v0.18.0-m13-stats**（已打，指向 0bc3c3b，收尾 docs 提交之前——沿 M11/M12 惯例）。下一步 M14 拆书（执行版任务卡已入 HANDOVER）。

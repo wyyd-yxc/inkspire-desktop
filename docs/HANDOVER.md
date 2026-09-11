@@ -1,16 +1,17 @@
 # 项目交接文档（HANDOVER）
 
 > **新会话/新模型开工第一入口**。本文件始终保持「随时可交接」状态，每次里程碑收尾后更新。
-> 最后更新：2026-09-09 · 会话 39 · **M12 作品风格完成（tag v0.17.0-m12-style）；下一步 M13 创作统计（执行版任务卡见第 9 节）**
-> 此前：M10.8/M11（v0.15.x/v0.16.0）已收尾。静态审查 `--base`：M13 起用 v0.17.0-m12-style。
+> 最后更新：2026-09-11 · 会话 40 · **M13 创作统计完成（tag v0.18.0-m13-stats）；下一步 M14 拆书（执行版任务卡见第 9 节）**
+> 此前：M12/M11（v0.17.0/v0.16.0）已收尾。静态审查 `--base`：M14 起用 v0.18.0-m13-stats。
 
 ## 0. 移交摘要（新模型 60 秒读完）
 
-- **M0-M12 全部完成并通过双轨验收**，18 个版本 tag（最新 v0.17.0-m12-style）
-- **产品已更名「墨笺」**（appId/数据目录/可执行名 InkSpire 不变）；GMI 额度耗尽（402）后 AI 档案切 TokenRhythm
+- **M0-M13 全部完成并通过双轨验收**，19 个版本 tag（最新 v0.18.0-m13-stats）
+- **产品已更名「墨笺」**（appId/数据目录/可执行名 InkSpire 不变）；GMI 额度耗尽（402）后 AI 档案切 TokenRhythm；glm-5 被下线后静态审查模型换 **glm-5.1**
 - **M12 作品风格**：风格包管理（设置分区）+书绑定+优先级注入（书绑定包>基调预设>无，写作管线+场景正文）+封面上传（封面债清偿）；migration v13（首个 ALTER TABLE）；真实 AI 风格可感知黑盒实证
-- **下一步**：M13 创作统计（执行版任务卡见第 9 节，快照内嵌主进程方案已定）
-- git：18 tag、工作区 clean（验收文档已随收尾提交）
+- **M13 创作统计**：migration v14（word_count_snapshots+books.word_target）；快照上报内嵌主进程（chapters:update/delete 双挂钩+同值跳过，渲染层零改动）；统计页（今日净增/目标进度/近 30 天趋势/近 12 月热力/里程碑）；全程零 AI
+- **下一步**：M14 拆书（执行版任务卡见第 9 节，零新表+digest:pick-text 单通道方案已定）
+- git：19 tag、工作区 clean（验收文档已随收尾提交）
 - 你能跑 `npm run dev` 验证环境；测试方法见第 5 节；所有坑见第 6 节（**18 条，必读**）
 
 ## 1. 项目是什么
@@ -36,10 +37,11 @@
 | M10.5 | 跨模块联动与同步（正文→百科提取/记忆去重/剧情双向注入/各页同步入口/自动同步） | ✅ 静态四轮整改闭环（原子水位通道+白名单读写拆分）+黑盒 9/9 通过，tag v0.13.0-m10.5-sync |
 | M11 | 灵感墙（五类便签+入画布联动+划词存灵感） | ✅（静态三轮+黑盒 13/13，报告 2026-09-08-M11-wall.md；tag v0.16.0-m11-wall） |
 | M12 | 作品风格（风格包+绑定+优先级注入+封面） | ✅（静态两轮+黑盒 10/10，报告 2026-09-09-M12-style.md；tag v0.17.0-m12-style） |
-| M13-M15 | 统计/拆书/Agent偏好 | ⬜（任务卡见第 9 节；下一个 M13，执行版已定稿） |
+| M13 | 创作统计（字数快照+目标+趋势+热力+里程碑） | ✅（静态两轮+黑盒 10/10，报告 2026-09-10-M13-stats.md；tag v0.18.0-m13-stats） |
+| M14-M15 | 拆书/Agent偏好 | ⬜（任务卡见第 9 节；下一个 M14，执行版已定稿） |
 | M16 | 重打包 | ✅ 0.15.0 已打包并覆盖安装验证（2026-09-08） |
 
-**数据库 migration 当前版本 = 13**（…plot_events+plot_edges/inspirations/style_profiles+books.style_profile_id；v12 灵感墙建表，v13 风格包+项目首个 ALTER TABLE）。
+**数据库 migration 当前版本 = 14**（…plot_events+plot_edges/inspirations/style_profiles+books.style_profile_id/word_count_snapshots+books.word_target；v12 灵感墙建表，v13 风格包+项目首个 ALTER TABLE，v14 统计快照+目标）。
 
 ## 3. 新会话开工 SOP（按序执行）
 
@@ -55,7 +57,7 @@
 ```
 Electron(main: db/ ai/ ipc/) ←IPC(preload 白名单桥)→ Vue3 渲染层(views/components/services)
 ```
-- 数据：better-sqlite3 v13（NAPI prebuilds 跨 ABI），库文件在 %APPDATA%/inkspire-desktop/inkspire.sqlite，migration v13
+- 数据：better-sqlite3 v13（NAPI prebuilds 跨 ABI），库文件在 %APPDATA%/inkspire-desktop/inkspire.sqlite，migration v14
 - AI：`src/main/ai/` Provider 抽象+注册表；openaiCompatible.ts（SSE 流式+429 自动重试+AbortSignal 中止）
 - 注入链路：ChapterEditor.loadGenesis/loadWiki/loadMemory → caches → writingContext → systemPrompt
 - UI：Tailwind 4 @theme 紫罗兰令牌（#6c5ce7），弹窗/Toast/确认框/AiWritingPanel 可复用
@@ -64,7 +66,7 @@ Electron(main: db/ ai/ ipc/) ←IPC(preload 白名单桥)→ Vue3 渲染层(view
 
 1. 开发自测：`npm run dev -- --remote-debugging-port=9222`，node+WebSocket 连 CDP 驱动真实 Electron（参考 tmp/ 下脚本）
 2. 双轨验收：
-   - **静态审查**：`node scripts/accept-via-llm.mjs <材料.md> --base <tag> --model glm-5 --base-url https://tokenrhythm.studio/v1 --key-env TOKENRHYTHM_API_KEY`（GMI 已 402 勿用；输出存 docs/acceptance/llm-review-*.md）
+   - **静态审查**：`node scripts/accept-via-llm.mjs <材料.md> --base <tag> --model glm-5.1 --base-url https://tokenrhythm.studio/v1 --key-env TOKENRHYTHM_API_KEY`（GMI 已 402 勿用；glm-5 已被下线勿用；输出存 docs/acceptance/llm-review-*.md）
    - **黑盒子代理**：Agent(general-purpose)，提示词含验收点+CDP 方法+自建自清纪律。**AI 用例重试≤3；代理报错超 3 次取消黑盒**
 3. 任一不通过即不通过；整改后复验；用户确认 → tag
 4. 验收报告、材料全部入库
@@ -181,7 +183,11 @@ Electron(main: db/ ai/ ipc/) ←IPC(preload 白名单桥)→ Vue3 渲染层(view
 
 ---
 
-### M13 创作统计（下一个，执行版——探索实证已固化 2026-09-09）
+### ~~M13 创作统计~~（✅ 已完成 2026-09-11，tag v0.18.0-m13-stats）
+
+交付概要：migration v14（word_count_snapshots：PK(book_id,day)+base_total/last_total/updated_at FK CASCADE；books ADD word_target）；快照上报内嵌主进程——chapters:update（wordCount 传入时）与 chapters:delete（静态整改补挂）双挂钩同库 recordWordSnapshot（事务 SUM→建基线/覆盖末值→同值跳过），覆盖一切写入点、渲染层零改动；stats:list 只读通道。统计页 /book/:bookId/stats（StatsView+statsCalc 纯函数）：今日净增/总字数+目标进度条内联编辑/近 30 天 SVG 趋势/近 12 月纯 CSS 热力图（heat-0..4 令牌）/里程碑阶梯（首次创作/首章完稿/1万~100万字，从快照序列推导不落库）；侧栏「统计」pill（顶栏两行布局）。全程零 AI。双轨：静态审查 glm-5 下线换 glm-5.1，两轮有条件通过整改闭环（r1 严重项 chapters:delete 漏挂快照已修；r2 同值跳过+delta 语义修正）+黑盒 10/10（报告 2026-09-10-M13-stats.md，外部 AI 消耗 0）；自测 T1 21/21 修 1 真 bug（saveTarget .trim() 抛错）；黑盒两缺陷修复（侧栏 pill 溢出遮挡/首章完稿 UTC 口径）。toast DOM 残留观察项已登记技术债。以下为原执行卡存档。
+
+**原执行卡（存档）**——探索实证已固化 2026-09-09。
 
 **背景（代码事实已探明）**：chapters.word_count 由调用方计算传入（DAO 透传）；全书字数=渲染层逐章求和（WorkspaceView.totalWords）；**一切改字数的落盘全部经主进程 chapters:update**（防抖自动保存唯一汇聚点 flushSave、CanvasView AI 采纳、useReverseSync 反向替换均传 wordCount；renameChapter 不传→不触发）；无任何历史字数快照（自 M13 起积累——宜早交付）；无图表库且零 canvas 先例（热力图=纯 CSS grid，趋势=内联 SVG polyline）；books 表已有 v13 ALTER 先例；settings 双白名单（水位键只读）——**每书字数目标不入 settings**，走 books 加列；mergeWatermarkChapter 主进程事务读改写为可参照范式。
 
@@ -210,21 +216,25 @@ Electron(main: db/ ai/ ipc/) ←IPC(preload 白名单桥)→ Vue3 渲染层(view
 
 ---
 
-### M14 拆书
+### M14 拆书（下一个，执行版——探索实证已固化 2026-09-11）
 
-**背景**：用户上传参考文本，AI 拆解出可复用的风格包（供 M12 表消费）；refs/landing_book-analysis-material-library.webp 为原站参考；presetStyles.ts 注释「M14 后换真实风格包」由此兑现。
+**背景（代码事实已探明）**：M12 的 style_profiles 表与管理页已落地，digest 预留齐备——DAO VALID_SOURCE_TYPES 已含 'digest'（styles.ts L19）、StylePackagesSection 来源徽标已支持「拆书」（L99-100）、database.ts 表注释已预留、presetStyles.ts L3 注释「M14 后换真实风格包」由此兑现。**三处与原卡草案的偏差已实证**：①**createStyleProfile 硬编码 source_type='manual'**（styles.ts L111）——CreateStyleProfileInput 需扩可选 sourceType，DAO 白名单校验默认 manual（不影响 M12 既有调用方）；②渲染层受 CSP connect-src 'self' 限制**无法读本地文件**，导入 txt 必须走主进程——原卡「零新通道」修正为「+1 个只读通道 digest:pick-text」（仿 covers.ts 范式：dialog.showOpenDialog 过滤 txt→readFile UTF-8→截前 2 万字→返回 {fileName, text}；取消返回 null；>10MB 拒绝）；③resolveProfile 是 aiWriting.ts L206 私有函数，需导出供拆书复用（M15 将统一收敛为槽位解析）。可复用件：SyncCandidateDialog（五处先例；SyncCandidateItem=key/title/detail/source/tag/tagColor/checked/disabled）、lenientParse（services/jsonRepair.ts：严格 parse 失败走状态机修复重试）、chatStream（会话句柄含 abort() 可停止）。refs/landing_book-analysis-material-library.webp 为原站参考。
 
-**功能清单**：导入 txt（UTF-8，超长截取前 2 万字）→AI 拆解（调性总结/叙事规则条目/样例句段）→SyncCandidateDialog 勾选→落风格包（source_type='digest'）；入口挂 M12 风格包管理页「从参考文本拆解」。
+**功能清单**：设置中心风格包分区「从参考文本拆解」按钮 → StyleDigestDialog（components/settings/，守单文件 ≤400 行规）四态流——①**导入**：digest:pick-text 选 txt（显示文件名+字数；超 2 万字提示已截取开头；取消则停在导入态）；②**AI 拆解**：resolveProfile 默认档案+chatStream 流式（新 services/digestPrompts.ts：system 提示词约定输出严格 JSON `{"name","tone","rules":[],"sample"}`；拆解中可停止）；③**解析清洗**：lenientParse+渲染层白名单清洗（name trim 非空≤30 字/tone≤100 字/rules 逐条 trim≤100 字限 20 条/sample≤200 字，与 DAO sanitizeRules 同口径双保险）——失败报错可重试，不落库；④**勾选落库**：SyncCandidateDialog 展示候选（调性 1 项+规则 N 项+样例 1 项，默认全勾，全不勾确认禁用）→勾选项组装 styles:create(sourceType='digest')→列表刷新出「拆书」徽标→关闭弹窗丢弃参考文本。
 
-**数据与 IPC 设计草案**：零新表零新通道——产出直写 M12 的 styles:create；AI 走 ai:chat-stream+lenientParse（复用提取范式：严格 JSON+宽容解析+白名单过滤+长度钳制）。
+**数据与 IPC 设计**：零新表零迁移；+1 只读通道 digest:pick-text（主进程 ipc/digest.ts，无副作用不落盘）；落库复用 styles:create（仅扩 sourceType 入参）；AI 复用 ai:chat-stream（零新 AI 通道）；preload 增 digest 组（仅 pickText）。
 
-**入口**：设置中心风格包管理页按钮。
+**入口**：设置中心风格包管理页头部（「+ 新建风格包」旁）。
 
-**设计决策**：参考文本不落库不持久（隐私：拆完即弃，仅内存传递）；一次拆解一个包；只拆文风不拆情节结构/人物（那是设定集的事）。
+**设计决策**：参考文本不落库不持久（隐私：拆完即弃，仅内存传递，弹窗关闭/取消即丢）；一次拆解一个包；只拆文风不拆情节结构/人物（那是设定集的事）；digest 包与 manual 包同池参与书绑定与注入（styleContext 不区分来源）；GBK 不自动检测（仅 UTF-8，UI 注明，乱码由用户转码）。
 
-**不做清单**：epub/pdf/mobi 格式/整本书无截取拆解/素材库（原站概念）/批量拆解/拆情节大纲
+**不做清单**：epub/pdf/mobi 格式/整本书无截取拆解/素材库（原站概念）/批量拆解/拆情节大纲/编码自动检测/拆解历史记录。
 
-**验收点**：导入参考 txt→AI 拆解→勾选→风格包生成且来源=拆书；该包绑定新书后生成正文风格可感知；未选任何候选不落库。**依赖**：**M12 的 style_profiles 表与管理页必须先落地**。**tag 号**：v0.19.0-m14-digest。
+**验收点**：1) 导入参考 txt→AI 拆解→勾选→风格包生成且来源徽标=拆书（source_type='digest' 落库）；2) 该包绑定新书后生成正文风格可感知（真实 AI 特征断言）；3) 全不勾确认禁用/取消/拆解失败均不落库；参考文本重启后无任何残留；4) 超 2 万字截断生效（只取开头）；5) 删 digest 包走既有解绑链路（FK SET NULL 回落）；6) typecheck 三重闸门+console 零报错；AI 用例重试≤3。
+
+**已知边界**：GBK txt 乱码由用户转码；JSON 解析失败可重试；2 万字只取开头不智能选段。
+
+**依赖**：M12 已满足（可立即开工）。**tag 号**：v0.19.0-m14-digest。
 
 ---
 
@@ -254,6 +264,6 @@ Electron(main: db/ ai/ ipc/) ←IPC(preload 白名单桥)→ Vue3 渲染层(view
 npm run dev                                        # 开发
 npm run dev -- --remote-debugging-port=9222        # CDP 自动化
 npm run typecheck                                  # 三重闸门（tsc×2+build）
-node scripts/accept-via-llm.mjs <材料.md> --base v0.16.0-m11-wall --model glm-5 --base-url https://tokenrhythm.studio/v1 --key-env TOKENRHYTHM_API_KEY
+node scripts/accept-via-llm.mjs <材料.md> --base v0.18.0-m13-stats --model glm-5.1 --base-url https://tokenrhythm.studio/v1 --key-env TOKENRHYTHM_API_KEY
 npm run dist                                       # 打包 NSIS
 ```
