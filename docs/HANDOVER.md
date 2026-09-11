@@ -1,17 +1,17 @@
 # 项目交接文档（HANDOVER）
 
 > **新会话/新模型开工第一入口**。本文件始终保持「随时可交接」状态，每次里程碑收尾后更新。
-> 最后更新：2026-09-11 · 会话 40 · **M13 创作统计完成（tag v0.18.0-m13-stats）；下一步 M14 拆书（执行版任务卡见第 9 节）**
-> 此前：M12/M11（v0.17.0/v0.16.0）已收尾。静态审查 `--base`：M14 起用 v0.18.0-m13-stats。
+> 最后更新：2026-09-12 · 会话 41 · **M14 拆书完成（双轨通过，tag v0.19.0-m14-digest 待用户确认）；下一步 M15 Agent 模型偏好（执行版任务卡见第 9 节）**
+> 此前：M13/M12（v0.18.0/v0.17.0）已收尾。静态审查 `--base`：M15 起用 v0.19.0-m14-digest。
 
 ## 0. 移交摘要（新模型 60 秒读完）
 
-- **M0-M13 全部完成并通过双轨验收**，19 个版本 tag（最新 v0.18.0-m13-stats）
+- **M0-M14 全部完成并通过双轨验收**（M14 tag 待用户确认），19 个已打版本 tag（最新 v0.18.0-m13-stats）
 - **产品已更名「墨笺」**（appId/数据目录/可执行名 InkSpire 不变）；GMI 额度耗尽（402）后 AI 档案切 TokenRhythm；glm-5 被下线后静态审查模型换 **glm-5.1**
-- **M12 作品风格**：风格包管理（设置分区）+书绑定+优先级注入（书绑定包>基调预设>无，写作管线+场景正文）+封面上传（封面债清偿）；migration v13（首个 ALTER TABLE）；真实 AI 风格可感知黑盒实证
 - **M13 创作统计**：migration v14（word_count_snapshots+books.word_target）；快照上报内嵌主进程（chapters:update/delete 双挂钩+同值跳过，渲染层零改动）；统计页（今日净增/目标进度/近 30 天趋势/近 12 月热力/里程碑）；全程零 AI
-- **下一步**：M14 拆书（执行版任务卡见第 9 节，零新表+digest:pick-text 单通道方案已定）
-- git：19 tag、工作区 clean（验收文档已随收尾提交）
+- **M14 拆书**：styles:create 扩 digest 来源+digest:pick-text 只读通道+StyleDigestDialog 四态流（导入→流式拆解可停止→勾选→落库）；参考文本不落库不持久（字节级实证）；黑盒真实 AI 风格感知 4/4 实证
+- **下一步**：M15 Agent 模型偏好（执行版任务卡见第 9 节，migration v15 agent_bindings 槽位表方案已定）
+- git：19 tag（+M14 tag 待打后 20）、工作区 clean（验收文档已随收尾提交）
 - 你能跑 `npm run dev` 验证环境；测试方法见第 5 节；所有坑见第 6 节（**18 条，必读**）
 
 ## 1. 项目是什么
@@ -38,10 +38,11 @@
 | M11 | 灵感墙（五类便签+入画布联动+划词存灵感） | ✅（静态三轮+黑盒 13/13，报告 2026-09-08-M11-wall.md；tag v0.16.0-m11-wall） |
 | M12 | 作品风格（风格包+绑定+优先级注入+封面） | ✅（静态两轮+黑盒 10/10，报告 2026-09-09-M12-style.md；tag v0.17.0-m12-style） |
 | M13 | 创作统计（字数快照+目标+趋势+热力+里程碑） | ✅（静态两轮+黑盒 10/10，报告 2026-09-10-M13-stats.md；tag v0.18.0-m13-stats） |
-| M14-M15 | 拆书/Agent偏好 | ⬜（任务卡见第 9 节；下一个 M14，执行版已定稿） |
+| M14 | 拆书（txt→AI 拆解→风格包 digest） | ✅（静态五轮收敛+黑盒 6/6 含真实 AI 风格感知 4/4，报告 2026-09-12-M14-digest.md；tag 待用户确认 v0.19.0-m14-digest） |
+| M15-M16 | Agent偏好/（打包已完） | M15 ⬜（执行版任务卡见第 9 节，下一个） |
 | M16 | 重打包 | ✅ 0.15.0 已打包并覆盖安装验证（2026-09-08） |
 
-**数据库 migration 当前版本 = 14**（…plot_events+plot_edges/inspirations/style_profiles+books.style_profile_id/word_count_snapshots+books.word_target；v12 灵感墙建表，v13 风格包+项目首个 ALTER TABLE，v14 统计快照+目标）。
+**数据库 migration 当前版本 = 14**（…plot_events+plot_edges/inspirations/style_profiles+books.style_profile_id/word_count_snapshots+books.word_target；v12 灵感墙建表，v13 风格包+项目首个 ALTER TABLE，v14 统计快照+目标；M15 预计 v15 agent_bindings）。
 
 ## 3. 新会话开工 SOP（按序执行）
 
@@ -216,7 +217,11 @@ Electron(main: db/ ai/ ipc/) ←IPC(preload 白名单桥)→ Vue3 渲染层(view
 
 ---
 
-### M14 拆书（下一个，执行版——探索实证已固化 2026-09-11）
+### ~~M14 拆书~~（✅ 双轨通过 2026-09-12，tag v0.19.0-m14-digest 待用户确认）
+
+交付概要：styles:create 扩 sourceType（DAO 白名单缺省 manual）；digest:pick-text 只读通道（txt→UTF-8 去 BOM→截前 2 万字，取消 null，>10MB 拒——执行卡实证修正「零新通道」）；digestPrompts 拆解服务（文风分析师+严格 JSON+lenientParse+渲染层清洗与 DAO 双保险）；resolveProfile 导出复用；StyleDigestDialog 四态流（导入→流式拆解可停止（代次号防竞态）→SyncCandidateDialog 勾选互斥渲染→落库「拆书」徽标）；参考文本不落库不持久（DB+WAL 字节级实证）。双轨：静态 glm-5.1 五轮收敛——r1 采纳 running 态提前、r2 **竞态真修**（建流后代次号校验防停止漏 abort+catch 不覆盖停止状态+关闭清空拆解产物），余项裁定留档（附录 A1-A5）+黑盒 6/6（报告 2026-09-12-M14-digest.md；真实 AI 4/4 次；**风格感知 4/4：拆书包绑定续写 617 字命中第一人称/句长中位 13 字/无感叹号/意象群**）；自测 T1 15/15+T2 19/19+T3 4/4（win32 消息级驱动原生对话框范式沉淀）。2 条低危 UX 观察登记技术债。以下为原执行卡存档。
+
+**原执行卡（存档）**——探索实证已固化 2026-09-11。
 
 **背景（代码事实已探明）**：M12 的 style_profiles 表与管理页已落地，digest 预留齐备——DAO VALID_SOURCE_TYPES 已含 'digest'（styles.ts L19）、StylePackagesSection 来源徽标已支持「拆书」（L99-100）、database.ts 表注释已预留、presetStyles.ts L3 注释「M14 后换真实风格包」由此兑现。**三处与原卡草案的偏差已实证**：①**createStyleProfile 硬编码 source_type='manual'**（styles.ts L111）——CreateStyleProfileInput 需扩可选 sourceType，DAO 白名单校验默认 manual（不影响 M12 既有调用方）；②渲染层受 CSP connect-src 'self' 限制**无法读本地文件**，导入 txt 必须走主进程——原卡「零新通道」修正为「+1 个只读通道 digest:pick-text」（仿 covers.ts 范式：dialog.showOpenDialog 过滤 txt→readFile UTF-8→截前 2 万字→返回 {fileName, text}；取消返回 null；>10MB 拒绝）；③resolveProfile 是 aiWriting.ts L206 私有函数，需导出供拆书复用（M15 将统一收敛为槽位解析）。可复用件：SyncCandidateDialog（五处先例；SyncCandidateItem=key/title/detail/source/tag/tagColor/checked/disabled）、lenientParse（services/jsonRepair.ts：严格 parse 失败走状态机修复重试）、chatStream（会话句柄含 abort() 可停止）。refs/landing_book-analysis-material-library.webp 为原站参考。
 
@@ -238,21 +243,31 @@ Electron(main: db/ ai/ ipc/) ←IPC(preload 白名单桥)→ Vue3 渲染层(view
 
 ---
 
-### M15 Agent 模型偏好（功能槽位）
+### M15 Agent 模型偏好（下一个，执行版——已知代码事实固化 2026-09-12）
 
-**背景**：architecture.md ModelBinding 设计（功能槽位绑定档案，未绑定回落默认）；现状 resolveProfile 两处（aiWriting.ts / AssistantDock.vue）固定读默认档案；原站「23 个 Agent」收敛为功能域槽位。
+**背景（代码事实）**：architecture.md ModelBinding 设计（功能槽位绑定档案，未绑定回落默认）；原站「23 个 Agent」收敛为功能域槽位。现状档案解析三处分散：①`aiWriting.ts:206` resolveProfile（M14 起已导出，写作管线/场景正文/拆书经它）；②`AssistantDock.vue` 自带档案解析副本（助手聊天，开工时核实行号）；③提取同步三目标（WikiView/MemoryView/PlotCanvasView 的 AI 调用）档案解析位置**待开工第 0 步探索实证**（可能各自调 resolveProfile 或自带）。
 
 **功能清单**：定义 8 个槽位：正文写作（续写/整章润色）/划词改写/构思台/情节大纲 AI/场景规划 AI/提取同步（设定集+叙事档案+情节三目标）/助手聊天/拆书；设置中心「功能槽位」分区：每槽位下拉（跟随默认/各档案）；调用时按槽位解析档案。
 
-**数据与 IPC 设计草案**：migration 建 `agent_bindings(slot TEXT PRIMARY KEY, profile_id TEXT NOT NULL)`；IPC：`bindings:list` + `bindings:set(slot, profileId|'')`；渲染层抽 `resolveProfileForSlot(slot)` 收敛两处 resolveProfile；槽位常量入 src/shared/agent.types.ts。
+**数据与 IPC 设计草案**：migration v15 建 `agent_bindings(slot TEXT PRIMARY KEY, profile_id TEXT NOT NULL)`；IPC：`bindings:list` + `bindings:set(slot, profileId|'')`（槽位常量入 src/shared/agent.types.ts）；渲染层抽 `services/agentSlots.ts`：`resolveProfileForSlot(slot)` 收敛三处解析（未绑定槽位走原 resolveProfile 逻辑）；preload 增 bindings 组。
 
-**入口**：设置中心新分区。
+**入口**：设置中心新分区（风格包分区附近）。
 
-**设计决策**：槽位=功能域非 Agent 实体（不建 23 行）；「跟随默认」=表内无行（删绑定即回落）；删除档案级联清绑定（deleteProfile 增清理）；params/温度跟档案走，不做槽位级覆盖。
+**设计决策**：槽位=功能域非 Agent 实体（不建 23 行）；「跟随默认」=表内无行（bindings:set 传空串即删行回落）；删除档案级联清绑定（deleteProfile 增清理，仿 FK SET NULL 语义手动实现或 FK+ON DELETE CASCADE）；params/温度跟档案走，不做槽位级覆盖；拆书槽位=M14 的 resolveProfile 调用点改造。
 
 **不做清单**：23 Agent 实体与自定义提示词/槽位级温度覆盖/按书绑定（全局槽位）
 
-**验收点**：两档案不同模型时，情节大纲 AI 与助手各走各的档案（抓请求模型名验证）；未绑定槽位回落默认；删除档案后对应槽位回落默认不报错。**依赖**：无硬依赖，建议最后做（覆盖全部 AI 功能面，回归面最大）。**tag 号**：v0.20.0-m15-bindings。
+**步骤分解**（开工第 0 步先探索实证三处解析点与 sync 提取调用链，再照 M14 节奏小步提交）：
+1. 数据层：migration v15 + shared/agent.types.ts（8 槽位常量）+ DAO（bindings list/set+删档案级联清）+ IPC 两通道+preload
+2. 收敛：agentSlots.ts resolveProfileForSlot（未绑定回落默认→第一档案）+三处调用点改造（写作管线/助手/提取同步；划词/构思台/情节/场景/拆书按调用链归位）
+3. 设置分区：SlotBindingsSection.vue（8 行下拉：跟随默认/各档案，即时保存）
+4. 自测 tmp/m15-*.mjs（假服务器范式：两档案不同模型名，抓请求 model 字段断言分槽位路由；未绑定回落/删档案回落/console 零报错；零真实 AI）
+5. 双轨：材料 material-M15-bindings.md → 静态 `--base v0.19.0-m14-digest --model glm-5.1` → 黑盒（抓请求模型名验证分槽位路由）
+6. 交付亲手验证指引 → 用户确认 → tag v0.20.0-m15-bindings → 收尾
+
+**验收点**：两档案不同模型时，情节大纲 AI 与助手各走各的档案（抓请求模型名验证）；未绑定槽位回落默认；删除档案后对应槽位回落默认不报错；typecheck+console 零报错+零真实 AI 消耗。
+
+**依赖**：无硬上游（M14 已交付使拆书槽位可直接纳入）。**tag 号**：v0.20.0-m15-bindings。
 
 ---
 
@@ -264,6 +279,6 @@ Electron(main: db/ ai/ ipc/) ←IPC(preload 白名单桥)→ Vue3 渲染层(view
 npm run dev                                        # 开发
 npm run dev -- --remote-debugging-port=9222        # CDP 自动化
 npm run typecheck                                  # 三重闸门（tsc×2+build）
-node scripts/accept-via-llm.mjs <材料.md> --base v0.18.0-m13-stats --model glm-5.1 --base-url https://tokenrhythm.studio/v1 --key-env TOKENRHYTHM_API_KEY
+node scripts/accept-via-llm.mjs <材料.md> --base v0.19.0-m14-digest --model glm-5.1 --base-url https://tokenrhythm.studio/v1 --key-env TOKENRHYTHM_API_KEY
 npm run dist                                       # 打包 NSIS
 ```

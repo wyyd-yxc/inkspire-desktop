@@ -642,3 +642,22 @@
 - **观察项登记技术债**：toast 动画结束后实体未从 DOM 移除（innerText 残留至重启，无功能影响）。
 - **流程坑沿用**：双轨并行期间禁碰 dev 进程（会话 39 纪律），黑盒所需的一次 dev 重启按验收点 8 流程执行并留档。
 - **状态**：双轨通过；经用户确认 tag **v0.18.0-m13-stats**（已打，指向 0bc3c3b，收尾 docs 提交之前——沿 M11/M12 惯例）。下一步 M14 拆书（执行版任务卡已入 HANDOVER）。
+
+---
+
+## [2026-09-12 01:00] 会话 41：M14 拆书全量交付（双轨验收通过，tag v0.19.0-m14-digest 待用户确认）
+
+> 本会话前半程完成 M13 收尾（tag v0.18.0-m13-stats+会话 40 归档），后半程 M14 全量交付。
+
+- **实现**（4 feat + 2 fix，自 v0.18.0-m13-stats 起 12 提交）：
+  - 数据面：CreateStyleProfileInput 扩 `sourceType?`，DAO VALID_SOURCE_TYPES 白名单校验缺省回落 manual（M12 既有调用方零影响；update 不开放来源修改）——styles.ts 硬编码 'manual' 实证修正
+  - 通道：`digest:pick-text` 只读通道（dialog 过滤 txt→UTF-8 去 BOM→截前 2 万字→{fileName,text,totalChars,truncated}，取消 null，>10MB 拒绝）+preload digest 组——执行卡「零新通道」实证修正（渲染层 CSP 不可读本地文件）
+  - 服务：digestPrompts.ts（文风分析师 system+严格 JSON 约定+lenientParse+渲染层白名单清洗与 DAO 双保险）；resolveProfile 导出复用（M15 收敛过渡点）
+  - UI：StyleDigestDialog 四态流（import→running 流式可停止→review 复用 SyncCandidateDialog 互斥渲染→落库「拆书」徽标）+风格包分区入口；参考文本不落库不持久，关闭即弃
+- **开发自测**（CDP，外部 AI 消耗 1 次）：T1 主链路 **15/15**（win32 消息级驱动原生对话框：ComboBoxEx32→ComboBox→Edit 三层下钻 WM_CHAR 键入——突破 CDP 不可达原生对话框；请求恰好 1 条/全文注入/候选 5 项/落库 digest/徽标/未采纳正文 DB+WAL 字节级零残留）+T2 边界 **19/19**（取消/非 JSON 报错/围栏+值内英文引号容错/全不勾禁用/2.5 万字截断 userLen=20343/停止/拆解中关闭/删包 FK 解绑/console 零报错）+T3 真实 AI 抽查 **4/4**（基元律动拆解公域章回体→「古典快打白话风」6 规则）
+- **测试基建沉淀 2 条**：①win32 PS1 必须 UTF-8 带 BOM（无 BOM 按 GBK 解析中文损坏）；②假服务器 SSE data: 帧 JSON 字符串内换行必须转义（真实服务器同责），否则主进程丢帧
+- **双轨验收**：
+  - **静态审查 glm-5.1 五轮收敛**：r1 两中等一低——buildCandidates 清洗判误报（数据流唯一入口 sanitizeDigest 已钳制）、部分不勾空 tone 判设计口径（M12 手动创建同字段可选）、running 态提前**采纳修复**（498953d）；r2 竞态中等项**真修**——chatStream 建流后代次号校验防停止漏 abort 新流+catch 不覆盖停止状态+关闭清空拆解产物（隐私口径）（5bad083）；r3-r5 余项全为 diff 截断证据补全（附录 B 核心源码）与惯例分歧裁定（徽标系 M12 既有代码、扩展名二次校验系 IPC 边界防御先例、review 取消销毁系任务卡隐私口径、resolveProfile 导出系 M15 收敛路线）——A5 声明静态轨道闭环
+  - **黑盒 6/6**（独立代理，报告入库 2026-09-12-M14-digest.md）：真实 AI 4/4 次预算无重试；**风格可感知实证**——拆书包「疏离诗意短句」绑定新书续写 617 字特征 4/4 命中（第一人称/句长中位 13 字/无感叹号/意象群延续）；截断 25,024 字 UI 提示+尾部哨兵零泄漏；不落库三态/重启持久/删包解绑全过；console 错误 0；测试数据全清零。脚手架异常 4 起超线披露（全为脚手架侧根因，留用户裁决——M10/M13 先例）
+- **观察项登记技术债 2 条**：①截断提示仅拆解中态可见；②主动停止以错误红色样式呈现
+- **状态**：双轨通过；**tag v0.19.0-m14-digest 待用户亲手验证后确认打**（收尾 docs 先行）。下一步 M15 Agent 模型偏好（执行版任务卡已入 HANDOVER）。
