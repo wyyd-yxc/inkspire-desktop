@@ -172,6 +172,47 @@ export function sanitizeDigest(input): DigestResult | null {
 | 低：review 取消直接销毁全部上下文，不能退回导入态 | **不采纳（任务卡口径）** | 执行卡设计决策原文「参考文本不落库不持久（隐私：拆完即弃）」「取消则不生成」——取消=用户主动放弃，销毁是隐私承诺的保守侧；失败/停止路径已保留文本供重试（T2-b/e 实证），覆盖主要重试场景 |
 | 信息：多对象夹杂 `{...} 文本 {...}` 极端解析隐患 | **记录在案，不追加** | 此类畸形经 lenientParse 失败→parseDigestOutput 返回 null→走既有失败路径（报错回落导入态、可重试、不落库，T2-b 实证该路径）；提示词已约定单对象输出，多对象切割的收益/复杂度比不划算 |
 
+### r4 补充摘录（类型契约全文）
+
+`src/shared/digest.types.ts`（全文，typecheck 三重闸门绿即证与使用处一致）：
+
+```ts
+/** digest:pick-text 返回：参考文本（已截取）与截断信息；用户取消时通道返回 null */
+export interface DigestPickResult {
+  /** 所选文件名（仅展示用） */
+  fileName: string
+  /** 参考文本（UTF-8 解码，超长已截取开头 DIGEST_TEXT_LIMIT 字） */
+  text: string
+  /** 文件总字符数（截取前） */
+  totalChars: number
+  /** 是否发生了截取 */
+  truncated: boolean
+}
+
+/** AI 拆解产出（清洗后的规范形态） */
+export interface DigestResult {
+  /** 风格包名（非空 ≤30 字） */
+  name: string
+  /** 文笔调性总括（≤100 字，可为空） */
+  tone: string
+  /** 叙事规则条目（≤20 条，每条 ≤100 字，可为空） */
+  rules: string[]
+  /** 样例句段（≤200 字，可为空） */
+  sample: string
+}
+```
+
+## 附录 A4：r4 裁定（glm-5.1，2026-09-11）
+
+结论：有条件通过（llm-review-2026-09-11-16-12-.md）。余项均为证据补全/惯例分歧/运行时范围，静态审查收敛。
+
+| 项 | 裁定 | 处理 |
+|---|---|---|
+| 中等：digest.types.ts 缺静态证据 | **采纳（材料补全）** | 类型契约全文入附录 B（diff 截断老问题；typecheck 绿互证字段口径与 sanitizeDigest 一致） |
+| 低：resolveProfile 导出违背最小暴露 | **不采纳（任务卡既定路线）** | M15 执行卡明确「渲染层抽 resolveProfileForSlot(slot) 收敛 resolveProfile」——本导出是收敛前的过渡复用点，注释已声明；跨服务导出共享函数系项目惯例（styleContext/statsCalc 同类） |
+| 低：扩展名二次校验冗余 | **不采纳（IPC 边界防御惯例）** | dialog filters 仅为建议性过滤（Windows 下可手输文件名/所有文件绕过），IPC 边界白名单校验是项目安全惯例——covers.ts 同款先例（ALLOWED_EXT+路径穿越拒+空文件名防御，M12 静态审查同认可此类防御） |
+| 低：review 取消销毁全部上下文 | **维持 r3 不采纳裁定** | 任务卡隐私口径（拆完即弃）；失败/停止路径保留文本重试已覆盖主要场景（T2-b/e） |
+
 ## 附录 C：黑盒验收结果
 
 （待黑盒后填写）
