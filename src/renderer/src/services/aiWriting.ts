@@ -202,8 +202,8 @@ export function buildChapterPolishMessages(ctx: WritingContext, fullText: string
   ]
 }
 
-/** 解析当前应使用的档案：默认档案 → 第一个档案 → 报错 */
-async function resolveProfile() {
+/** 解析当前应使用的档案：默认档案 → 第一个档案 → 报错（导出供拆书等非写作域复用，M15 将收敛为槽位解析） */
+export async function resolveProfile() {
   if (!isElectron) throw new Error('AI 功能仅支持在应用内使用')
   const [listRes, defRes] = await Promise.all([
     window.api.apiProfiles.list(),
