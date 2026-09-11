@@ -100,6 +100,11 @@ export function createStyleProfile(input: CreateStyleProfileInput): StyleProfile
   const d: Database = getDb()
   const now = new Date().toISOString()
   const target = normalizeWordTarget(input.wordTargetMin, input.wordTargetMax)
+  // 来源白名单校验：仅 'manual'/'digest' 合法（digest=M14 拆书），非法/缺省回落 manual
+  const sourceType =
+    input.sourceType !== undefined && VALID_SOURCE_TYPES.has(input.sourceType)
+      ? input.sourceType
+      : 'manual'
   const row: StyleProfileRow = {
     id: randomUUID(),
     name: name.slice(0, 30),
@@ -108,7 +113,7 @@ export function createStyleProfile(input: CreateStyleProfileInput): StyleProfile
     word_target_min: target.min,
     word_target_max: target.max,
     sample: (input.sample ?? '').trim(),
-    source_type: 'manual',
+    source_type: sourceType,
     created_at: now,
     updated_at: now
   }

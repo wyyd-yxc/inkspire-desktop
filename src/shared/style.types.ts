@@ -1,7 +1,7 @@
 /**
  * 作品风格包共享类型（M12）：全局风格包库（style_profiles）。
- * 预设 5 包保持 presetStyles.ts 常量不入库；本表只存用户自建包，
- * source_type 'digest' 为 M14 拆书产出预留。
+ * 预设 5 包保持 presetStyles.ts 常量不入库；本表只存用户包
+ * （source_type 'manual' 自建 / 'digest' M14 拆书写入）。
  */
 
 /** 风格包来源：manual 用户自建 / digest 拆书产出（M14 写入） */
@@ -33,6 +33,8 @@ export interface CreateStyleProfileInput {
   wordTargetMin?: number | null
   wordTargetMax?: number | null
   sample?: string
+  /** 来源（M14）：'manual' 用户自建（默认）/ 'digest' 拆书产出；非法值回落 manual */
+  sourceType?: StyleSourceType
 }
 
 export interface UpdateStyleProfileInput {
