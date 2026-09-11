@@ -70,8 +70,8 @@ async function startDigest(): Promise<void> {
   streamTail.value = ''
   let full = ''
   try {
+    phase.value = 'running' // 先切态给即时反馈；resolveProfile 失败经 fail() 回落导入态
     const profile = await resolveProfile()
-    phase.value = 'running'
     session = await chatStream(profile, buildDigestMessages(pick.value.text), {
       onChunk: (t) => {
         if (mySeq !== seq) return
