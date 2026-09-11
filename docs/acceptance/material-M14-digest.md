@@ -74,6 +74,76 @@
 | 疑点：AI 用例重试≤3 未在材料体现 | 说明 | 重试≤3 是黑盒子代理任务书纪律（acceptance-workflow 双轨口径），不属开发自测范围；黑盒报告将披露实际重试次数 |
 | 疑点：零残留字节搜索「多余」 | 说明 | 代码确无持久化逻辑（即预期结论）；字节级搜索是对「不落库不持久」承诺的运行时反证（主库+WAL 实测），保留 |
 
-## 附录 B：黑盒验收结果
+## 附录 A2：r2 裁定（glm-5.1，2026-09-11）
+
+结论：有条件通过（llm-review-2026-09-11-16-03-.md）。整改回归：typecheck 绿 + T1 15/15 + T2 19/19（含 e 停止/f 拆解中关闭两用例，直击竞态修复面）。
+
+| 项 | 裁定 | 处理 |
+|---|---|---|
+| 中等：startDigest 竞态——chatStream 返回后未校验代次号，停止可能漏 abort 新流；catch 块未校验会覆盖停止消息 | **采纳，真问题** | 已修复：建流后 `if (mySeq !== seq) { session.abort(); session = null; return }`；catch 块加 `if (mySeq !== seq) return`——停止/重开后在途链路一律中断且不覆盖状态 |
+| 低：关闭弹窗未清空 parsed/candidates（拆解产物驻留内存） | **采纳（隐私口径一致性）** | watch else 分支同步清空 parsed.value=null、candidates.value=[] |
+| 低/信息：rule 候选项无 tagColor | 不采纳（类型可选+设计色） | SyncCandidateItem.tagColor 为可选字段（sync.types.ts L18 `tagColor?: string`，typecheck 绿即证）；SyncCandidateDialog 对缺省 tagColor 有默认底色分支（L92）——调性紫（主色）/规则默认墨褐/样例暖褐为有意区分 |
+| 信息：digestPrompts.ts 被 diff 截断无法验证 | 材料补全 | 核心源码入附录 B（提示词/解析/清洗全文+断言依据源码摘录），供下轮复审静态验证 |
+| 无法判定：VALID_SOURCE_TYPES 含 digest | 材料补全 | src/main/db/styles.ts L19（附录 B 摘录） |
+| 无法判定：「拆书」徽标渲染 | 材料补全 | StylePackagesSection.vue 徽标条件渲染（附录 B 摘录） |
+| 无法判定：typecheck/console（需运行） | 运行时证据 | typecheck 本轮实跑绿；console 零报错 T1/T2/T3 全程 CDP 收集为 0 |
+
+## 附录 B：核心源码事实（r2 截断补全）
+
+### services/digestPrompts.ts（全文）
+
+```ts
+/** 拆解 system 提示：文风分析师角色，只输出严格 JSON */
+const DIGEST_SYSTEM_PROMPT = [
+  '你是一位资深小说文风分析师，擅长从文本中提炼可复用的写作风格。',
+  '只分析文笔风格（叙事人称与视角、时态、句式长短与节奏、对话与描写比例、用词调性），',
+  '不要分析情节、人物、世界观或故事内容。全部使用中文书写。'
+].join('')
+
+export function buildDigestMessages(refText: string): ChatMessage[] {
+  return [
+    { role: 'system', content: DIGEST_SYSTEM_PROMPT },
+    { role: 'user', content: `请分析以下参考文本的文风，产出一个可直接约束 AI 写作的风格包。
+严格输出如下 JSON（不要任何额外文字、不要 markdown 代码块）：
+{ "name": "风格包名（12 字内...）", "tone": "文笔调性总括（一句话 60 字内）", "rules": ["叙事规则条目", "..."], "sample": "从参考文本原句中摘出的一个连续句段（100 字内，不得改写）" }
+要求：
+- rules 给 4-8 条具体可执行的叙事规则（人称/视角/时态/句式/对话/描写偏好），每条 50 字内
+- sample 必须是参考文本中原句的连续摘录
+- 所有字段值内部禁止使用英文双引号（引用请用「」）
+
+参考文本：
+${refText.slice(0, REF_TEXT_LIMIT)}` }
+  ]
+}
+
+export function parseDigestOutput(text: string): DigestResult | null {
+  const first = text.indexOf('{')
+  const last = text.lastIndexOf('}')
+  if (first < 0 || last <= first) return null
+  const obj = lenientParse<...>(text.slice(first, last + 1))
+  if (!obj) return null
+  return sanitizeDigest({ name: String(obj.name ?? ''), tone: String(obj.tone ?? ''),
+    rules: Array.isArray(obj.rules) ? obj.rules.map((r) => String(r)) : [], sample: String(obj.sample ?? '') })
+}
+
+export function sanitizeDigest(input): DigestResult | null {
+  const name = input.name.trim().slice(0, 30)
+  if (!name) return null
+  return { name, tone: input.tone.trim().slice(0, 100),
+    rules: input.rules.map((r) => r.trim().slice(0, MAX_RULE_LEN)).filter(Boolean).slice(0, MAX_RULES),
+    sample: input.sample.trim().slice(0, 200) }
+}
+```
+
+### 断言依据源码摘录
+
+- `src/main/db/styles.ts:19`：`const VALID_SOURCE_TYPES: Set<string> = new Set(['manual', 'digest'])`
+- `src/main/db/styles.ts`（createStyleProfile）：`const sourceType = input.sourceType !== undefined && VALID_SOURCE_TYPES.has(input.sourceType) ? input.sourceType : 'manual'`
+- `src/renderer/src/components/settings/StylePackagesSection.vue`（徽标）：`:class="p.sourceType === 'digest' ? 'bg-ink-warning/10 text-ink-warning' : '...'">{{ p.sourceType === 'digest' ? '拆书' : '自建' }}`
+- `src/renderer/src/components/sync/SyncCandidateDialog.vue`（全不勾禁用）：`:disabled="checkedCount === 0"`；tagColor 缺省分支：`:style="it.tagColor ? { background: it.tagColor } : { background: '#6b5f4a' }"`
+- `src/shared/sync.types.ts:18`：`tagColor?: string`（可选）
+- `src/main/ipc/digest.ts`：`digest:pick-text` handler 全文见 diff（未截断：dialog→txt 校验→10MB 护栏→UTF-8 去 BOM→`raw.slice(0, DIGEST_TEXT_LIMIT)`→`{fileName, text, totalChars, truncated}`；取消返回 null）
+
+## 附录 C：黑盒验收结果
 
 （待黑盒后填写）

@@ -45,8 +45,10 @@ watch(
       parsed.value = null
       candidates.value = []
     } else {
-      // 隐私：关闭即丢弃参考文本
+      // 隐私：关闭即丢弃参考文本与拆解产物（派生数据一并清空，r2 低危项）
       pick.value = null
+      parsed.value = null
+      candidates.value = []
     }
   }
 )
@@ -96,7 +98,14 @@ async function startDigest(): Promise<void> {
         fail(msg)
       }
     })
+    // chatStream 建流期间用户可能已停止/重开——次代号过期则立即中断新流（r2 中等项：防停止漏 abort）
+    if (mySeq !== seq) {
+      session.abort()
+      session = null
+      return
+    }
   } catch (err) {
+    if (mySeq !== seq) return // 已停止/重开：不覆盖其状态
     fail(err instanceof Error ? err.message : '无法启动 AI 拆解')
   }
 }
