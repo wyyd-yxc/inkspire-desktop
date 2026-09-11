@@ -9,6 +9,7 @@ import { isElectron } from '../../services/books'
 import { useToast } from '@/composables/useToast'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import StyleProfileDialog from './StyleProfileDialog.vue'
+import StyleDigestDialog from './StyleDigestDialog.vue'
 
 const toast = useToast()
 const profiles = ref<StyleProfile[]>([])
@@ -16,6 +17,7 @@ const loading = ref(true)
 
 const editorVisible = ref(false)
 const editing = ref<StyleProfile | null>(null)
+const digestVisible = ref(false)
 const deleteVisible = ref(false)
 const pendingDelete = ref<StyleProfile | null>(null)
 
@@ -73,10 +75,16 @@ onMounted(() => {
   <section class="mb-6 rounded-card bg-surface p-5 shadow-card">
     <div class="mb-1 flex items-center justify-between">
       <h2 class="font-semibold">作品风格包</h2>
-      <button
-        class="rounded-full bg-ink-primary px-4 py-2 text-sm text-white transition-colors hover:bg-ink-primary-hover"
-        @click="openCreate"
-      >+ 新建风格包</button>
+      <div class="flex gap-2">
+        <button
+          class="rounded-full border border-ink-border px-4 py-2 text-sm text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
+          @click="digestVisible = true"
+        >从参考文本拆解</button>
+        <button
+          class="rounded-full bg-ink-primary px-4 py-2 text-sm text-white transition-colors hover:bg-ink-primary-hover"
+          @click="openCreate"
+        >+ 新建风格包</button>
+      </div>
     </div>
     <p class="mb-4 text-sm leading-relaxed text-ink-text-secondary">
       沉淀你自己的文风：文笔调性、叙事规则、单章字数目标。在书房为书籍绑定后，AI 续写/润色与「按场景生成正文」都会遵守；
@@ -84,7 +92,8 @@ onMounted(() => {
     </p>
     <p v-if="loading" class="py-4 text-center text-xs text-ink-text-muted">加载中…</p>
     <p v-else-if="profiles.length === 0" class="rounded-lg bg-paper px-3 py-3 text-xs text-ink-text-muted">
-      还没有自建风格包。内置的 5 种预设文风（热血/轻松/悬疑/古风/硬核科幻）始终可在构思台「基调」步使用。
+      还没有风格包。可手动新建，或导入一段参考文本让 AI 拆解生成；
+      内置的 5 种预设文风（热血/轻松/悬疑/古风/硬核科幻）始终可在构思台「基调」步使用。
     </p>
     <div v-else class="flex flex-col gap-2.5">
       <article
@@ -114,6 +123,7 @@ onMounted(() => {
     </div>
 
     <StyleProfileDialog v-model="editorVisible" :editing="editing" @saved="load" />
+    <StyleDigestDialog v-model:visible="digestVisible" @saved="load" />
     <ConfirmDialog
       v-model="deleteVisible"
       title="删除风格包"
