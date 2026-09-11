@@ -144,6 +144,34 @@ export function sanitizeDigest(input): DigestResult | null {
 - `src/shared/sync.types.ts:18`：`tagColor?: string`（可选）
 - `src/main/ipc/digest.ts`：`digest:pick-text` handler 全文见 diff（未截断：dialog→txt 校验→10MB 护栏→UTF-8 去 BOM→`raw.slice(0, DIGEST_TEXT_LIMIT)`→`{fileName, text, totalChars, truncated}`；取消返回 null）
 
+### r3 补充摘录（r3 余项证据补全）
+
+- `src/renderer/src/services/digestPrompts.ts:17-19`（截断口径一致性）：`/** 参考文本注入上限：digest:pick-text 已截 2 万字，此处兜底防绕过通道直调 */ const REF_TEXT_LIMIT = 20000`——与 main 进程 `DIGEST_TEXT_LIMIT = 20000`（src/main/ipc/digest.ts:14）同值，UI 显示的截取字数与实际注入 AI 的字数一致
+- `StylePackagesSection.vue` 列表项完整模板段（徽标挂载位置，M12 已验收代码、本里程碑未改动故不在 diff 中）：
+
+```html
+<article v-for="p in profiles" :key="p.id" class="rounded-lg border border-ink-border px-4 py-3">
+  <div class="flex items-center gap-2">
+    <span class="font-medium">{{ p.name }}</span>
+    <span class="rounded-full px-1.5 py-0.5 text-[10px]"
+      :class="p.sourceType === 'digest' ? 'bg-ink-warning/10 text-ink-warning' : 'bg-ink-primary-soft text-ink-text-secondary'"
+    >{{ p.sourceType === 'digest' ? '拆书' : '自建' }}</span>
+    ...
+```
+
+- 组件性质说明：SyncCandidateDialog 为 M10.5 交付的已验收既有组件（五处复用先例），非本里程碑 diff 范围；本轮仅作为消费方复用，其禁用逻辑与 tagColor 缺省分支以上方摘录为准
+
+## 附录 A3：r3 裁定（glm-5.1，2026-09-11）
+
+结论：有条件通过（llm-review-2026-09-11-16-09-.md）。
+
+| 项 | 裁定 | 处理 |
+|---|---|---|
+| 中等：「拆书」徽标渲染缺 diff 证据 | **误报（既有代码）** | 徽标系 M12 已验收代码，本里程碑零改动——「不在 diff 中」恰是未改动的证明；挂载证据已补：附录 B 完整列表项模板段 + T1 运行时断言（badge-ok，真实渲染出「拆书」徽标） |
+| 低：REF_TEXT_LIMIT 未声明，疑与 DIGEST_TEXT_LIMIT 口径冲突 | **采纳（材料补全）** | 已摘录定义（附录 B）：两常量同为 20000，注释即声明「兜底防绕过」语义；不存在 UI 欺骗（T2-d2 UI 字数与 d3 请求长度互证） |
+| 低：review 取消直接销毁全部上下文，不能退回导入态 | **不采纳（任务卡口径）** | 执行卡设计决策原文「参考文本不落库不持久（隐私：拆完即弃）」「取消则不生成」——取消=用户主动放弃，销毁是隐私承诺的保守侧；失败/停止路径已保留文本供重试（T2-b/e 实证），覆盖主要重试场景 |
+| 信息：多对象夹杂 `{...} 文本 {...}` 极端解析隐患 | **记录在案，不追加** | 此类畸形经 lenientParse 失败→parseDigestOutput 返回 null→走既有失败路径（报错回落导入态、可重试、不落库，T2-b 实证该路径）；提示词已约定单对象输出，多对象切割的收益/复杂度比不划算 |
+
 ## 附录 C：黑盒验收结果
 
 （待黑盒后填写）
