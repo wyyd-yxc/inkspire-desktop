@@ -661,3 +661,18 @@
   - **黑盒 6/6**（独立代理，报告入库 2026-09-12-M14-digest.md）：真实 AI 4/4 次预算无重试；**风格可感知实证**——拆书包「疏离诗意短句」绑定新书续写 617 字特征 4/4 命中（第一人称/句长中位 13 字/无感叹号/意象群延续）；截断 25,024 字 UI 提示+尾部哨兵零泄漏；不落库三态/重启持久/删包解绑全过；console 错误 0；测试数据全清零。脚手架异常 4 起超线披露（全为脚手架侧根因，留用户裁决——M10/M13 先例）
 - **观察项登记技术债 2 条**：①截断提示仅拆解中态可见；②主动停止以错误红色样式呈现
 - **状态**：双轨通过；**经用户亲手验证确认 tag v0.19.0-m14-digest（已打，指向 cd2beb5，收尾 docs 提交之前——沿惯例）**。下一步 M15 Agent 模型偏好（执行版任务卡已入 HANDOVER）。
+
+---
+
+## [2026-09-12 17:00] 会话 42：M15 Agent 模型偏好全量交付（双轨验收通过，tag v0.20.0-m15-bindings 待用户确认）
+
+- **实现**（3 feat + 4 fix，自 v0.19.0-m14-digest 起 13 提交）：
+  - 数据层：migration v15 `agent_bindings(slot PK, profile_id FK ON DELETE CASCADE)`——删档案级联清绑定靠 FK（无需改 deleteProfile）+ shared/agent.types.ts（8 槽位常量/中文标签/覆盖说明）+ bindings DAO（slot 白名单+''=删行+upsert 验档案存在+list 白名单回退守卫）+ IPC 两通道+preload
+  - 解析收敛：agentSlots.ts `resolveProfileForSlot`（绑定→默认→第一档案→报错）；generateWriting 增**必传** slot 参数（typecheck 编译期强制 14 调用点显式归槽）；旧解析点清零——aiWriting.resolveProfile 删除、AssistantDock 本地副本（唯一重复实现）删除、拆书改 digest 槽；ChapterEditor 按 `KIND_SLOT: Record<PanelKind, AgentSlot>` 穷尽映射分流（新增 kind 漏配槽位编译期报错）；连通测试（quickTest/编辑器 test）显式档案不经槽位
+  - 设置分区：SlotBindingsSection.vue 8 行下拉即改即存（跟随默认/档案名（模型名）），默认档案说明三态诚实标注（含回落目标）
+- **开发自测**（CDP+本地假服务器双档案不同 model，**零外部 AI**）：T1 **19/19**——未绑定回落/分区 8 行即改即存/plot·assistant·extract·digest 四槽位绑定生效（抓请求 model 字段路由断言）/''删绑定回落/删档案 FK 级联清零+回落不报错/reload 持久/console 零报错
+- **测试脚本教训**：浮球是 `<button title="写作助手…">` 非 div；弹窗内按钮定位必须限定 teleport 弹窗范围（document 级会命中页面同名打开器）；假服务器需按请求特征分流返回拆解 JSON
+- **双轨验收**：
+  - **静态审查 glm-5.1 七轮收敛**：真修 5 处——r1 保存期间全部下拉禁用（与守卫一致）；r2 KIND_SLOT 穷尽映射+零档案空态不渲染下拉；r3 保存失败回拉真实绑定重置 DOM；r4 默认档案说明三态诚实标注；r5/r6 toBinding 白名单回退守卫+chatStream 直调全集 grep 证据+13 调用点真实 diff 入附录 B2（静态核对闭环）；余项裁定留档（IPC 边界类型注解系项目惯例、3 次 IPC 系权衡、TOCTOU 同步无窗口、onPick 断言/全局禁用系审查口径摇摆）——A7 声明静态轨道闭环
+  - **黑盒 6/6 无缺陷**（独立代理独立脚本，报告入库 2026-09-12-M15-bindings.md）：真实 AI 1/2 次（助手槽绑「基元律动」真实出文抽查）；UI 绑定→路由→解绑回落→UI 删档案级联全链路实证；console 错误 0；清理全清零。观察项「情节画布双请求」经代码核查为脚本计数误读（openAiDialog 无 AI 调用）
+- **状态**：双轨通过；**tag v0.20.0-m15-bindings 待用户亲手验证后确认打**。**M0-M15 全部完成**；建议下一步 M16 发布版重打包（把 M11-M15 打进安装包，任务卡待用户确认后细化）。
