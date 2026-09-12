@@ -13,6 +13,7 @@ import { useToast } from '@/composables/useToast'
 const toast = useToast()
 const bindings = ref<AgentBinding[]>([])
 const profiles = ref<ApiProfile[]>([])
+/** 默认档案说明（诚实标注回落：默认键未设/指向已删档案时显示实际回落目标） */
 const defaultName = ref('')
 const loading = ref(true)
 /** 正在保存的槽位（防重复提交，行内下拉禁用） */
@@ -35,7 +36,10 @@ async function load(): Promise<void> {
     if (!dRes.ok) throw new Error(dRes.error)
     bindings.value = bRes.data
     profiles.value = pRes.data
-    defaultName.value = pRes.data.find((p) => p.id === dRes.data)?.name ?? pRes.data[0]?.name ?? ''
+    const defHit = pRes.data.find((p) => p.id === dRes.data)
+    if (defHit) defaultName.value = `当前：${defHit.name}`
+    else if (pRes.data.length > 0) defaultName.value = `未指向有效档案，实际回落「${pRes.data[0].name}」`
+    else defaultName.value = ''
   } catch (err) {
     toast.error(err instanceof Error ? err.message : '槽位绑定加载失败')
   } finally {
@@ -71,7 +75,7 @@ onMounted(() => {
     <h2 class="mb-1 font-semibold">功能槽位</h2>
     <p class="mb-4 text-sm leading-relaxed text-ink-text-secondary">
       为不同功能指定不同的 AI 档案（不同模型各有所长）；「跟随默认」时使用上方 AI 接口档案中的默认档案{{
-        defaultName ? `（当前：${defaultName}）` : ''
+        defaultName ? `（${defaultName}）` : ''
       }}。
     </p>
     <p v-if="loading" class="py-4 text-center text-xs text-ink-text-muted">加载中…</p>

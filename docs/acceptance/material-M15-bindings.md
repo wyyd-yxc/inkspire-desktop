@@ -163,6 +163,15 @@ export async function generateWriting(
 | 低：材料笔误 composposables | **采纳** | 已更正 |
 | 无法判定：调用点完备性/FK 运行时/断言真实性 | 附录 B 清单+typecheck 必传参数保证；T8/黑盒实证 | 同前 |
 
+## 附录 A4：r4 裁定（glm-5.1，2026-09-12）
+
+结论：有条件通过（llm-review-2026-09-12-16-11-.md）。余项收敛至 2 低危。
+
+| 项 | 裁定 | 处理 |
+|---|---|---|
+| 低：默认档案名显示误导（指向已删档案时把第一个档案名当默认名展示） | **采纳（诚实标注）** | 改为三态：指向有效档案→「当前：X」；未设/指向已删→「未指向有效档案，实际回落「第一个档案名」」；与 resolveProfileForSlot 实际回落行为一致 |
+| 低：setBinding 校验与写入间 TOCTOU 竞态 | **不采纳（沿 M13 r2 同口径）** | better-sqlite3 同步执行，getProfile 校验与 INSERT 在同一同步调用栈内完成，无并发窗口；渲染层 IPC 顺序处理；即便理论错档也有 resolveProfileForSlot 防御性校验兜底不崩 |
+
 ## 附录 C：黑盒验收结果
 
 （待黑盒后填写）
