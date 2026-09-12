@@ -88,7 +88,7 @@ onMounted(() => {
           <select
             class="shrink-0 rounded-lg border border-ink-border bg-paper px-2.5 py-1.5 text-xs text-ink-text disabled:opacity-50"
             :value="boundId(slot)"
-            :disabled="saving === slot"
+            :disabled="saving !== ''"
             @change="onPick(slot, $event)"
           >
             <option value="">跟随默认</option>

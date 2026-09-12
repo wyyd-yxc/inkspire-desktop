@@ -50,8 +50,63 @@
 
 ## 附录 A：r1 整改与裁定（glm-5.1，2026-09-12）
 
-（待静态审查后填写）
+结论：有条件通过（llm-review-2026-09-12-15-56-.md）。
 
-## 附录 B：黑盒验收结果
+| 项 | 裁定 | 处理 |
+|---|---|---|
+| 高危：agentSlots.ts 核心逻辑未出现在 diff | **diff 截断，材料补全** | 文件已随 6fee266 提交（typecheck 三重闸门依赖其存在）；全文入附录 B 供静态验证 |
+| 中危：onPick 全局守卫与行级禁用不一致（保存期间改其他槽被静默吞） | **采纳，真问题** | 已修复：保存期间禁用全部下拉（`:disabled="saving !== ''"`），与全局守卫一致——不存在可交互但被吞的状态 |
+| 中危：ChapterEditor 分流疑点（polish/expand 疑含整章语义） | **误报（枚举不可见）** | PanelKind = 'continue' \| SelectionAction \| 'chapter-polish'，SelectionAction = 'polish'\|'expand'\|'rewrite' 仅来自划词浮条 startSelectionAction；整章润色是独立 kind 'chapter-polish'→writing。两枚举定义摘录附录 B 佐证，分流精确无歧义 |
+| 无法判定：FK CASCADE 运行状态 | 运行时证据 | T8 实证：删档案 B 后绑定行 3→0；foreign_keys=ON 源码位置 database.ts getDb（M0 起既有，M12 r1 已裁定过同一主题） |
+| 无法判定：t1 断言真实性 | 运行时/黑盒范围 | 假服务器路由断言属运行时实证；黑盒将复验真实 UI 路径 |
+
+## 附录 B：核心源码事实（r1 截断补全）
+
+### services/agentSlots.ts（全文）
+
+```ts
+/** 解析槽位应使用的档案：槽位绑定 → 默认档案 → 第一个档案 → 报错 */
+export async function resolveProfileForSlot(slot: AgentSlot): Promise<ApiProfile> {
+  if (!isElectron) throw new Error('AI 功能仅支持在应用内使用')
+  const [listRes, defRes, bindRes] = await Promise.all([
+    window.api.apiProfiles.list(),
+    window.api.settings.get<string>('ai.default_profile_id', ''),
+    window.api.bindings.list()
+  ])
+  if (!listRes.ok) throw new Error(listRes.error)
+  if (!defRes.ok) throw new Error(defRes.error)
+  if (!bindRes.ok) throw new Error(bindRes.error)
+  const profiles = listRes.data
+  if (profiles.length === 0) {
+    throw new Error('还没有可用的 AI 档案，请先到「设置」配置 API')
+  }
+  // 槽位绑定优先；绑定指向的档案已删（理论上 FK 已清行，防御性校验）则继续回落
+  const bound = bindRes.data.find((b) => b.slot === slot)
+  if (bound) {
+    const hit = profiles.find((p) => p.id === bound.profileId)
+    if (hit) return hit
+  }
+  return profiles.find((p) => p.id === defRes.data) ?? profiles[0]
+}
+```
+
+### ChapterEditor 槽位分流佐证（枚举定义）
+
+```ts
+// ChapterEditor.vue:280
+type PanelKind = 'continue' | SelectionAction | 'chapter-polish'
+// aiWriting.ts:115
+export type SelectionAction = 'polish' | 'expand' | 'rewrite'
+// 划词浮条（:650-652）startSelectionAction('polish'/'expand'/'rewrite') 是 SelectionAction 唯一来源；
+// 整章润色按钮（:610）固定 'chapter-polish'，AI 续写按钮（:637）固定 'continue'
+```
+
+### FK 级联依据（database.ts getDb，M0 起既有）
+
+```ts
+db.pragma('foreign_keys = ON') // 启用外键级联（删书连带删章节）
+```
+
+## 附录 C：黑盒验收结果
 
 （待黑盒后填写）
