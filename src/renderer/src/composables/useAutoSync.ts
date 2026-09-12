@@ -395,6 +395,6 @@ function collectAi(messages: ChatMessage[]): Promise<string> {
       },
       onDone: () => resolve(acc),
       onError: (m) => reject(new Error(m))
-    })
+    }, 'extract')
   })
 }

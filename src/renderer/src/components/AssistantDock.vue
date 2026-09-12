@@ -10,6 +10,7 @@ import type { WikiEntry } from '../../../shared/wiki.types'
 import { isElectron } from '../services/books'
 import { useToast } from '@/composables/useToast'
 import { chatStream } from '../services/ai'
+import { resolveProfileForSlot } from '../services/agentSlots'
 import { lenientParse } from '../services/jsonRepair'
 
 const props = defineProps<{
@@ -180,7 +181,7 @@ async function send(): Promise<void> {
   const all = buildMessages(userText)
 
   try {
-    const session = await chatStream(await resolveProfile(), all, {
+    const session = await chatStream(await resolveProfileForSlot('assistant'), all, {
       onChunk: (t) => {
         const m = messages.value.find((x) => x.id === replyId)
         if (m) m.content += t
@@ -215,19 +216,6 @@ function stopGen(): void {
   currentSession?.abort()
   currentSession = null
   isBusy.value = false
-}
-
-/** 解析当前应使用的档案（默认 → 第一个 → 报错） */
-async function resolveProfile() {
-  const [listRes, defRes] = await Promise.all([
-    window.api.apiProfiles.list(),
-    window.api.settings.get<string>('ai.default_profile_id', '')
-  ])
-  if (!listRes.ok) throw new Error(listRes.error)
-  if (!defRes.ok) throw new Error(defRes.error)
-  const profiles = listRes.data
-  if (profiles.length === 0) throw new Error('还没有可用的 AI 档案，请先到「设置」配置 API')
-  return profiles.find((p) => p.id === defRes.data) ?? profiles[0]
 }
 
 async function clearConversation(): Promise<void> {

@@ -14,6 +14,7 @@ import type { Chapter } from '../../../shared/chapter.types'
 import type { StreamSession } from '../services/ai'
 import type { SelectionAction, SelectionContext } from '../services/aiWriting'
 import { buildChapterPolishMessages, buildContinueMessages, buildSelectionMessages, generateWriting } from '../services/aiWriting'
+import type { AgentSlot } from '../../../shared/agent.types'
 import { buildPlotChainText } from '../services/syncService'
 import type { GenesisStepRecord, Step2Soul, Step4Layout, Step1Style } from '../../../shared/genesis.types'
 import { WIKI_TYPE_LABELS } from '../../../shared/wiki.types'
@@ -356,6 +357,8 @@ async function runGeneration(kind: PanelKind): Promise<void> {
                   selectionTarget ?? { text: '', before: '', after: '' },
                   kind,
                 )
+        // 槽位按 kind 分流：划词三动作走「划词改写」槽，续写/整章润色走「正文写作」槽（M15）
+        const slot: AgentSlot = kind === 'polish' || kind === 'expand' || kind === 'rewrite' ? 'selection' : 'writing'
         const { session } = await generateWriting(messages, {
           onChunk: (t) => {
             panel.value?.append(t)
@@ -375,7 +378,7 @@ async function runGeneration(kind: PanelKind): Promise<void> {
             toast.error(m)
             release()
           }
-        })
+        }, slot)
         if (mySeq !== generationSeq) {
           // 请求建立期间已被停止：立即中止，不挂到 activeSession
           session.abort()

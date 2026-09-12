@@ -105,7 +105,7 @@ export function useMemorySync(deps: {
         },
         onDone: () => resolve(acc),
         onError: (m) => reject(new Error(m))
-      }).then(({ session }) => {
+      }, 'extract').then(({ session }) => {
         activeSession = session
       })
     })
@@ -307,7 +307,7 @@ export function useMemorySync(deps: {
             },
             onDone: () => resolve(acc),
             onError: (m) => reject(new Error(m))
-          }).then(({ session }) => {
+          }, 'extract').then(({ session }) => {
             activeSession = session
           })
         })

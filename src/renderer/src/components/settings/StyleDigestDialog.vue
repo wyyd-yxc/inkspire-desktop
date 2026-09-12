@@ -9,7 +9,7 @@ import type { DigestPickResult, DigestResult } from '../../../../shared/digest.t
 import type { SyncCandidateItem } from '../../../../shared/sync.types'
 import { isElectron } from '@/services/books'
 import { chatStream, type StreamSession } from '@/services/ai'
-import { resolveProfile } from '@/services/aiWriting'
+import { resolveProfileForSlot } from '@/services/agentSlots'
 import { buildDigestMessages, parseDigestOutput } from '@/services/digestPrompts'
 import { useToast } from '@/composables/useToast'
 import SyncCandidateDialog from '@/components/sync/SyncCandidateDialog.vue'
@@ -72,8 +72,8 @@ async function startDigest(): Promise<void> {
   streamTail.value = ''
   let full = ''
   try {
-    phase.value = 'running' // 先切态给即时反馈；resolveProfile 失败经 fail() 回落导入态
-    const profile = await resolveProfile()
+    phase.value = 'running' // 先切态给即时反馈；档案解析失败经 fail() 回落导入态
+    const profile = await resolveProfileForSlot('digest')
     session = await chatStream(profile, buildDigestMessages(pick.value.text), {
       onChunk: (t) => {
         if (mySeq !== seq) return

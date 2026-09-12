@@ -85,7 +85,7 @@ export function usePlotSync(deps: {
         },
         onDone: () => resolve(acc),
         onError: (m) => reject(new Error(m))
-      }).then(({ session }) => {
+      }, 'extract').then(({ session }) => {
         activeSession = session
       })
     })

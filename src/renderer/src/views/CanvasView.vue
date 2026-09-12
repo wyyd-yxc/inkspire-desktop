@@ -452,7 +452,7 @@ async function startSceneGen(): Promise<void> {
         aiPanel.value?.fail()
         toast.error(m)
       }
-    })
+    }, 'scene')
   } catch (err) {
     aiPanel.value?.fail()
     toast.error(err instanceof Error ? err.message : '生成失败')
@@ -590,7 +590,7 @@ function generateOneScene(
           },
           onDone: () => resolve(acc),
           onError: (m) => reject(new Error(m))
-        })
+        }, 'writing')
       } catch (err) {
         reject(err instanceof Error ? err : new Error(String(err)))
       }

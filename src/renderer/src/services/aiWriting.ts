@@ -7,7 +7,8 @@ import type { ChatMessage } from '../../../shared/ai.types'
 import type { Book } from '../../../shared/book.types'
 import type { Step2Soul, Step4Layout } from '../../../shared/genesis.types'
 import { chatStream, type StreamHandlers, type StreamSession } from './ai'
-import { isElectron } from './books'
+import { resolveProfileForSlot } from './agentSlots'
+import type { AgentSlot } from '../../../shared/agent.types'
 
 /** 供提示词使用的上下文（由编辑器层从当前状态提取） */
 export interface WritingContext {
@@ -202,28 +203,16 @@ export function buildChapterPolishMessages(ctx: WritingContext, fullText: string
   ]
 }
 
-/** 解析当前应使用的档案：默认档案 → 第一个档案 → 报错（导出供拆书等非写作域复用，M15 将收敛为槽位解析） */
-export async function resolveProfile() {
-  if (!isElectron) throw new Error('AI 功能仅支持在应用内使用')
-  const [listRes, defRes] = await Promise.all([
-    window.api.apiProfiles.list(),
-    window.api.settings.get<string>('ai.default_profile_id', '')
-  ])
-  if (!listRes.ok) throw new Error(listRes.error)
-  if (!defRes.ok) throw new Error(defRes.error)
-  const profiles = listRes.data
-  if (profiles.length === 0) {
-    throw new Error('还没有可用的 AI 档案，请先到「设置」配置 API')
-  }
-  return profiles.find((p) => p.id === defRes.data) ?? profiles[0]
-}
-
-/** 发起一次写作生成（流式）；返回会话与档案显示名 */
+/**
+ * 发起一次写作生成（流式）；返回会话与档案显示名。
+ * @param slot 功能槽位（M15）：按槽位解析档案（绑定→默认→第一档案），编译期强制调用方显式归槽
+ */
 export async function generateWriting(
   messages: ChatMessage[],
-  handlers: StreamHandlers
+  handlers: StreamHandlers,
+  slot: AgentSlot
 ): Promise<{ session: StreamSession; profileName: string }> {
-  const profile = await resolveProfile()
+  const profile = await resolveProfileForSlot(slot)
   const session = await chatStream(profile, messages, handlers)
   return { session, profileName: profile.name }
 }

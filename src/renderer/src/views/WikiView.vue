@@ -300,7 +300,7 @@ async function startAiGenerate(): Promise<void> {
         aiPanel.value?.fail()
         toast.error(m)
       }
-    })
+    }, 'extract')
   } catch (err) {
     aiPanel.value?.fail()
     toast.error(err instanceof Error ? err.message : '生成失败')

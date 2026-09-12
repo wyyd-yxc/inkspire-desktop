@@ -196,7 +196,7 @@ async function aiAssistSoul(): Promise<void> {
         aiPanel.value?.fail()
         toast.error(m)
       }
-    })
+    }, 'genesis')
   } catch (err) {
     aiPanel.value?.fail()
     toast.error(err instanceof Error ? err.message : '生成失败')
@@ -259,7 +259,7 @@ async function coldStartWorld(): Promise<void> {
         aiPanel.value?.fail()
         toast.error(m)
       }
-    })
+    }, 'genesis')
   } catch (err) {
     aiPanel.value?.fail()
     toast.error(err instanceof Error ? err.message : '生成失败')

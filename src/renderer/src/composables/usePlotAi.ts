@@ -180,7 +180,7 @@ export function usePlotAi(deps: {
           aiPanel.value?.fail()
           toast.error(m)
         }
-      })
+      }, 'plot')
       activeSession = session
     } catch (err) {
       aiPanel.value?.fail()
