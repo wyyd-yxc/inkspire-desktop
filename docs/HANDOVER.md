@@ -243,9 +243,21 @@ Electron(main: db/ ai/ ipc/) ←IPC(preload 白名单桥)→ Vue3 渲染层(view
 
 ---
 
-### M15 Agent 模型偏好（下一个，执行版——已知代码事实固化 2026-09-12）
+### M15 Agent 模型偏好（下一个，执行版——调用点映射已全量实证 2026-09-12）
 
-**背景（代码事实）**：architecture.md ModelBinding 设计（功能槽位绑定档案，未绑定回落默认）；原站「23 个 Agent」收敛为功能域槽位。现状档案解析三处分散：①`aiWriting.ts:206` resolveProfile（M14 起已导出，写作管线/场景正文/拆书经它）；②`AssistantDock.vue` 自带档案解析副本（助手聊天，开工时核实行号）；③提取同步三目标（WikiView/MemoryView/PlotCanvasView 的 AI 调用）档案解析位置**待开工第 0 步探索实证**（可能各自调 resolveProfile 或自带）。
+**背景（代码事实已探明）**：architecture.md ModelBinding 设计（功能槽位绑定档案，未绑定回落默认）；原站「23 个 Agent」收敛为功能域槽位。全项目 chatStream 调用点 18 处，档案解析仅 3 处：①`aiWriting.ts:206` resolveProfile（规范版，经 generateWriting 被 14 处使用）；②`AssistantDock.vue:221-231` 本地副本（唯一真重复，缺 isElectron 守卫）；③主进程 resolveConnection（仅按 profileId 取档，回落全在渲染层）。SettingsView.quickTest 与 ApiProfileDialog.test 显式传被测档案（连通测试语义），**不纳入槽位**。
+
+**槽位→调用点映射（18 处全覆盖）**：
+| 槽位 | 调用点 |
+|---|---|
+| writing 正文写作 | ChapterEditor.vue:359 runGeneration 的 continue/chapter-polish；CanvasView.vue:586 按场景生成正文（沿 M12 注入口径） |
+| selection 划词改写 | 同一 runGeneration 的 polish/expand/rewrite（按 kind 分流） |
+| genesis 构思台 | GenesisView.vue:192、:255 |
+| plot 情节大纲 | usePlotAi.ts:176 |
+| scene 场景规划 | CanvasView.vue:448 四模式 |
+| extract 提取同步 | useWikiSync:103/useMemorySync:101,:304/usePlotSync:82/useReverseSync:115/useAutoSync:392（静默档同槽）/useWikiCleanup:112/WikiView.vue:296 词条生成（按域归入） |
+| assistant 助手聊天 | AssistantDock.vue:183 |
+| digest 拆书 | StyleDigestDialog.vue:77 |
 
 **功能清单**：定义 8 个槽位：正文写作（续写/整章润色）/划词改写/构思台/情节大纲 AI/场景规划 AI/提取同步（设定集+叙事档案+情节三目标）/助手聊天/拆书；设置中心「功能槽位」分区：每槽位下拉（跟随默认/各档案）；调用时按槽位解析档案。
 
@@ -257,12 +269,13 @@ Electron(main: db/ ai/ ipc/) ←IPC(preload 白名单桥)→ Vue3 渲染层(view
 
 **不做清单**：23 Agent 实体与自定义提示词/槽位级温度覆盖/按书绑定（全局槽位）
 
-**步骤分解**（开工第 0 步先探索实证三处解析点与 sync 提取调用链，再照 M14 节奏小步提交）：
-1. 数据层：migration v15 + shared/agent.types.ts（8 槽位常量）+ DAO（bindings list/set+删档案级联清）+ IPC 两通道+preload
-2. 收敛：agentSlots.ts resolveProfileForSlot（未绑定回落默认→第一档案）+三处调用点改造（写作管线/助手/提取同步；划词/构思台/情节/场景/拆书按调用链归位）
-3. 设置分区：SlotBindingsSection.vue（8 行下拉：跟随默认/各档案，即时保存）
-4. 自测 tmp/m15-*.mjs（假服务器范式：两档案不同模型名，抓请求 model 字段断言分槽位路由；未绑定回落/删档案回落/console 零报错；零真实 AI）
-5. 双轨：材料 material-M15-bindings.md → 静态 `--base v0.19.0-m14-digest --model glm-5.1` → 黑盒（抓请求模型名验证分槽位路由）
+**步骤分解**（SOP 小步提交+typecheck 三重闸门；双轨并行期间禁碰 dev 进程）：
+0. 本卡映射表已固化（2026-09-12 探索实证）
+1. 数据层：migration v15（`agent_bindings(slot TEXT PRIMARY KEY, profile_id TEXT NOT NULL REFERENCES api_profiles(id) ON DELETE CASCADE)`——删档案级联靠 FK（foreign_keys=ON 已设），**无需改 deleteProfile**）+ shared/agent.types.ts（8 槽位常量+中文标签）+ DAO bindings.ts（list/set：slot 白名单、''=删行回落、非空先验档案存在 INSERT OR REPLACE）+ IPC 两通道（slot 白名单+UUID-or-空校验）+ preload
+2. 收敛：新建 services/agentSlots.ts resolveProfileForSlot（绑定命中→用之；否则原「默认→第一→报错」回落）+ generateWriting 增**必传** slot 参数（typecheck 强制 14 调用点显式归槽）+ 删旧 resolveProfile 导出 + AssistantDock 删本地副本 + StyleDigestDialog 改 digest 槽
+3. 设置分区：SlotBindingsSection.vue（8 行下拉：跟随默认/各档案，即改即存，显示当前默认档案名）
+4. 自测 tmp/m15-*.mjs（本地假服务器双档案不同 model，抓请求 model 字段断言路由；零真实 AI）：未绑定回落/五槽位绑定生效（writing/plot/assistant/digest/extract）/''删绑定回落/删档案级联回落/分区 UI 即改即存/reload 持久/console 零报错
+5. 双轨：材料 material-M15-bindings.md → 静态 `--base v0.19.0-m14-digest --model glm-5.1` → 黑盒（真实 UI 分区交互+绑定后出文正常+真实 AI 抽查≤2）
 6. 交付亲手验证指引 → 用户确认 → tag v0.20.0-m15-bindings → 收尾
 
 **验收点**：两档案不同模型时，情节大纲 AI 与助手各走各的档案（抓请求模型名验证）；未绑定槽位回落默认；删除档案后对应槽位回落默认不报错；typecheck+console 零报错+零真实 AI 消耗。
