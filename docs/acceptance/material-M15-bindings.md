@@ -172,6 +172,26 @@ export async function generateWriting(
 | 低：默认档案名显示误导（指向已删档案时把第一个档案名当默认名展示） | **采纳（诚实标注）** | 改为三态：指向有效档案→「当前：X」；未设/指向已删→「未指向有效档案，实际回落「第一个档案名」」；与 resolveProfileForSlot 实际回落行为一致 |
 | 低：setBinding 校验与写入间 TOCTOU 竞态 | **不采纳（沿 M13 r2 同口径）** | better-sqlite3 同步执行，getProfile 校验与 INSERT 在同一同步调用栈内完成，无并发窗口；渲染层 IPC 顺序处理；即便理论错档也有 resolveProfileForSlot 防御性校验兜底不崩 |
 
+## 附录 A5：r5 裁定（glm-5.1，2026-09-12）
+
+结论：有条件通过（llm-review-2026-09-12-16-14-.md）。
+
+| 项 | 裁定 | 处理 |
+|---|---|---|
+| 中危（材料疑点）：diff 截断致归槽清单不可静态复核，疑「绕过 generateWriting 直调 chatStream」 | **证据补全，非缺陷** | chatStream 直调全集 grep 证据（下方）；typecheck 必传参数是全仓编译期保障（任何漏传 slot 的调用在 tsc 即失败，不依赖审查员逐文件核对） |
+| 低：IPC 边界 AgentSlot 类型注解 | **维持 r3 不采纳** | 项目级惯例（十余通道同型+运行时白名单），单机信任边界内一致约定 |
+| 低：toBinding `as AgentSlot` 不安全断言 | **采纳（惯例对齐）** | 改白名单回退式守卫（inspirations/styles DAO 同惯例）：非法 slot 行跳过不返回 |
+
+### chatStream 直调全集 grep 证据（排除 generateWriting 通道外无遗漏）
+
+```
+grep -rn "chatStream(" src/renderer/src --include="*.vue" --include="*.ts"
+→ services/ai.ts（定义）、services/aiWriting.ts（generateWriting 内唯一入口）
+→ components/AssistantDock.vue（assistant 槽）
+→ components/settings/StyleDigestDialog.vue（digest 槽）
+→ views/SettingsView.vue quickTest、components/ApiProfileDialog.vue test（显式被测档案，连通测试语义不经槽位）
+```
+
 ## 附录 C：黑盒验收结果
 
 （待黑盒后填写）
