@@ -74,8 +74,10 @@ onMounted(() => {
       }}。
     </p>
     <p v-if="loading" class="py-4 text-center text-xs text-ink-text-muted">加载中…</p>
-    <template v-else>
-      <div class="flex flex-col gap-1.5">
+    <p v-else-if="profiles.length === 0" class="rounded-lg bg-paper px-3 py-3 text-xs text-ink-text-muted">
+      还没有 AI 档案。先在上方「AI 接口档案」新建档案，再回来为槽位指定模型。
+    </p>
+    <div v-else class="flex flex-col gap-1.5">
         <label
           v-for="slot in AGENT_SLOTS"
           :key="slot"
@@ -96,9 +98,5 @@ onMounted(() => {
           </select>
         </label>
       </div>
-      <p v-if="profiles.length === 0" class="mt-3 rounded-lg bg-paper px-3 py-2 text-xs text-ink-text-muted">
-        还没有 AI 档案。先在上方「AI 接口档案」新建档案，再回来为槽位指定模型。
-      </p>
-    </template>
   </section>
 </template>

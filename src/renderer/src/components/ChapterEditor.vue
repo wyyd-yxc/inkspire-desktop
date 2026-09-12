@@ -280,6 +280,15 @@ const editor = useEditor({
 
 type PanelKind = 'continue' | SelectionAction | 'chapter-polish'
 
+/** PanelKind→槽位穷尽映射（M15）：Record 键完整性保证新增 kind 漏配槽位时编译期报错 */
+const KIND_SLOT: Record<PanelKind, AgentSlot> = {
+  continue: 'writing',
+  'chapter-polish': 'writing',
+  polish: 'selection',
+  expand: 'selection',
+  rewrite: 'selection'
+}
+
 const panel = ref<InstanceType<typeof AiWritingPanel> | null>(null)
 const panelVisible = ref(false)
 const panelKind = ref<PanelKind>('continue')
@@ -357,8 +366,8 @@ async function runGeneration(kind: PanelKind): Promise<void> {
                   selectionTarget ?? { text: '', before: '', after: '' },
                   kind,
                 )
-        // 槽位按 kind 分流：划词三动作走「划词改写」槽，续写/整章润色走「正文写作」槽（M15）
-        const slot: AgentSlot = kind === 'polish' || kind === 'expand' || kind === 'rewrite' ? 'selection' : 'writing'
+        // 槽位按 kind 分流（Record 穷尽映射：新增 PanelKind 成员漏配槽位时编译期报错，M15）
+        const slot: AgentSlot = KIND_SLOT[kind]
         const { session } = await generateWriting(messages, {
           onChunk: (t) => {
             panel.value?.append(t)

@@ -107,6 +107,50 @@ export type SelectionAction = 'polish' | 'expand' | 'rewrite'
 db.pragma('foreign_keys = ON') // 启用外键级联（删书连带删章节）
 ```
 
+## 附录 A2：r2 裁定（glm-5.1，2026-09-12）
+
+结论：有条件通过（llm-review-2026-09-12-16-02-.md）。
+
+| 项 | 裁定 | 处理 |
+|---|---|---|
+| 低：零档案时 8 个仅含「跟随默认」的无效下拉仍渲染 | **采纳** | 已改：8 行区域 `v-else`（profiles 为空时仅显示引导文案，不渲染下拉） |
+| 低：ChapterEditor 分流字面量比对，新增 SelectionAction 成员会静默错槽 | **采纳（升级为编译期穷尽）** | 改为 `KIND_SLOT: Record<PanelKind, AgentSlot>` 穷尽映射——Record 键完整性使新增 kind 漏配槽位时 typecheck 直接报错（比建议的类型守卫更强） |
+| 疑点：diff 严重截断（agentSlots 全文/签名变更/调用点散落） | **材料补全** | 附录 B 增 generateWriting 签名变更与 14 调用点归槽清单（file:line→slot 对照）；归槽完备性由必传参数+typecheck 三重闸门保证 |
+| 无法判定：FK CASCADE/断言真实性等运行时项 | 黑盒范围 | 同 r1，T8 已实证 |
+
+### generateWriting 签名变更与调用点归槽清单（r2 补全）
+
+```ts
+// aiWriting.ts（签名：第三参必传，编译期强制调用方显式归槽）
+export async function generateWriting(
+  messages: ChatMessage[],
+  handlers: StreamHandlers,
+  slot: AgentSlot
+): Promise<{ session: StreamSession; profileName: string }> {
+  const profile = await resolveProfileForSlot(slot)
+  ...
+}
+```
+
+14 调用点归槽对照（grep `generateWriting(` 全集，无遗漏）：
+
+| 调用点 | slot |
+|---|---|
+| components/ChapterEditor.vue（runGeneration，KIND_SLOT 映射） | selection（polish/expand/rewrite）/ writing（continue/chapter-polish） |
+| composables/useMemorySync.ts:101、:304 | extract |
+| composposables/useWikiCleanup.ts:112 | extract |
+| composables/useAutoSync.ts:392（静默档 collectAi） | extract |
+| composables/usePlotAi.ts:176 | plot |
+| composables/useReverseSync.ts:115 | extract |
+| composables/useWikiSync.ts:103 | extract |
+| composables/usePlotSync.ts:82 | extract |
+| views/GenesisView.vue:192、:255 | genesis |
+| views/WikiView.vue:296 | extract |
+| views/CanvasView.vue:448（场景节点） | scene |
+| views/CanvasView.vue:586（按场景生成正文） | writing |
+
+非 generateWriting 的 chatStream 直调：AssistantDock（assistant 槽，本地副本已删）、StyleDigestDialog（digest 槽）、SettingsView.quickTest 与 ApiProfileDialog.test（显式被测档案，不经槽位）。
+
 ## 附录 C：黑盒验收结果
 
 （待黑盒后填写）
