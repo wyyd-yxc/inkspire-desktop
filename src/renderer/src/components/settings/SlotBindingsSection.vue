@@ -55,6 +55,7 @@ async function onPick(slot: AgentSlot, e: Event): Promise<void> {
     await load()
   } catch (err) {
     toast.error(err instanceof Error ? err.message : '保存失败')
+    await load() // 保存失败：回拉真实绑定重置下拉 DOM，避免显示值与库不一致（r3 中危项）
   } finally {
     saving.value = ''
   }

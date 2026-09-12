@@ -138,7 +138,7 @@ export async function generateWriting(
 |---|---|
 | components/ChapterEditor.vue（runGeneration，KIND_SLOT 映射） | selection（polish/expand/rewrite）/ writing（continue/chapter-polish） |
 | composables/useMemorySync.ts:101、:304 | extract |
-| composposables/useWikiCleanup.ts:112 | extract |
+| composables/useWikiCleanup.ts:112 | extract |
 | composables/useAutoSync.ts:392（静默档 collectAi） | extract |
 | composables/usePlotAi.ts:176 | plot |
 | composables/useReverseSync.ts:115 | extract |
@@ -150,6 +150,18 @@ export async function generateWriting(
 | views/CanvasView.vue:586（按场景生成正文） | writing |
 
 非 generateWriting 的 chatStream 直调：AssistantDock（assistant 槽，本地副本已删）、StyleDigestDialog（digest 槽）、SettingsView.quickTest 与 ApiProfileDialog.test（显式被测档案，不经槽位）。
+
+## 附录 A3：r3 裁定（glm-5.1，2026-09-12）
+
+结论：有条件通过（llm-review-2026-09-12-16-09-.md）。
+
+| 项 | 裁定 | 处理 |
+|---|---|---|
+| 中危：保存失败时未刷新，下拉显示值与库真实绑定割裂 | **采纳** | catch 块追加 `await load()` 回拉真实状态重置 DOM |
+| 低：IPC 边界 slot 参数标注 AgentSlot 类型「掩盖跨进程类型丢失」 | **不采纳（项目惯例）** | 全项目 IPC handler 均直接标注共享类型（styles/plot/inspirations 等十余通道同型）+运行时白名单校验（AGENT_SLOTS.includes+UUID_RE 兜底）；单机信任边界内的一致约定，M2 起 static 审查从未要求改为 string |
+| 低：每次生成 3 次本地 IPC 查询开销 | **不采纳（权衡留档）** | 原 resolveProfile 本就每次 2 次 IPC；本地 better-sqlite3 IPC 亚毫秒级，生成请求秒级网络耗时面前可忽略；引入缓存需与档案增删/绑定变更联动失效，复杂度不划算——性能留档不排期 |
+| 低：材料笔误 composposables | **采纳** | 已更正 |
+| 无法判定：调用点完备性/FK 运行时/断言真实性 | 附录 B 清单+typecheck 必传参数保证；T8/黑盒实证 | 同前 |
 
 ## 附录 C：黑盒验收结果
 
