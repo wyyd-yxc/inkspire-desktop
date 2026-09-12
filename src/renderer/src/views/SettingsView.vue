@@ -11,6 +11,7 @@ import { checkOnce, loadAutoSyncSettings, type AutoSyncSettings } from '@/compos
 import ApiProfileDialog from '@/components/ApiProfileDialog.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import StylePackagesSection from '@/components/settings/StylePackagesSection.vue'
+import SlotBindingsSection from '@/components/settings/SlotBindingsSection.vue'
 
 const toast = useToast()
 const profiles = ref<ApiProfile[]>([])
@@ -199,6 +200,9 @@ onMounted(() => {
 
       <!-- 作品风格包（M12） -->
       <StylePackagesSection />
+
+      <!-- 功能槽位（M15） -->
+      <SlotBindingsSection />
 
       <!-- 自动同步（M10.5） -->
       <section v-if="syncCfg" class="mb-6 rounded-card bg-surface p-5 shadow-card">
