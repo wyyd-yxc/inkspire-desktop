@@ -286,6 +286,17 @@ const MIGRATIONS: Array<{
         PRIMARY KEY (book_id, day)
       );
       ALTER TABLE books ADD COLUMN word_target INTEGER;`
+  },
+  {
+    // v15 M15 Agent 模型偏好。agent_bindings 功能槽位绑定档案（slot PK，一槽位至多一行）：
+    // 表内无行=「跟随默认」（渲染层回落 ai.default_profile_id）；profile_id FK ON DELETE CASCADE=
+    // 删档案自动清绑定回落默认（foreign_keys=ON 已在 getDb 设置，无需 deleteProfile 手动清理）。
+    version: 15,
+    sql: `
+      CREATE TABLE IF NOT EXISTS agent_bindings (
+        slot       TEXT PRIMARY KEY,
+        profile_id TEXT NOT NULL REFERENCES api_profiles(id) ON DELETE CASCADE
+      );`
   }
 ]
 

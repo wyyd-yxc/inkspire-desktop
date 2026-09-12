@@ -61,6 +61,7 @@ import type {
 } from '../shared/style.types'
 import type { WordSnapshot } from '../shared/stats.types'
 import type { DigestPickResult } from '../shared/digest.types'
+import type { AgentBinding, AgentSlot } from '../shared/agent.types'
 import type {
   CreateInspirationInput,
   Inspiration,
@@ -272,6 +273,14 @@ const api = {
   digest: {
     pickText: (): Promise<IpcResult<DigestPickResult | null>> =>
       ipcRenderer.invoke('digest:pick-text')
+  },
+
+  /** Agent 槽位绑定（M15）：功能槽位→API 档案；未列槽位=跟随默认 */
+  bindings: {
+    list: (): Promise<IpcResult<AgentBinding[]>> => ipcRenderer.invoke('bindings:list'),
+    /** profileId 传空串=解除绑定（回落默认档案） */
+    set: (slot: AgentSlot, profileId: string): Promise<IpcResult<boolean>> =>
+      ipcRenderer.invoke('bindings:set', slot, profileId)
   },
 
   /** 应用设置（键受主进程白名单约束） */
