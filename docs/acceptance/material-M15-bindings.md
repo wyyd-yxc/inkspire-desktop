@@ -192,6 +192,47 @@ grep -rn "chatStream(" src/renderer/src --include="*.vue" --include="*.ts"
 → views/SettingsView.vue quickTest、components/ApiProfileDialog.vue test（显式被测档案，连通测试语义不经槽位）
 ```
 
+## 附录 A6：r6 裁定（glm-5.1，2026-09-12）
+
+结论：有条件通过（llm-review-2026-09-12-16-18-.md）。
+
+| 项 | 裁定 | 处理 |
+|---|---|---|
+| 中危（证据缺失）：diff 截断致归槽清单不可全量静态核对 | **证据补全（本轮闭环）** | 13 处调用点的真实 diff 片段逐行入附录 B（`git diff v0.19.0-m14-digest..HEAD` 原样摘录）；ChapterEditor 例外（非一行追加，KIND_SLOT 映射+hunk 已在附录 B） |
+| 低：IPC 边界 AgentSlot 注解 | **维持 r3/r5 不采纳** | 该意见已三轮重复，属性是「项目级规范讨论」而非本里程碑缺陷；全项目 16+ 通道同型，如需改 string 注解应进 coding-standards 全局统一，不应单通道特例化 |
+| 低：toBinding as 断言 | **采纳** | 改 `(AGENT_SLOTS as readonly string[]).includes(r.slot)`，无业务类型断言 |
+
+## 附录 B2：13 处调用点归槽真实 diff（r6 证据补全，原样摘录）
+
+```diff
+--- composables/useAutoSync.ts   @@ -395 +395 @@ function collectAi
++    }, 'extract')
+--- composables/useMemorySync.ts @@ -105 +105
++      }, 'extract').then(({ session }) => {
+--- composables/useMemorySync.ts @@ -307 +307
++          }, 'extract').then(({ session }) => {
+--- composables/usePlotAi.ts     @@ -180 +180
++      }, 'plot')
+--- composables/usePlotSync.ts   @@ -85 +85
++      }, 'extract').then(({ session }) => {
+--- composables/useReverseSync.ts @@ -118 +118
++          }, 'extract').then(({ session }) => {
+--- composables/useWikiCleanup.ts @@ -115 +115
++        }, 'extract').then(({ session }) => {
+--- composables/useWikiSync.ts   @@ -106 +106
++      }, 'extract').then(({ session }) => {
+--- views/CanvasView.vue         @@ -452 +452 @@ async function startSceneGen
++    }, 'scene')
+--- views/CanvasView.vue         @@ -590 +590 @@ function generateOneScene
++        }, 'writing')
+--- views/GenesisView.vue        @@ -196 +196 @@ async function aiAssistSoul
++    }, 'genesis')
+--- views/GenesisView.vue        @@ -259 +259 @@ async function coldStartWorld
++    }, 'genesis')
+--- views/WikiView.vue          @@ -300 +300 @@ async function startAiGenerate
++    }, 'extract')
+```
+
 ## 附录 C：黑盒验收结果
 
 （待黑盒后填写）

@@ -15,7 +15,7 @@ interface AgentBindingRow {
 
 function toBinding(r: AgentBindingRow): AgentBinding | null {
   // 白名单回退（inspirations/styles 同惯例）：防御外部工具篡改 DB 写入非法 slot
-  if (!AGENT_SLOTS.includes(r.slot as AgentSlot)) return null
+  if (!(AGENT_SLOTS as readonly string[]).includes(r.slot)) return null
   return { slot: r.slot as AgentSlot, profileId: r.profile_id }
 }
 
