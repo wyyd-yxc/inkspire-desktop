@@ -117,6 +117,7 @@ function autoScroll(): void {
 watch(text, () => autoScroll())
 
 onBeforeUnmount(() => {
+  flushBuf() // 已到未上屏的增量不静默丢（ref 更新无副作用）
   if (flushTimer) {
     clearTimeout(flushTimer)
     flushTimer = null

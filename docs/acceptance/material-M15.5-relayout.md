@@ -143,6 +143,27 @@ watchEffect(() => {  // 助手上下文回写；onBeforeUnmount 清空
 | P3 中：AiWritingPanel flushTimer 无卸载清理 | **采纳（卫生）** | 补 onBeforeUnmount 清理定时器 |
 | 无法判定项（壳模板/CRUD handler/路由配置等 diff 截断） | 黑盒覆盖 | 附录 B 已含关键段摘录；运行时断言 T2/T4/T6/T7/T8/T9/T10 全 PASS；黑盒将再以真实 UI 复验 |
 
+## 附录 A3：r3 裁定（glm-5.1，2026-09-13）
+
+结论：有条件通过（llm-review-2026-09-13-04-58-.md）。
+
+| 项 | 裁定 | 处理 |
+|---|---|---|
+| 高：七页去头部 diff 截断，全站清零无法静态验证 | **证据补全（运行时+grep 双证）** | 该七页变更合计仅 -37/+7 行（删头部块），grep 证据如下；运行时 T4 六页断言+T8 画布「无旧返回栏」全 PASS |
+| 中：BookCard 删除键缺 focus 危险色 | **采纳** | 补 `focus:bg-ink-danger focus:text-white` |
+| 中：AiWritingPanel 卸载未 flushBuf | **采纳** | onBeforeUnmount 先 flushBuf 再清定时器 |
+| 低：stopGeneration 中 seal()+finish() 冗余 | **不采纳（语义显式）** | seal()=「停止截断」意图、finish()=「流结束」，finish 现含密封故功能等价；显式 seal 表达停止语义，保留可读性 |
+| 信息：typecheck .vue 缺口 | r1 已裁定并登记技术债 | 不重复 |
+
+### 「← 写作台」全站 grep 清零证据（r3）
+
+```
+$ grep -rn "← 写作台" src/renderer/src --include="*.vue"
+（无输出=清零，2026-09-13 会话 43 实测）
+$ git show 385c71b --stat
+七页文件各 -3~-14 行（ GenesisView/CanvasView/PlotCanvasView 顶栏链接+页名；WikiView/MemoryView/InspirationsWallView/StatsView 左栏头部块）
+```
+
 ## 附录 C：黑盒验收结果
 
 （待黑盒后填写）
