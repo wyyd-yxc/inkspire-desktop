@@ -690,7 +690,7 @@
 - **自测发现并修复 1 个真 bug**（805fb48）：切章 watch 初版依赖 `?ch` 旧值——首次从默认章切走时丢草稿。T3 真实键盘探针专项实证（未过防抖切章/离台双场景落盘）。
 - **工程发现登记技术债**：**.vue SFC 零类型检查**——typecheck=tsc×2+build 不含 .vue，vue-tsc 3.3.11 与 TypeScript 7 不兼容（ERR_PACKAGE_PATH_NOT_EXPORTED）M0 起无法接入；watchEffect 未导入运行时才炸实证。以共享类型检查+build+CDP 自测三层兜底，待 vue-tsc 支持 TS7 后接入。
 - **双轨**：静态 glm-5.1 四轮收敛——真修 6 处（finish 密封/computed 字数/面板卸载清定时器+flushBuf/T3b 离台场景补测/focus 危险色），P1（离台守卫——onBeforeUnmount 兜底非缺陷）/P2（先清后写——既有语义）/seal 冗余（语义显式）三项裁定留档；黑盒 **37/37 无缺陷零真实 AI**（壳全页遍历 12+切章双场景 6+浮球同步 6+技术债 8+场景入口 5，报告入库 2026-09-13-M15.5-relayout.md）。测试脚本教训：body.innerText 不含 placeholder 探针；GBK 控制台乱码不影响判读。
-- **状态**：双轨通过；**tag v0.20.1-m15.5-relayout 待用户确认**。下一步 M16 打包（0.21.0，执行中）。
+- **状态**：双轨通过；**经用户亲手验证确认 tag v0.20.1-m15.5-relayout（已打，指向 babe53b）**。
 
 ### 会话 43 续：M16 发布版重打包（0.21.0，tag v0.21.0-m16-release 待用户确认）
 
@@ -698,4 +698,4 @@
 - **覆盖安装**：本机 0.15.0 之上升级。/S 静默对 assisted 向导无效（挂起实证）→ 消息级驱动向导（tmp/m16-setup-driver.ps1：仅为我安装→下一步→安装→完成），ProductVersion 0.21.0.0 确认
 - **安装版冒烟 6/6**（tmp/m16-smoke.mjs，CDP 9223）：启动+数据保留（4 书完整）/migration v15 健康/新导航壳 7 项渲染/无旧返回栏/章节可读/console 零报错——记录入库 2026-09-13-M16-release.md
 - 脚本教训：安装版页面 URL 为 file:// 协议（CDP 过滤不能用 localhost）
-- **状态**：打包+验证完成；**tag v0.21.0-m16-release 待用户确认**。M0-M16 全部完成。
+- **状态**：打包+验证完成；**经用户确认 tag v0.21.0-m16-release（已打，指向 12b6899）**。**M0-M16 全部完成，项目发布收官**（共 23 个版本 tag）。
