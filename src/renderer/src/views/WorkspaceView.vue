@@ -3,7 +3,7 @@
  * 写作台页（M15.5 起为书内壳的子页）：章节树/同步栈/助手浮球已上移 BookShellLayout，
  * 本页专注编辑器编排——内容防抖自动保存（1.5s）+ Ctrl+S、路由 ?ch= 驱动选章（切章前保存旧章）。
  */
-import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, inject, onBeforeUnmount, onMounted, ref, watch, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
 import type { WikiEntry } from '../../../shared/wiki.types'
 import type { Memory } from '../../../shared/memory.types'
@@ -55,14 +55,19 @@ async function loadContexts(): Promise<void> {
 
 const editorRef = ref<InstanceType<typeof ChapterEditor> | null>(null)
 
-/** 待写盘的最新编辑状态（html+字数） */
-const pendingContent = ref<{ html: string; wordCount: number } | null>(null)
+/** 待写盘的最新编辑状态（html+字数+归属章 id：路由切换后仍能落对章） */
+const pendingContent = ref<{ html: string; wordCount: number; chapterId: string } | null>(null)
 let saveTimer: ReturnType<typeof setTimeout> | null = null
 
-/** 立即保存（跳过防抖）；默认保存当前章节，切章 watch 传入旧章 */
-async function flushSave(target = activeChapter.value): Promise<void> {
+/** 立即保存（跳过防抖）：按 pending 归属章落盘——首次切离默认章（无 ?ch 旧值）同样正确 */
+async function flushSave(): Promise<void> {
   const pending = pendingContent.value
-  if (!pending || !target) return
+  if (!pending) return
+  const target = chapters.value.find((c) => c.id === pending.chapterId)
+  if (!target) {
+    pendingContent.value = null // 归属章已被删除：丢弃草稿
+    return
+  }
   pendingContent.value = null
   editorRef.value?.setSaveState('saving')
   try {
@@ -82,24 +87,22 @@ async function flushSave(target = activeChapter.value): Promise<void> {
 }
 
 function onContentChange(html: string, wordCount: number): void {
-  pendingContent.value = { html, wordCount }
+  if (!activeChapter.value) return
+  pendingContent.value = { html, wordCount, chapterId: activeChapter.value.id }
   editorRef.value?.setSaveState('dirty')
   // 本地即时更新字数显示（不等落盘；壳章节树同数组实时跟随）
-  if (activeChapter.value) {
-    const i = chapters.value.findIndex((c) => c.id === activeChapter.value!.id)
-    if (i >= 0) chapters.value[i] = { ...chapters.value[i], wordCount }
-  }
+  const i = chapters.value.findIndex((c) => c.id === activeChapter.value!.id)
+  if (i >= 0) chapters.value[i] = { ...chapters.value[i], wordCount }
   if (saveTimer) clearTimeout(saveTimer)
   saveTimer = setTimeout(() => void flushSave(), 1500)
 }
 
-/** 路由切章（壳章节树点击/新建/删除驱动）：切走前保存旧章（旧章已删除则跳过） */
+/** 路由切章（壳章节树点击/新建/删除驱动）：切走前保存未落盘草稿（按归属章落盘） */
 watch(
   () => route.query.ch,
-  async (_newId, oldId) => {
+  () => {
     if (route.name !== 'workspace') return
-    const old = oldId && typeof oldId === 'string' ? chapters.value.find((c) => c.id === oldId) : null
-    if (old) await flushSave(old)
+    void flushSave()
   }
 )
 
