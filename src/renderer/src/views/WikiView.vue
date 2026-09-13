@@ -375,13 +375,8 @@ onMounted(() => void loadAll())
 
 <template>
   <div class="flex h-full">
-    <!-- 左栏：类型筛选 + 搜索 -->
+    <!-- 左栏：类型筛选 + 搜索（M15.5：页名/书名上移书内壳） -->
     <aside class="flex w-52 shrink-0 flex-col border-r border-ink-border/60 bg-surface">
-      <div class="border-b border-ink-border/60 px-4 py-3">
-        <router-link :to="`/book/${bookId}/write`" class="text-xs text-ink-text-muted hover:text-ink-primary">← 写作台</router-link>
-        <p class="mt-2 text-sm font-semibold">设定集</p>
-        <p class="truncate text-xs text-ink-text-muted" :title="book?.title">{{ book?.title ?? '…' }}</p>
-      </div>
       <div class="px-3 py-3">
         <input
           v-model="keyword"

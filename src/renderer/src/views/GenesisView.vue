@@ -363,13 +363,8 @@ onMounted(() => void loadAll())
 
 <template>
   <div class="flex h-full flex-col">
-    <!-- 顶栏 -->
-    <header class="flex items-center justify-between border-b border-ink-border/60 bg-surface px-8 py-4">
-      <div class="flex items-baseline gap-3">
-        <router-link :to="`/book/${bookId}/write`" class="text-xs text-ink-text-muted hover:text-ink-primary">← 写作台</router-link>
-        <h1 class="text-lg font-bold text-ink-primary">构思台</h1>
-        <span class="text-sm text-ink-text-muted">{{ book?.title ?? '…' }}</span>
-      </div>
+    <!-- 顶栏（M15.5：导航与书名上移书内壳，仅保留完成度信息） -->
+    <header class="flex items-center justify-end border-b border-ink-border/60 bg-surface px-8 py-3">
       <span class="text-xs text-ink-text-muted">已完成 {{ completedCount }}/5 步</span>
     </header>
 

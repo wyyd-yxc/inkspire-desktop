@@ -221,11 +221,8 @@ const panelSourceNote = computed(() => {
 
 <template>
   <div class="flex h-full flex-col">
-    <!-- 顶部工具栏 -->
+    <!-- 顶部工具栏（M15.5：导航与书名上移书内壳） -->
     <header class="flex items-center gap-3 border-b border-ink-border/60 bg-surface px-5 py-3">
-      <router-link :to="`/book/${bookId}/write`" class="text-xs text-ink-text-muted hover:text-ink-primary">← 写作台</router-link>
-      <h1 class="text-base font-bold text-ink-primary">情节大纲</h1>
-      <span class="truncate text-sm text-ink-text-muted">{{ book?.title ?? '…' }}</span>
       <div class="ml-auto flex items-center gap-2">
         <!-- 搜索高亮 -->
         <div class="flex items-center gap-1.5">

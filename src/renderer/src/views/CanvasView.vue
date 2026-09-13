@@ -664,8 +664,6 @@ onMounted(() => void loadAll())
   <div class="flex h-full flex-col">
     <!-- 顶部工具栏 -->
     <header class="flex items-center gap-3 border-b border-ink-border/60 bg-surface px-5 py-3">
-      <router-link :to="`/book/${bookId}/write`" class="text-xs text-ink-text-muted hover:text-ink-primary">← 写作台</router-link>
-      <h1 class="text-base font-bold text-ink-primary">场景规划</h1>
       <span class="truncate text-sm text-ink-text-muted">{{ chapter?.title ?? '…' }}</span>
       <div class="ml-auto flex items-center gap-2">
         <!-- 连线编辑器（单击边选中后出现） -->

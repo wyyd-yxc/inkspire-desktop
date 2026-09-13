@@ -143,13 +143,8 @@ onMounted(() => {
 
 <template>
   <div class="flex h-full">
-    <!-- 左栏：里程碑 -->
+    <!-- 左栏：里程碑（M15.5：页名/书名上移书内壳） -->
     <aside class="flex w-60 shrink-0 flex-col overflow-y-auto border-r border-ink-border/60 bg-surface">
-      <div class="border-b border-ink-border/60 px-4 py-3">
-        <router-link :to="`/book/${bookId}/write`" class="text-xs text-ink-text-muted hover:text-ink-primary">← 写作台</router-link>
-        <p class="mt-2 text-sm font-semibold">创作统计</p>
-        <p class="truncate text-xs text-ink-text-muted" :title="book?.title">{{ book?.title ?? '…' }}</p>
-      </div>
       <div class="px-3 py-3">
         <p class="mb-2 text-xs text-ink-text-muted">里程碑</p>
         <div

@@ -260,13 +260,8 @@ onMounted(() => {
 
 <template>
   <div class="flex h-full">
-    <!-- 左栏：类别筛选 + 回收站 + 操作 -->
+    <!-- 左栏：类别筛选 + 回收站 + 操作（M15.5：页名/书名上移书内壳） -->
     <aside class="flex w-52 shrink-0 flex-col border-r border-ink-border/60 bg-surface">
-      <div class="border-b border-ink-border/60 px-4 py-3">
-        <router-link :to="`/book/${bookId}/write`" class="text-xs text-ink-text-muted hover:text-ink-primary">← 写作台</router-link>
-        <p class="mt-2 text-sm font-semibold">灵感墙</p>
-        <p class="truncate text-xs text-ink-text-muted" :title="book?.title">{{ book?.title ?? '…' }}</p>
-      </div>
       <div class="px-2 py-3">
         <button
           class="mb-1 flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-sm transition-colors"
