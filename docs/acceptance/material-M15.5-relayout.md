@@ -132,6 +132,17 @@ watchEffect(() => {  // 助手上下文回写；onBeforeUnmount 清空
 
 `{ path: '/book/:bookId', component: BookShellLayout, children: [{ path: '', redirect: write }, write/genesis/wiki/canvas/:chapterId/plot/memory/inspirations/stats 八 children] }`；书房 `/` 与 `/settings` 平级在外。
 
+## 附录 A2：r2 裁定（glm-5.1，2026-09-13）
+
+结论：不通过（llm-review-2026-09-13-04-53-.md）——三项复核如下，整改后 T1 扩为 23/23。
+
+| 项 | 裁定 | 处理 |
+|---|---|---|
+| P1 高：离开写作台路由时 watch 守卫拦截 flushSave，草稿丢失 | **不采纳（缺陷定性），采纳（覆盖缺口）** | 守卫 return 后组件随即卸载，`onBeforeUnmount → void flushSave()` 按归属章落盘（附录 B 补摘录该钩子）——功能上不丢；**场景级自测缺口属实**：新增 T3b（输入未过防抖→点「设定集」→ 断言第二章已落盘含探针）PASS 实证。watcher 守卫保留（防其他路由 query 变化误触发） |
+| P2 中：flushSave 先清 pending 再异步落盘，异常时草稿不可恢复 | **不采纳（既有语义，M3 起如此）** | 失败路径：setSaveState('dirty')+toast 报错，编辑器屏幕文本仍在，用户继续编辑即产生新 pending 自动重试；「恢复旧 pending」会引入覆盖新输入的竞态，弊大于利。留档 |
+| P3 中：AiWritingPanel flushTimer 无卸载清理 | **采纳（卫生）** | 补 onBeforeUnmount 清理定时器 |
+| 无法判定项（壳模板/CRUD handler/路由配置等 diff 截断） | 黑盒覆盖 | 附录 B 已含关键段摘录；运行时断言 T2/T4/T6/T7/T8/T9/T10 全 PASS；黑盒将再以真实 UI 复验 |
+
 ## 附录 C：黑盒验收结果
 
 （待黑盒后填写）

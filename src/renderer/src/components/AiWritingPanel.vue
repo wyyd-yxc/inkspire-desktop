@@ -3,7 +3,7 @@
  * AI 写作面板：编辑器底部的流式预览区，续写/划词/整章润色共用。
  * 状态机：generating（流式中）→ ready（等用户采纳）；停止/放弃随时可用。
  */
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 
 const props = defineProps<{
   /** 任务类型（展示标题用） */
@@ -115,6 +115,13 @@ function autoScroll(): void {
   if (el) el.scrollTop = el.scrollHeight
 }
 watch(text, () => autoScroll())
+
+onBeforeUnmount(() => {
+  if (flushTimer) {
+    clearTimeout(flushTimer)
+    flushTimer = null
+  }
+})
 </script>
 
 <template>
