@@ -164,6 +164,17 @@ $ git show 385c71b --stat
 七页文件各 -3~-14 行（ GenesisView/CanvasView/PlotCanvasView 顶栏链接+页名；WikiView/MemoryView/InspirationsWallView/StatsView 左栏头部块）
 ```
 
+## 附录 A4：静态审查收敛声明（glm-5.1，2026-09-13）
+
+r4 结论：有条件通过（llm-review-2026-09-13-05-01-.md）——「可审查部分的代码质量合格」，余项全部为 BookShellLayout.vue diff 截断（1.5 万字 diff 限额的结构性限制，核心段已摘录附录 B）与运行时范畴（黑盒覆盖）。**静态审查轨道就此收敛**：
+
+| 项 | 裁定 |
+|---|---|
+| U8：窗口关闭时 flushSave 落盘时序 | M3 起既有语义（onBeforeUnmount void flushSave 发起 IPC），非本轮引入；Electron 窗口关闭不等待渲染层在途 IPC 属已知边界，自动保存 1.5s 防抖下窗口暴露面与本轮改前一致——留档不另改 |
+| U9 及其余无法判定项 | 自测 T9/T10 已断言（redirect/书房设置无壳）；黑盒终审 |
+
+静态轨道结论：r1-r4 共 6 处真修（finish 密封、computed 字数、卸载清定时器、T3b 场景补测、focus 危险色、卸载 flushBuf），P1/P2/seal 三项裁定留档，.vue 类型检查缺口查实登记技术债。双轨第一轨完成。
+
 ## 附录 C：黑盒验收结果
 
 （待黑盒后填写）
