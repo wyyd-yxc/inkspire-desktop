@@ -21,11 +21,28 @@ const emit = defineEmits<{
 
 const text = ref('')
 const phase = ref<'generating' | 'ready'>('generating')
+/** 流式缓冲：chunk 先入缓冲、定时批量上屏（降低大文本逐 chunk 重排版+滚动回流频率，M15.5 清偿卡顿债） */
+let buf = ''
+let flushTimer: ReturnType<typeof setTimeout> | null = null
+/** 密封：停止/失败后丢弃在途增量（停止即瞬时截断，M12 黑盒缺陷 1） */
+let sealed = false
+
+function flushBuf(): void {
+  if (flushTimer) {
+    clearTimeout(flushTimer)
+    flushTimer = null
+  }
+  if (!buf) return
+  text.value += buf
+  buf = ''
+}
 
 watch(
   () => props.visible,
   (v) => {
     if (v) {
+      flushBuf()
+      sealed = false
       text.value = ''
       phase.value = 'generating'
     }
@@ -34,26 +51,45 @@ watch(
 
 /** 供父组件推入流式增量 */
 function append(chunk: string): void {
-  text.value += chunk
+  if (sealed) return
+  buf += chunk
+  if (!flushTimer) {
+    flushTimer = setTimeout(() => {
+      flushTimer = null
+      flushBuf()
+    }, 120)
+  }
 }
 
 /** 重置到生成中初始态（同一面板连续发起第二次生成时调用——visible 不翻转不会触发 watch） */
 function reset(): void {
+  flushBuf()
+  sealed = false
   text.value = ''
   phase.value = 'generating'
 }
 
-/** 流结束（父组件在 onDone 里调用） */
+/** 流结束（父组件在 onDone 里调用）；空输出也进入 ready 并显示提示（不再静默悬挂） */
 function finish(): void {
-  if (text.value.trim()) phase.value = 'ready'
-}
-
-/** 流失败：保留已到内容供参考，标记结束态 */
-function fail(): void {
+  flushBuf()
   phase.value = 'ready'
 }
 
+/** 流失败/停止：密封丢在途增量，保留已到内容供参考 */
+function fail(): void {
+  flushBuf()
+  sealed = true
+  phase.value = 'ready'
+}
+
+/** 主动停止：先上屏已到内容再密封（配合父组件 abort 调用） */
+function seal(): void {
+  flushBuf()
+  sealed = true
+}
+
 function accept(): void {
+  flushBuf()
   emit('accept', text.value.trim())
 }
 
@@ -68,7 +104,7 @@ const kindLabel = computed(
     })[props.kind]
 )
 
-defineExpose({ append, reset, finish, fail })
+defineExpose({ append, reset, finish, fail, seal })
 
 const scrollBody = ref<HTMLElement | null>(null)
 
@@ -114,7 +150,7 @@ watch(text, () => autoScroll())
 
     <!-- 内容区 -->
     <div ref="scrollBody" class="min-h-[80px] flex-1 overflow-y-auto px-5 pb-2">
-      <p class="whitespace-pre-wrap text-[14px] leading-7 text-ink-text">{{ text || '等待模型输出…' }}</p>
+      <p class="whitespace-pre-wrap text-[14px] leading-7 text-ink-text">{{ text || (phase === 'ready' ? '（模型没有返回内容，可点「重写」重试）' : '等待模型输出…') }}</p>
     </div>
 
     <!-- 采纳条 -->

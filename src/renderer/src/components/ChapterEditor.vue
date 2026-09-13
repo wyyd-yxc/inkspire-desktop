@@ -409,6 +409,7 @@ function stopGeneration(): void {
   activeSession?.abort()
   activeSession = null
   isBusy = false
+  panel.value?.seal() // 密封丢弃在途增量：停止即瞬时截断（M12 黑盒缺陷 1 清偿）
   panel.value?.finish()
 }
 

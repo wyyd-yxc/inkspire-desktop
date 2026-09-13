@@ -25,6 +25,8 @@ const phase = ref<'import' | 'running' | 'review'>('import')
 const pick = ref<DigestPickResult | null>(null)
 const streamTail = ref('')
 const errorMsg = ref('')
+/** 中性提示（主动停止等用户操作结果，与失败区分呈现——M14 黑盒观察 2） */
+const noticeMsg = ref('')
 const parsed = ref<DigestResult | null>(null)
 const candidates = ref<SyncCandidateItem[]>([])
 let session: StreamSession | null = null
@@ -38,6 +40,7 @@ watch(
     session?.abort()
     session = null
     errorMsg.value = ''
+    noticeMsg.value = ''
     streamTail.value = ''
     if (v) {
       phase.value = 'import'
@@ -69,6 +72,7 @@ async function startDigest(): Promise<void> {
   if (!pick.value) return
   const mySeq = ++seq
   errorMsg.value = ''
+  noticeMsg.value = ''
   streamTail.value = ''
   let full = ''
   try {
@@ -112,6 +116,7 @@ async function startDigest(): Promise<void> {
 
 /** 失败回落导入态（保留已导入文本，可直接重试） */
 function fail(msg: string): void {
+  noticeMsg.value = ''
   errorMsg.value = msg
   phase.value = 'import'
 }
@@ -120,7 +125,8 @@ function stop(): void {
   seq++
   session?.abort()
   session = null
-  errorMsg.value = '已停止拆解'
+  errorMsg.value = ''
+  noticeMsg.value = '已停止拆解，可重新发起'
   phase.value = 'import'
 }
 
@@ -189,6 +195,10 @@ function close(): void {
             v-if="errorMsg"
             class="mt-3 rounded-lg bg-ink-danger/10 px-3 py-2 text-xs leading-5 text-ink-danger"
           >{{ errorMsg }}</p>
+          <p
+            v-if="noticeMsg"
+            class="mt-3 rounded-lg bg-paper px-3 py-2 text-xs leading-5 text-ink-text-secondary"
+          >{{ noticeMsg }}</p>
         </template>
 
         <template v-else>
@@ -210,7 +220,7 @@ function close(): void {
   <SyncCandidateDialog
     :visible="visible && phase === 'review'"
     title="采纳拆解结果"
-    :description="`将生成风格包「${parsed?.name ?? ''}」（来源：拆书），勾选要纳入的内容；取消则不生成。`"
+    :description="`将生成风格包「${parsed?.name ?? ''}」（来源：拆书），勾选要纳入的内容；取消则不生成。${pick?.truncated ? '拆解基于参考文本前 2 万字。' : ''}`"
     confirm-text="生成风格包"
     :items="candidates"
     @confirm="doCreate"

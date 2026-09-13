@@ -183,9 +183,9 @@ function openWiki(): void {
 
     <StyleBindDialog v-model="bindVisible" :book="book" @saved="emit('changed', $event)" />
 
-    <!-- hover 删除按钮 -->
+    <!-- 删除按钮：常驻弱显（M15.5 清偿 hover-only 债：触屏/键盘可达），hover 加深为危险色 -->
     <button
-      class="absolute right-2 top-2 hidden h-8 w-8 items-center justify-center rounded-full bg-black/25 text-white transition-colors hover:bg-ink-danger group-hover:flex"
+      class="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/25 text-white/60 opacity-70 transition-colors hover:bg-ink-danger hover:text-white hover:opacity-100 focus:opacity-100"
       title="删除此书"
       @click.stop="emit('delete', book)"
     >

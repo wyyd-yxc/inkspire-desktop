@@ -29,13 +29,15 @@ const kindClass: Record<string, string> = {
 </template>
 
 <style scoped>
-.toast-enter-active,
-.toast-leave-active {
+.toast-enter-active {
   transition: all 0.25s ease;
 }
-.toast-enter-from,
-.toast-leave-to {
+.toast-enter-from {
   opacity: 0;
   transform: translateY(-8px);
+}
+/* 离场不做过渡：窗口被遮挡时 transitionend 不派发会卡住节点移除（M13 黑盒 DOM 残留根因），直接卸载 */
+.toast-leave-active {
+  display: none;
 }
 </style>
