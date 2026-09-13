@@ -65,8 +65,73 @@
 
 ## 附录 A：r1 整改与裁定（glm-5.1，2026-09-13）
 
-（待静态审查后填写）
+结论：有条件通过（llm-review-2026-09-13-04-46-.md）。
 
-## 附录 B：黑盒验收结果
+| 项 | 裁定 | 处理 |
+|---|---|---|
+| 中：AiWritingPanel finish() 缺 sealed=true，迟到达 chunk 污染已完成面板 | **采纳** | finish() 补密封（与 fail 一致）；retry 经 reset() 解封不受影响 |
+| 高：typecheck 闸门未捕获未 import 的 watchEffect，疑闸门失效 | **采纳披露，确认为既有工程缺口（非本轮引入）** | 查实：typecheck=tsc×2+build——**tsc 不检查 .vue SFC**（.vue 的 script 类型检查需 vue-tsc，而 vue-tsc 3.3.11 与项目 TypeScript 7 不兼容：TS7 包不再导出 `./lib/tsc`，vue-tsc 启动即 ERR_PACKAGE_PATH_NOT_EXPORTED，M0 起即无法接入）。.ts/.shared/主进程/preload 覆盖正常；.vue 缺口以 typecheck（共享类型/契约）+build（转译错误会挂）+CDP 运行时自测三层兜底。登记 roadmap 技术债（vue-tsc 支持 TS7 后接入）；踩坑登记「.vue 内未导入标识符 typecheck 不报，运行时才炸」 |
+| 低：ChapterSidebar 死 prop bookId | **误报** | props.bookId 在场景规划跳转（router.push \`/book/${props.bookId}/canvas/...\`）中活跃使用；附源码自证 |
+| 低：字数统计模板内联 reduce | **采纳** | 提取为 computed totalWords |
+| 无法判定（diff 截断）：壳布局/切章保存/同步栈/助手上下文/路由 | **证据补全** | 核心源码摘录入附录 B（shellContext 契约+壳关键段+WorkspaceView 切章保存段+路由嵌套配置）；运行时断言见自测 T2-T11 |
+
+## 附录 B：核心源码事实（r1 截断补全）
+
+### 契约 layouts/shellContext.ts（全文见 diff，未截断）
+
+`BOOK_SHELL_KEY: InjectionKey<BookShellCtx>`；BookShellCtx = { bookId, book, chapters, activeChapterId, editorCtx: {title,content,selection}, renameChapter }。
+
+### 壳关键段（BookShellLayout.vue 摘录）
+
+```ts
+const activeChapterId = computed(() =>
+  route.name === 'workspace' ? ((route.query.ch as string) ?? '') : ''
+)
+const editorCtx = reactive({ title: '', content: '', selection: '' })
+provide(BOOK_SHELL_KEY, { bookId, book, chapters, activeChapterId, editorCtx, renameChapter })
+// 章节树点击/新建 → router.push({ path: `/book/${bookId.value}/write`, query: { ch: c.id } })
+// 删除当前编辑章 → router.push({ path: `/book/${bookId.value}/write` })（回落首章）
+// 同步栈：useMemorySync/useWikiSync/usePlotSync 全在壳实例化；openSyncDialog 任意页可用
+```
+
+```html
+<aside class="flex h-full w-60 shrink-0 flex-col border-r ...">
+  <div>← 书房 / 书名</div>
+  <nav> 7×router-link（route.name === item.name 时高亮 bg-ink-primary-soft）+ 同步按钮（syncAlert 红点）</nav>
+  <ChapterSidebar :chapters :active-id="activeChapterId" :book-id @create @select @rename @remove @move />
+</aside>
+<main class="min-w-0 flex-1"><router-view /></main>
+<AssistantDock :book-id :book :chapter-title="editorCtx.title" :chapter-content="editorCtx.content" :selection-text="editorCtx.selection" />
+```
+
+### 切章保存段（WorkspaceView.vue，805fb48 全文）
+
+```ts
+const pendingContent = ref<{ html: string; wordCount: number; chapterId: string } | null>(null)
+async function flushSave(): Promise<void> {
+  const pending = pendingContent.value
+  if (!pending) return
+  const target = chapters.value.find((c) => c.id === pending.chapterId)
+  if (!target) { pendingContent.value = null; return } // 归属章已删除：弃草稿
+  pendingContent.value = null
+  /* chapters.update(target.id, ...) + 共享数组原位更新 + setSaveState */
+}
+function onContentChange(html, wordCount) {
+  if (!activeChapter.value) return
+  pendingContent.value = { html, wordCount, chapterId: activeChapter.value.id }
+  /* ...防抖 1.5s flushSave... */
+}
+watch(() => route.query.ch, () => { if (route.name !== 'workspace') return; void flushSave() })
+watchEffect(() => {  // 助手上下文回写；onBeforeUnmount 清空
+  editorCtx.title = activeChapter.value?.title ?? ''
+  editorCtx.content = (activeChapter.value?.content ?? '').replace(/<[^>]+>/g, '')
+})
+```
+
+### 路由嵌套（router/index.ts 全文见 diff）
+
+`{ path: '/book/:bookId', component: BookShellLayout, children: [{ path: '', redirect: write }, write/genesis/wiki/canvas/:chapterId/plot/memory/inspirations/stats 八 children] }`；书房 `/` 与 `/settings` 平级在外。
+
+## 附录 C：黑盒验收结果
 
 （待黑盒后填写）

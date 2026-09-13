@@ -4,7 +4,7 @@
  * M15.5 起为纯树组件（头部书名/功能导航已上移 BookShellLayout）；
  * 选中经壳路由 ?ch= 驱动写作台切章；重命名采用行内编辑。
  */
-import { nextTick, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import type { Chapter } from '../../../shared/chapter.types'
 
@@ -51,6 +51,8 @@ function commitRename(): void {
   editingId.value = ''
   if (id && title) emit('rename', id, title)
 }
+
+const totalWords = computed(() => props.chapters.reduce((s, c) => s + c.wordCount, 0))
 </script>
 
 <template>
@@ -143,7 +145,7 @@ function commitRename(): void {
     <!-- 底部统计 -->
     <div class="border-t border-ink-border/60 px-4 py-2.5 text-xs text-ink-text-muted">
       全书共 <span class="font-medium text-ink-text-secondary">{{ chapters.length }}</span> 章 ·
-      <span class="font-medium text-ink-text-secondary">{{ chapters.reduce((s, c) => s + c.wordCount, 0).toLocaleString('zh-CN') }}</span> 字
+      <span class="font-medium text-ink-text-secondary">{{ totalWords.toLocaleString('zh-CN') }}</span> 字
     </div>
   </div>
 </template>

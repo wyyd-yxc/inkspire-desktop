@@ -69,9 +69,10 @@ function reset(): void {
   phase.value = 'generating'
 }
 
-/** 流结束（父组件在 onDone 里调用）；空输出也进入 ready 并显示提示（不再静默悬挂） */
+/** 流结束（父组件在 onDone 里调用）；密封丢在途增量，空输出也进入 ready 并显示提示（不再静默悬挂） */
 function finish(): void {
   flushBuf()
+  sealed = true
   phase.value = 'ready'
 }
 
