@@ -676,3 +676,18 @@
   - **静态审查 glm-5.1 七轮收敛**：真修 5 处——r1 保存期间全部下拉禁用（与守卫一致）；r2 KIND_SLOT 穷尽映射+零档案空态不渲染下拉；r3 保存失败回拉真实绑定重置 DOM；r4 默认档案说明三态诚实标注；r5/r6 toBinding 白名单回退守卫+chatStream 直调全集 grep 证据+13 调用点真实 diff 入附录 B2（静态核对闭环）；余项裁定留档（IPC 边界类型注解系项目惯例、3 次 IPC 系权衡、TOCTOU 同步无窗口、onPick 断言/全局禁用系审查口径摇摆）——A7 声明静态轨道闭环
   - **黑盒 6/6 无缺陷**（独立代理独立脚本，报告入库 2026-09-12-M15-bindings.md）：真实 AI 1/2 次（助手槽绑「基元律动」真实出文抽查）；UI 绑定→路由→解绑回落→UI 删档案级联全链路实证；console 错误 0；清理全清零。观察项「情节画布双请求」经代码核查为脚本计数误读（openAiDialog 无 AI 调用）
 - **状态**：双轨通过；**经用户亲手验证确认 tag v0.20.0-m15-bindings（已打，指向 cb4a1c7）**。用户同时批准打包前进行 M15.5 UI 布局重规划（全局书内导航壳+UI 技术债清偿），完成后再 M16 打包。
+
+---
+
+## [2026-09-13 14:10] 会话 43：M15.5 UI 布局重规划全量交付（双轨验收通过，tag v0.20.1-m15.5-relayout 待用户确认）
+
+- **任务来源**：用户拍板「借鉴同类项目重新规划 UI 布局，完成后打包」。调研：Sudowrite/Novelcrafter（三栏范式：左导航常驻+编辑器+上下文面板）与彩云小梦/蛙蛙写作（轻创作页），收敛为**全局书内导航壳**形态（用户在两方案中选定）；UI 技术债全量清偿。
+- **实现**（2 feat + 4 fix，自 v0.20.0-m15-bindings 起 9 提交）：
+  - 壳：layouts/BookShellLayout.vue + shellContext.ts（InjectionKey 契约）——路由嵌套 `/book/:bookId`（8 功能页 children+空路径 redirect），左栏=书房返回/书名/7 导航项（路由高亮）+同步红点/章节树（ChapterSidebar 瘦身为纯树）/全书统计；章节状态壳持有（activeChapterId 由 `?ch=` 驱动）；**联动同步栈上移壳**（任意书内页可发起同步）；**助手浮球升级书内全局**（editorCtx 经 provide 回写，离台清空）
+  - 七页去旧返回栏（顶栏/左栏头部块，grep「← 写作台」全站清零）
+  - **技术债六项清偿**：删除键常驻弱显+focus 危险色（M1 债）；toast 离场去 transition（根因：遮挡窗 transitionend 不派发卡住节点移除，M13 债）；拆书候选阶段补截断提示+停止改中性样式（M14 两债）；AI 面板 120ms 缓冲批量上屏+seal 密封停止瞬时截断+空输出就绪提示（M12 两债）
+  - **切章保存重构**：pendingContent 绑定归属章 id，flushSave 按归属落盘
+- **自测发现并修复 1 个真 bug**（805fb48）：切章 watch 初版依赖 `?ch` 旧值——首次从默认章切走时丢草稿。T3 真实键盘探针专项实证（未过防抖切章/离台双场景落盘）。
+- **工程发现登记技术债**：**.vue SFC 零类型检查**——typecheck=tsc×2+build 不含 .vue，vue-tsc 3.3.11 与 TypeScript 7 不兼容（ERR_PACKAGE_PATH_NOT_EXPORTED）M0 起无法接入；watchEffect 未导入运行时才炸实证。以共享类型检查+build+CDP 自测三层兜底，待 vue-tsc 支持 TS7 后接入。
+- **双轨**：静态 glm-5.1 四轮收敛——真修 6 处（finish 密封/computed 字数/面板卸载清定时器+flushBuf/T3b 离台场景补测/focus 危险色），P1（离台守卫——onBeforeUnmount 兜底非缺陷）/P2（先清后写——既有语义）/seal 冗余（语义显式）三项裁定留档；黑盒 **37/37 无缺陷零真实 AI**（壳全页遍历 12+切章双场景 6+浮球同步 6+技术债 8+场景入口 5，报告入库 2026-09-13-M15.5-relayout.md）。测试脚本教训：body.innerText 不含 placeholder 探针；GBK 控制台乱码不影响判读。
+- **状态**：双轨通过；**tag v0.20.1-m15.5-relayout 待用户确认**。下一步 M16 打包（0.21.0，执行中）。
