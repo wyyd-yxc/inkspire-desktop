@@ -1,17 +1,17 @@
 # 项目交接文档（HANDOVER）
 
 > **新会话/新模型开工第一入口**。本文件始终保持「随时可交接」状态，每次里程碑收尾后更新。
-> 最后更新：2026-09-12 · 会话 42 · **M15 Agent 模型偏好完成（双轨通过，tag v0.20.0-m15-bindings 待用户确认）；M0-M15 全部完成，建议下一步 M16 发布版重打包**
+> 最后更新：2026-09-12 · 会话 42 · **M15 完成（tag v0.20.0-m15-bindings）；执行中：M15.5 UI 布局重规划（全局书内导航壳）→ M16 发布打包**
 > 此前：M14/M13（v0.19.0/v0.18.0）已收尾。静态审查 `--base`：后续涉码里程碑用 v0.20.0-m15-bindings。
 
 ## 0. 移交摘要（新模型 60 秒读完）
 
-- **M0-M15 全部完成并通过双轨验收**（M15 tag 待用户确认），20 个已打版本 tag（最新 v0.19.0-m14-digest）
+- **M0-M15 全部完成并通过双轨验收**，21 个版本 tag（最新 v0.20.0-m15-bindings）
 - **产品已更名「墨笺」**（appId/数据目录/可执行名 InkSpire 不变）；GMI 额度耗尽（402）后 AI 档案切 TokenRhythm；glm-5 被下线后静态审查模型换 **glm-5.1**
 - **M14 拆书**：styles:create 扩 digest 来源+digest:pick-text 只读通道+StyleDigestDialog 四态流（导入→流式拆解可停止→勾选→落库）；参考文本不落库不持久（字节级实证）；黑盒真实 AI 风格感知 4/4 实证
 - **M15 Agent 模型偏好**：migration v15 agent_bindings（FK CASCADE 级联清绑定）；agentSlots.resolveProfileForSlot 收敛全项目档案解析（generateWriting 必传槽位参数，14 调用点归槽）；设置「功能槽位」分区 8 行即改即存
 - **下一步**：M16 发布版重打包（建议，待用户确认启动——把 M11-M15 新功能打进 NSIS 安装包）
-- git：20 tag（+M15 tag 待打后 21）、工作区 clean（验收文档已随收尾提交）
+- git：21 tag、工作区 clean（验收文档已随收尾提交）
 - 你能跑 `npm run dev` 验证环境；测试方法见第 5 节；所有坑见第 6 节（**18 条，必读**）
 
 ## 1. 项目是什么
@@ -39,8 +39,9 @@
 | M12 | 作品风格（风格包+绑定+优先级注入+封面） | ✅（静态两轮+黑盒 10/10，报告 2026-09-09-M12-style.md；tag v0.17.0-m12-style） |
 | M13 | 创作统计（字数快照+目标+趋势+热力+里程碑） | ✅（静态两轮+黑盒 10/10，报告 2026-09-10-M13-stats.md；tag v0.18.0-m13-stats） |
 | M14 | 拆书（txt→AI 拆解→风格包 digest） | ✅（静态五轮收敛+黑盒 6/6 含真实 AI 风格感知 4/4，报告 2026-09-12-M14-digest.md；tag v0.19.0-m14-digest） |
-| M15 | Agent 模型偏好（8 功能槽位绑定档案） | ✅（静态七轮收敛+黑盒 6/6 无缺陷含真实 Provider 抽查，报告 2026-09-12-M15-bindings.md；tag 待用户确认 v0.20.0-m15-bindings） |
-| M16 | 发布版重打包（把 M11-M15 打进安装包） | 建议（待用户确认启动；roadmap 原 M16 行为 0.15.0 时代重打包，已 ✅） |
+| M15 | Agent 模型偏好（8 功能槽位绑定档案） | ✅（静态七轮收敛+黑盒 6/6 无缺陷含真实 Provider 抽查，报告 2026-09-12-M15-bindings.md；tag v0.20.0-m15-bindings） |
+| M15.5 | UI 布局重规划（全局书内导航壳+UI 技术债清偿） | 🔄 执行中（用户拍板形态，打包前完成） |
+| M16 | 发布版重打包（把 M11-M15.5 打进安装包） | ⬜（M15.5 后启动） |
 | M16 | 重打包 | ✅ 0.15.0 已打包并覆盖安装验证（2026-09-08） |
 
 **数据库 migration 当前版本 = 15**（…style_profiles+books.style_profile_id/word_count_snapshots+books.word_target/agent_bindings；v15 功能槽位绑定档案）。
@@ -244,7 +245,7 @@ Electron(main: db/ ai/ ipc/) ←IPC(preload 白名单桥)→ Vue3 渲染层(view
 
 ---
 
-### ~~M15 Agent 模型偏好~~（✅ 双轨通过 2026-09-12，tag v0.20.0-m15-bindings 待用户确认）
+### ~~M15 Agent 模型偏好~~（✅ 已完成 2026-09-12，tag v0.20.0-m15-bindings）
 
 交付概要：migration v15 agent_bindings（slot PK+FK ON DELETE CASCADE 删档案级联清绑定，无需改 deleteProfile）；shared/agent.types.ts（8 槽位/标签/覆盖说明）；bindings DAO/IPC/preload（''=删行回落、白名单校验、list 回退守卫）；agentSlots.resolveProfileForSlot 收敛全项目档案解析——generateWriting 必传 slot 参数编译期强制 14 调用点归槽（ChapterEditor 按 KIND_SLOT Record 穷尽映射分流划词/正文写作），AssistantDock 本地副本删除、拆书走 digest 槽，连通测试显式档案不经槽位；设置「功能槽位」分区 8 行下拉即改即存（默认档案说明三态诚实标注）。双轨：静态 glm-5.1 七轮收敛（真修 5 处：保存禁用一致性/KIND_SLOT 穷尽映射/零档案空态/失败回拉重置/三态标注+toBinding 守卫；附录 A1-A7+B/B2 含调用点真实 diff）+黑盒 6/6 无缺陷（报告 2026-09-12-M15-bindings.md；真实 AI 1/2 次助手槽绑真实档案出文抽查；UI 绑定→路由→级联→回落全链路实证）；自测 T1 19/19（假服务器双档案 model 路由断言，零外部 AI）。以下为原执行卡存档。
 
