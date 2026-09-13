@@ -19,44 +19,52 @@ const router = createRouter({
       component: () => import('@/views/SettingsView.vue')
     },
     {
-      path: '/book/:bookId/write',
-      name: 'workspace',
-      component: () => import('@/views/WorkspaceView.vue')
-    },
-    {
-      path: '/book/:bookId/genesis',
-      name: 'genesis',
-      component: () => import('@/views/GenesisView.vue')
-    },
-    {
-      path: '/book/:bookId/wiki',
-      name: 'wiki',
-      component: () => import('@/views/WikiView.vue')
-    },
-    {
-      path: '/book/:bookId/canvas/:chapterId',
-      name: 'canvas',
-      component: () => import('@/views/CanvasView.vue')
-    },
-    {
-      path: '/book/:bookId/plot',
-      name: 'plot',
-      component: () => import('@/views/PlotCanvasView.vue')
-    },
-    {
-      path: '/book/:bookId/memory',
-      name: 'memory',
-      component: () => import('@/views/MemoryView.vue')
-    },
-    {
-      path: '/book/:bookId/inspirations',
-      name: 'inspirations',
-      component: () => import('@/views/InspirationsWallView.vue')
-    },
-    {
-      path: '/book/:bookId/stats',
-      name: 'stats',
-      component: () => import('@/views/StatsView.vue')
+      path: '/book/:bookId',
+      // M15.5 布局重规划：书内页面共用全局导航壳（左侧常驻导航+章节树+助手浮球）
+      component: () => import('@/layouts/BookShellLayout.vue'),
+      children: [
+        { path: '', redirect: (to) => ({ path: `/book/${String(to.params.bookId)}/write` }) },
+        {
+          path: 'write',
+          name: 'workspace',
+          component: () => import('@/views/WorkspaceView.vue')
+        },
+        {
+          path: 'genesis',
+          name: 'genesis',
+          component: () => import('@/views/GenesisView.vue')
+        },
+        {
+          path: 'wiki',
+          name: 'wiki',
+          component: () => import('@/views/WikiView.vue')
+        },
+        {
+          path: 'canvas/:chapterId',
+          name: 'canvas',
+          component: () => import('@/views/CanvasView.vue')
+        },
+        {
+          path: 'plot',
+          name: 'plot',
+          component: () => import('@/views/PlotCanvasView.vue')
+        },
+        {
+          path: 'memory',
+          name: 'memory',
+          component: () => import('@/views/MemoryView.vue')
+        },
+        {
+          path: 'inspirations',
+          name: 'inspirations',
+          component: () => import('@/views/InspirationsWallView.vue')
+        },
+        {
+          path: 'stats',
+          name: 'stats',
+          component: () => import('@/views/StatsView.vue')
+        }
+      ]
     }
   ]
 })

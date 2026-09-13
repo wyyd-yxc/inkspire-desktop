@@ -1,20 +1,17 @@
 <script setup lang="ts">
 /**
- * 章节侧栏：章节列表（新增/选中/重命名/删除/上下移），底部显示全书总字数。
- * 重命名采用行内编辑（双击或按钮进入编辑态）。
+ * 章节树（书内导航壳下部）：章节列表（新增/选中/重命名/删除/上下移）+ 底部全书统计。
+ * M15.5 起为纯树组件（头部书名/功能导航已上移 BookShellLayout）；
+ * 选中经壳路由 ?ch= 驱动写作台切章；重命名采用行内编辑。
  */
-import { computed, ref, nextTick } from 'vue'
+import { nextTick, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import type { Chapter } from '../../../shared/chapter.types'
 
 const props = defineProps<{
   chapters: Chapter[]
   activeId: string
-  totalWords: number
-  bookTitle: string
   bookId: string
-  /** 联动同步提醒：有待同步变更时按钮显红点（M10.5 自动同步提醒档） */
-  syncAlert?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -23,7 +20,6 @@ const emit = defineEmits<{
   rename: [id: string, title: string]
   remove: [chapter: Chapter]
   move: [id: string, dir: -1 | 1]
-  sync: []
 }>()
 
 const router = useRouter()
@@ -55,72 +51,21 @@ function commitRename(): void {
   editingId.value = ''
   if (id && title) emit('rename', id, title)
 }
-
-const wordsLabel = computed(() => props.totalWords.toLocaleString('zh-CN'))
 </script>
 
 <template>
-  <aside class="flex h-full w-60 shrink-0 flex-col border-r border-ink-border/60 bg-surface">
-    <!-- 书籍信息（M13 黑盒缺陷#1 修复：pill 增至 7 个后单行溢出遮挡「+ 新章节」，改两行布局） -->
-    <div class="border-b border-ink-border/60 px-4 py-3">
-      <div class="flex items-center justify-between gap-2">
-        <router-link
-          to="/"
-          class="flex items-center gap-1 text-xs text-ink-text-muted transition-colors hover:text-ink-primary"
-        >
-          ← 书房
-        </router-link>
-        <button
-          class="rounded-full bg-ink-primary px-3 py-1 text-xs text-white transition-colors hover:bg-ink-primary-hover"
-          @click="emit('create')"
-        >+ 新章节</button>
-      </div>
-      <div class="mt-2 flex flex-wrap items-center gap-1.5">
-        <router-link
-          :to="`/book/${bookId}/genesis`"
-          class="rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
-          title="构思台"
-        >构思台</router-link>
-        <router-link
-          :to="`/book/${bookId}/wiki`"
-          class="rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
-          title="设定集"
-        >设定</router-link>
-        <router-link
-          :to="`/book/${bookId}/plot`"
-          class="rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
-          title="情节大纲"
-        >情节</router-link>
-        <router-link
-          :to="`/book/${bookId}/memory`"
-          class="rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
-          title="叙事档案"
-        >档案</router-link>
-        <router-link
-          :to="`/book/${bookId}/inspirations`"
-          class="rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
-          title="灵感墙"
-        >灵感</router-link>
-        <router-link
-          :to="`/book/${bookId}/stats`"
-          class="rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
-          title="创作统计"
-        >统计</router-link>
-        <button
-          class="relative rounded-full border border-ink-border px-2 py-0.5 text-xs text-ink-text-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
-          title="同步：把正文改动推送到设定集与叙事档案"
-          aria-label="同步正文到设定集与叙事档案"
-          @click="emit('sync')"
-        >同步<span
-          v-if="props.syncAlert"
-          class="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-ink-danger"
-        /></button>
-      </div>
-      <p class="mt-2 truncate text-sm font-semibold" :title="bookTitle">{{ bookTitle }}</p>
+  <div class="flex min-h-0 flex-1 flex-col">
+    <!-- 树头：新建章节 -->
+    <div class="flex items-center justify-between px-4 pb-1 pt-2.5">
+      <span class="text-xs text-ink-text-muted">章节</span>
+      <button
+        class="rounded-full bg-ink-primary px-3 py-1 text-xs text-white transition-colors hover:bg-ink-primary-hover"
+        @click="emit('create')"
+      >+ 新章节</button>
     </div>
 
     <!-- 章节列表 -->
-    <div class="flex-1 overflow-y-auto py-2">
+    <div class="min-h-0 flex-1 overflow-y-auto py-1">
       <p v-if="chapters.length === 0" class="px-4 py-8 text-center text-xs text-ink-text-muted">
         还没有章节，点上方「+ 新章节」开始
       </p>
@@ -198,7 +143,7 @@ const wordsLabel = computed(() => props.totalWords.toLocaleString('zh-CN'))
     <!-- 底部统计 -->
     <div class="border-t border-ink-border/60 px-4 py-2.5 text-xs text-ink-text-muted">
       全书共 <span class="font-medium text-ink-text-secondary">{{ chapters.length }}</span> 章 ·
-      <span class="font-medium text-ink-text-secondary">{{ wordsLabel }}</span> 字
+      <span class="font-medium text-ink-text-secondary">{{ chapters.reduce((s, c) => s + c.wordCount, 0).toLocaleString('zh-CN') }}</span> 字
     </div>
-  </aside>
+  </div>
 </template>
