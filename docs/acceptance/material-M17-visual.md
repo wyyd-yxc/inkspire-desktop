@@ -159,6 +159,16 @@ PALETTES: 长篇(墨褐/rule-lines)、中短篇(灰蓝/grid)、科幻(靛墨/sta
 | P1 严重：内联脚本未设 data-theme="light"，「用户选浅色+系统深色」时 splash 主题错乱 | **采纳，真缺陷** | 已修：内联脚本改为**恒设** `data-theme`（dark/light 二值）——用户显式浅色时挂 light，覆盖系统 @media 分支；CSP hash 同步重算（mutCjj4Kq8+9NZVYIJDq2FRakxKm0svZePy22C4x4Fc=） |
 | 无法判定（五核心文件 diff 缺失） | 附录 B 已含 theme.css 令牌结构/useTheme 链/coverArt 表/BookCover 要点；运行时由自测 19/19+截图目检覆盖 | 黑盒将再以真实 UI 复验 |
 
+## 附录 A4：r4 整改与裁定（glm-5.1，2026-09-14）
+
+结论：有条件通过（llm-review-2026-09-14-12-48-.md）。两个中危均采纳（真隐患）。
+
+| 项 | 裁定 | 处理 |
+|---|---|---|
+| 中：splash 60ms 硬编码退场，慢机器提前暴露白屏 | **采纳** | 改首帧信号驱动：`nextTick` → `requestAnimationFrame` → `dismiss()`；600ms 超时兜底（rAF 后台冻结踩坑 #12 的防护）——快机器首帧即退、慢机器不早退、极端情况必退 |
+| 中：主进程默认 `'light'` 绕过系统偏好（首次安装深色系统会闪白） | **采纳** | 默认改空串（无用户设置）→ 注入空串 → 内联脚本走 `matchMedia` 系统分支；窗口底色用 `nativeTheme.shouldUseDarkColors` 预判（不传 undefined 避免 Electron 默认白底） |
+| 无法判定（diff 截断项） | 附录 B 核心摘录 + 自测 19/19 + 双主题截图目检 | 黑盒终审 |
+
 ## 附录 C：黑盒验收结果
 
 （待黑盒后填写）
