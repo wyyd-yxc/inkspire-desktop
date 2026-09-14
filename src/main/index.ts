@@ -3,7 +3,7 @@
  * 职责：创建主窗口、注册 IPC 通道；后续数据库（better-sqlite3）与 AI 请求都在本进程内实现，
  * 渲染进程一律通过 preload 暴露的白名单 API 访问（见 docs/design/architecture.md）。
  */
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain, nativeTheme } from 'electron'
 import { join } from 'node:path'
 import { wrap } from './ipc/wrap'
 import { getSetting } from './db/settings'
@@ -28,13 +28,16 @@ import { registerBindingsIpc } from './ipc/bindings'
 
 /** 创建应用主窗口（1280x800，中文标题「墨笺」）。 */
 function createWindow(): void {
-  // 主题随窗口参数注入（M17 灭 FOUC）：preload 同步读取，首帧前挂 data-theme
-  let theme = 'light'
+  // 主题随窗口参数注入（M17 灭 FOUC）：preload 同步读取，首帧前挂 data-theme。
+  // 默认空串=无用户设置（首次安装）→ 内联脚本走系统偏好分支（r4 中危项修正）。
+  let theme = ''
   try {
-    theme = getSetting<string>('ui.theme', 'light')
+    theme = getSetting<string>('ui.theme', '')
   } catch {
-    /* 库未就绪（理论不达）：回落浅色 */
+    /* 库未就绪（理论不达）：空串回落系统偏好 */
   }
+  // 窗口底色预判（灭闪白）：用户设置优先；无设置时按系统偏好（nativeTheme）
+  const darkPredicted = theme === 'dark' || (theme === '' && nativeTheme.shouldUseDarkColors)
   const win = new BrowserWindow({
     width: 1280,
     height: 800,
@@ -43,8 +46,7 @@ function createWindow(): void {
     show: false,
     autoHideMenuBar: true,
     title: '墨笺',
-    // 与渲染层纸底色一致：消除启动瞬间的白屏闪烁（M17）
-    backgroundColor: theme === 'dark' ? '#171512' : '#faf8f3',
+    backgroundColor: darkPredicted ? '#171512' : '#faf8f3',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: true,
