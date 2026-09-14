@@ -11,6 +11,7 @@ import { BOOK_GENRES } from '../../../shared/book.types'
 import { isElectron } from '../services/books'
 import { useToast } from '@/composables/useToast'
 import StyleBindDialog from './StyleBindDialog.vue'
+import BookCover from './BookCover.vue'
 
 const props = defineProps<{ book: Book }>()
 const emit = defineEmits<{ delete: [book: Book]; changed: [] }>()
@@ -61,20 +62,6 @@ onMounted(() => void resolveStyleName())
 
 const bindVisible = ref(false)
 
-/** 封面渐变按书名 hash 稳定取色，避免每次渲染闪变 */
-const coverStyle = computed(() => {
-  const palettes = [
-    'linear-gradient(135deg,#8a7d62,#5c5342)',
-    'linear-gradient(135deg,#6f8a80,#48685f)',
-    'linear-gradient(135deg,#b08868,#8a5c42)',
-    'linear-gradient(135deg,#7a8aa6,#54618a)',
-    'linear-gradient(135deg,#a67f96,#7d5a70)'
-  ]
-  let h = 0
-  for (const ch of props.book.title) h = (h * 31 + ch.codePointAt(0)!) % 997
-  return { backgroundImage: palettes[h % palettes.length] }
-})
-
 const genreLabel = computed(() =>
   (BOOK_GENRES as readonly string[]).includes(props.book.genre) ? props.book.genre : '未分类'
 )
@@ -113,18 +100,18 @@ function openWiki(): void {
     class="group relative flex cursor-pointer flex-col overflow-hidden rounded-card bg-surface shadow-card transition-all hover:-translate-y-0.5 hover:shadow-lg"
     @click="openBook"
   >
-    <!-- 封面区 -->
-    <div class="relative flex h-40 items-center justify-center text-white" :style="coverStyle">
+    <!-- 封面区（M17：题材墨系模板，替换旧渐变占位） -->
+    <div class="relative h-40">
       <img
         v-if="coverUrl"
         :src="coverUrl"
         class="absolute inset-0 h-full w-full object-cover"
         alt=""
       />
-      <span v-else class="text-5xl font-bold drop-shadow-md">{{ book.title.slice(0, 1) }}</span>
+      <BookCover v-else :title="book.title" :genre="book.genre" />
       <span
         v-if="book.status !== 'writing'"
-        class="absolute left-2 top-2 rounded-full bg-black/25 px-2 py-0.5 text-xs"
+        class="absolute left-2 top-2 rounded-full bg-black/25 px-2 py-0.5 text-xs text-white"
       >
         {{ statusLabel[book.status] }}
       </span>
