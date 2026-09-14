@@ -1,0 +1,93 @@
+# M17 验收材料（纸墨 2.0：UI/UX 精修 + 品牌资产 + 封面系统）
+
+- 日期：2026-09-14 · 会话 44
+- diff 基准：`v0.21.0-m16-release`（静态审查请显式 `--base v0.21.0-m16-release`）
+- 设计依据：`docs/design/visual-2.0.md`（用户拍板「纸墨 2.0 精修进化」）
+- 关键提交：5fbe670（规范）、18518b1（令牌+双主题）、f436d0f（圆角）、6b17a79（品牌）、f625f98（封面）、5599a35（组件精修）、b1ca553（字体）、b9df80d（splash 修复）
+
+## 背景与用户决策
+
+用户指令：调用设计 skill 重新设计墨笺 UI/UX 与封面，打包前完成。四项拍板：
+1. **范围**：应用品牌（logo+图标+启动画面）+ 书籍封面系统（双范围）
+2. **方向**：纸墨 2.0 精修进化（保留 M10.8 案头纸墨基因，系统性升级）
+3. **深度**：全落地 + 重打包 0.22.0
+4. **资产方式**：纯代码化 SVG（不依赖 AI 生图；logo 4 稿由用户选定「稿 A・朱砂印」）
+
+方法：ui-ux-pro-max skill 检索（E-Ink/Paper 风格确认为同向参考 + 可访问性清单）+ design-system skill 三层令牌方法论 + design skill 的图标/品牌参考；对比度用 WCAG 2.x 公式脚本验算（tmp/m17-contrast*.mjs）。
+
+## 范围
+
+### 1. 设计令牌 2.0（theme.css 重构，三层架构）
+- **primitive 层**：原始色板（纸系/墨系/点缀/热力五档）——字面值只在本层出现
+- **semantic 层**：`--color-ink-*` 等语义名**全部保留**（1030 处组件类名零改动）；新增 `--color-ink-border-strong`（可交互边框 3:1）、`--color-on-primary`（按钮字色，双主题各一值）、`--color-scrim`（遮罩，浅色 0.3/深色 0.55）
+- **component 层**：`--focus-ring`（双环焦点样式）、`--radius-dialog`、`--duration-fast/base`、`--scrollbar-thumb(-hover)`
+- **色板修正（对比度驱动）**：浅色 muted `#a89e8e`→`#6f6759`（2.49:1→5.26:1）、danger `#b04a3e`→`#a8443a`、warning `#a8813c`→`#7d5f22`（3.37→5.60）、success `#4a7d5b`→`#3f6d4e`；深色主题全新「深夜书房」色板
+- **验算结论**：浅色 19 项 + 深色 19 项关键配对全 PASS（正文 ≥4.5:1、非文本 ≥3:1、层次 ≥1.1:1）
+
+### 2. 深色主题「深夜书房」（M0 起首次落地）
+- `[data-theme="dark"]` 覆盖全部语义令牌（墨黑纸底 `#171512` + 暖白文字 `#ece6d9` + 表面比底亮层次）
+- `composables/useTheme.ts`：三模式（light/dark/system），`matchMedia` 跟随系统，写 settings 键 `ui.theme`（主进程白名单已登记）
+- 设置中心「外观」分区（AppearanceSection.vue）：三按钮即改即存 + toast 反馈
+- 组件适配：`text-white`→`text-on-primary`（主/危险按钮，深色下反转）、`bg-black/30`→`bg-scrim`（遮罩主题感知）
+
+### 3. 品牌资产（纯 SVG）
+- **logo 定稿**：稿 A・朱砂印（印章方框 + 墨滴 + 右下朱砂点）；`assets/brand.ts` 为单一事实源（含深色变体参数）
+- **图标尺寸链**：16/24/32/48/64/128/256/512 PNG + 7 尺寸 PNG 嵌入 ICO（18KB，替换原 3KB 单 256px）；electron-builder.yml 显式 `icon: build/icon.ico`；build/icon.png 512 兜底
+- **启动画面**：index.html 内联 SVG logo + 纸色底（浅/深自动），Vue 挂载后 setTimeout 淡出移除；BrowserWindow `backgroundColor: '#faf8f3'`（灭闪白）
+- **书房顶栏**：挂 SVG 标识（currentColor 随主题）
+
+### 4. 书籍封面系统（`shared/coverArt.ts` + `BookCover.vue`）
+- 纯函数 `coverArtFor({title, genre})` → 九题材配置（双色底/点缀/底纹/排版）+ 同题材内 hash 微变化（明度偏移 ±6、底纹相位 0-39）
+- 九题材底纹（SVG pattern）：长篇=笺纸横纹 / 中短篇=细网格 / 科幻=星轨同心弧 / 历史=卷云纹 / 悬疑=雨丝 / 奇幻=远山 / 现实主义=素面 / 武侠=斜锋 / 其他=墨点
+- 书名排版三策略：≤4 字竖排大字 / 5-9 字两行 / ≥10 字三行缩字；笺纸内边框 + 双角饰
+- 替换 BookCard 原私有 5 组硬编码渐变+首字；自定义封面图优先（共存）
+
+### 5. 组件精修
+- 圆角收敛：裸 `rounded` 16 处显式化、`rounded-2xl` 17 处统一 `rounded-[12px]`（=--radius-dialog）
+- 69 处输入框边框统一 `border-ink-border-strong`（3:1 达标）
+- 全局 `:focus-visible` 焦点环（theme.css 统一规则，替换 72 处 outline-none 的"无替代"做法）
+- 墨系自定义滚动条（细窄、悬停加深、双主题）、`prefers-reduced-motion` 尊重
+
+### 6. 字体可控化
+- 思源宋体简体子集（400/600 两字重 woff2，共 2.9MB）入库 `assets/fonts/`；`@font-face` 本地加载（CSP `'self'` 合规）
+- 消除"无字体 Windows 退化为宋体"问题（原完全依赖系统字体栈）
+
+## 验收点
+
+1. 双主题切换生效且持久（设置分区三模式、reload 后保持、令牌值正确切换）
+2. 深色主题下关键元素可读（卡片/文字/按钮对比度达标——脚本验算 + 截图目检）
+3. 封面九题材渲染（SVG+渐变+底纹存在、配色有区分度、现实主义素面、其余 8 题材有底纹）
+4. 字体本地加载成功（document.fonts.check 通过、标题字体栈含 Noto Serif SC）
+5. 品牌资产：书房顶栏 logo 渲染、启动画面挂载后移除无残留、图标尺寸链产物完整（7 尺寸 ICO）
+6. 焦点环/滚动条/输入框边框令牌生效
+7. typecheck 三重闸门 + console 零报错 + 零 AI
+
+## 开发自测声明
+
+`npm run typecheck` 三重闸门绿。CDP 驱动真实 Electron（9222），零 AI，测试数据自建自清。
+
+- **tmp/m17-t1.mjs 19/19**：T1 启动画面移除 / T2 顶栏品牌标识 / T3 封面九题材（9 本均 SVG+渐变、9 种底色区分、现实主义素面、其余 8 有底纹）/ T4 思源宋体加载+字体栈 / T5 外观分区+切深色令牌生效（data-theme 挂载、paper=#171512、卡片深色面）+切回浅色 / T6 主题 reload 持久 / T7 焦点环（规则定义+令牌解析）/ T8 滚动条 thin / T9 图标产物 / T10 输入框 border-strong 色 / console 零报错
+- **对比度验算**（tmp/m17-contrast3/4.mjs）：浅色 19 项 + 深色 19 项全 PASS
+- **双主题截图目检**：书房/设置 × 浅/深 四张（tmp/m17-shot-*.png）
+- **封面预览图**：九题材一图（tmp/m17-covers-preview.png）
+- **logo 候选渲染**：四稿对比图（tmp/m17-logo-candidates.png，用户选定稿 A）
+
+**自测发现并修复 1 个真 bug**（b9df80d）：启动画面移除用 `requestAnimationFrame` —— 窗口后台时 rAF 被冻结（踩坑 #12 同型），splash 永久残留遮挡 UI。改 `setTimeout` 兜底。此 bug 在真实启动（窗口 show 前）必现。
+
+## 已知边界
+
+- 深色主题下封面保持题材原配色（封面是"书"的美术，不随 UI 主题反转）——设计决策
+- 字体子集为常用简体（约 7000 字），极生僻字回落系统衬线（Georgia/宋体）
+- 暗色模式未覆盖第三方组件（Vue Flow 画布底色为浅色）——画布为空间型界面，留档
+- 图标 ico 为 PNG 嵌入格式（Vista+ 支持）；XP 时代不支持（不属目标平台）
+- 自定义封面图不做压缩/裁剪（M12 既定边界）
+
+> 审查模型沿用 glm-5.1。**tag 号**：v0.22.0-m17-visual。
+
+## 附录 A：r1 整改与裁定（glm-5.1，2026-09-14）
+
+（待静态审查后填写）
+
+## 附录 B：黑盒验收结果
+
+（待黑盒后填写）
