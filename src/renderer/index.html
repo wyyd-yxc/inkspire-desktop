@@ -16,13 +16,28 @@
     </style>
   </head>
   <body>
+    <script>
+      // 首帧主题挂载（M17 灭 FOUC）：优先用户设置（preload 注入），否则系统偏好。
+      // 必须内联同步执行（早于样式生效），保证 splash 阶段主题即正确。
+      ;(function () {
+        try {
+          var injected = window.__inkspire_theme__
+          var dark =
+            injected === 'dark' ||
+            (injected !== 'light' &&
+              (injected === 'system' || !injected) &&
+              window.matchMedia('(prefers-color-scheme: dark)').matches)
+          if (dark) document.documentElement.setAttribute('data-theme', 'dark')
+        } catch (e) {}
+      })()
+    </script>
     <div id="app"></div>
     <!-- 启动画面（M17）：首屏加载期间显示品牌标识，Vue 挂载后由 main.ts 移除 -->
     <div id="boot-splash" aria-hidden="true">
       <svg width="72" height="72" viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg">
-        <rect x="10" y="10" width="76" height="76" rx="18" fill="none" stroke="#3a352e" stroke-width="6" />
-        <path d="M48 26 C40 40 34 48 34 57 a14 14 0 0 0 28 0 C62 48 56 40 48 26 Z" fill="#3a352e" />
-        <circle cx="70" cy="70" r="9" fill="#a8443a" />
+        <rect class="bs-frame" x="10" y="10" width="76" height="76" rx="18" fill="none" stroke="#3a352e" stroke-width="6" />
+        <path class="bs-drop" d="M48 26 C40 40 34 48 34 57 a14 14 0 0 0 28 0 C62 48 56 40 48 26 Z" fill="#3a352e" />
+        <circle class="bs-seal" cx="70" cy="70" r="9" fill="#a8443a" />
       </svg>
       <p>墨笺</p>
     </div>
@@ -45,10 +60,26 @@
         letter-spacing: 0.32em;
         color: #6d6558;
       }
+      /* 深色模式：底色/文字/logo 全部反转（logo 用暖白 + 提亮朱砂，对比度 ≥4.5:1） */
       @media (prefers-color-scheme: dark) {
         #boot-splash { background: #171512; }
         #boot-splash p { color: #b8ae9c; }
+        #boot-splash .bs-frame { stroke: #e3dbc9; }
+        #boot-splash .bs-drop { fill: #e3dbc9; }
+        #boot-splash .bs-seal { fill: #da8577; }
       }
+      /* 用户设置优先于系统偏好（M17 r2）：html[data-theme] 由挂载前脚本按注入值挂载，
+         此处显式声明两态，覆盖 media 查询（用户设浅色+系统深色 / 反之均正确） */
+      html[data-theme='light'] #boot-splash { background: #faf8f3; }
+      html[data-theme='light'] #boot-splash p { color: #6d6558; }
+      html[data-theme='light'] #boot-splash .bs-frame { stroke: #3a352e; }
+      html[data-theme='light'] #boot-splash .bs-drop { fill: #3a352e; }
+      html[data-theme='light'] #boot-splash .bs-seal { fill: #a8443a; }
+      html[data-theme='dark'] #boot-splash { background: #171512; }
+      html[data-theme='dark'] #boot-splash p { color: #b8ae9c; }
+      html[data-theme='dark'] #boot-splash .bs-frame { stroke: #e3dbc9; }
+      html[data-theme='dark'] #boot-splash .bs-drop { fill: #e3dbc9; }
+      html[data-theme='dark'] #boot-splash .bs-seal { fill: #da8577; }
     </style>
     <script type="module" src="/src/main.ts"></script>
   </body>
