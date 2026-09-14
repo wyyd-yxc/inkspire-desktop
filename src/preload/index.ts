@@ -309,3 +309,10 @@ const api = {
 export type Api = typeof api
 
 contextBridge.exposeInMainWorld('api', api)
+
+// 主题注入（M17 灭 FOUC）：主进程经 additionalArguments 传入（启动时已读库），
+// 渲染层 main.ts 在挂载前同步读取并挂 data-theme，避免「用户设深色但系统浅色」的首帧闪白。
+const themeArg = process.argv.find((a) => a.startsWith('--inkspire-theme='))
+if (themeArg) {
+  contextBridge.exposeInMainWorld('__inkspire_theme__', themeArg.split('=')[1] ?? 'light')
+}

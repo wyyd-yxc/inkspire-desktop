@@ -5,7 +5,11 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
+import { applyThemeBeforeMount } from './composables/useTheme'
 import './styles/theme.css'
+
+// 挂载前同步应用主题（M17 灭 FOUC）：preload 已注入主进程读库结果
+applyThemeBeforeMount()
 
 createApp(App).use(createPinia()).use(router).mount('#app')
 

@@ -52,6 +52,20 @@ export async function initTheme(): Promise<void> {
   apply()
 }
 
+/**
+ * 首帧前同步应用主题（M17 灭 FOUC）：由 main.ts 在挂载前调用。
+ * 依赖 preload 同步注入的 window.__inkspire_theme__（主进程启动时已读库），
+ * 无该字段时回退 system 检测——保证「用户设深色但系统浅色」不闪白。
+ */
+export function applyThemeBeforeMount(): void {
+  const injected = (window as unknown as { __inkspire_theme__?: string }).__inkspire_theme__
+  if (injected === 'dark' || injected === 'light' || injected === 'system') {
+    mode.value = injected as ThemeMode
+  }
+  systemDark.value = window.matchMedia('(prefers-color-scheme: dark)').matches
+  apply()
+}
+
 export function useTheme(): {
   mode: typeof mode
   setMode: typeof setThemeMode

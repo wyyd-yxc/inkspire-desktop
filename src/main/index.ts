@@ -6,6 +6,7 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'node:path'
 import { wrap } from './ipc/wrap'
+import { getSetting } from './db/settings'
 import { registerBookIpc } from './ipc/books'
 import { registerSettingsIpc } from './ipc/settings'
 import { registerAiIpc } from './ipc/ai'
@@ -27,6 +28,13 @@ import { registerBindingsIpc } from './ipc/bindings'
 
 /** 创建应用主窗口（1280x800，中文标题「墨笺」）。 */
 function createWindow(): void {
+  // 主题随窗口参数注入（M17 灭 FOUC）：preload 同步读取，首帧前挂 data-theme
+  let theme = 'light'
+  try {
+    theme = getSetting<string>('ui.theme', 'light')
+  } catch {
+    /* 库未就绪（理论不达）：回落浅色 */
+  }
   const win = new BrowserWindow({
     width: 1280,
     height: 800,
@@ -36,11 +44,12 @@ function createWindow(): void {
     autoHideMenuBar: true,
     title: '墨笺',
     // 与渲染层纸底色一致：消除启动瞬间的白屏闪烁（M17）
-    backgroundColor: '#faf8f3',
+    backgroundColor: theme === 'dark' ? '#171512' : '#faf8f3',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: true,
       contextIsolation: true,
+      additionalArguments: [`--inkspire-theme=${theme}`],
       // 写作应用：窗口后台时仍保持 AI 流式与自动保存的定时器运转
       backgroundThrottling: false
     }

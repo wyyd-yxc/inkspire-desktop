@@ -86,8 +86,60 @@
 
 ## 附录 A：r1 整改与裁定（glm-5.1，2026-09-14）
 
-（待静态审查后填写）
+结论：有条件通过（llm-review-2026-09-14-12-27-.md）。整改后自测回归 19/19。
 
-## 附录 B：黑盒验收结果
+| 项 | 裁定 | 处理 |
+|---|---|---|
+| 严重：splash 移除逻辑缺失（App.vue diff 中不可见） | **误报（文件看错）** | 移除逻辑在 **main.ts**（非 App.vue）：`applyThemeBeforeMount()` + mount 后 setTimeout 淡出 `#boot-splash`（b9df80d）；自测 T1 实证 splash 已移除。材料附录补 main.ts 源码摘录 |
+| 中等：outline-none 覆盖全局焦点环 | **误报（实测证伪）** | `outline` 与 `box-shadow` 为独立属性互不覆盖；实测聚焦元素 computed `box-shadow: rgb(23,21,18) 0 0 0 2px, rgb(227,219,201) 0 0 0 4px`（焦点环生效）；theme.css 的 `:focus-visible` 规则显式 `outline:none` 后设 box-shadow，优先级正确 |
+| 中等：主题初始化在 onMounted 异步读库，用户设深色+系统浅色时 FOUC | **采纳（真问题）** | 已修：主进程 createWindow 读库 → `additionalArguments: ['--inkspire-theme=dark']` → preload 注入 `window.__inkspire_theme__` → `main.ts` 挂载前 `applyThemeBeforeMount()` 同步挂 `data-theme`；BrowserWindow backgroundColor 同步随主题 |
+| 低：brand.ts 无末尾换行 | **采纳** | 已补 |
+| 无法判定（theme.css/useTheme/BookCover/coverArt 等 diff 缺失） | **材料补全** | 核心源码摘录入附录 B（theme.css 令牌全文、useTheme 三模式、coverArt 九题材表、BookCover 模板要点、main.ts splash 移除） |
+
+## 附录 B：核心源码事实（r1 截断补全）
+
+### 启动画面移除（src/renderer/src/main.ts 全文尾部）
+
+```ts
+import { applyThemeBeforeMount } from './composables/useTheme'
+// 挂载前同步应用主题（M17 灭 FOUC）：preload 已注入主进程读库结果
+applyThemeBeforeMount()
+createApp(App).use(createPinia()).use(router).mount('#app')
+// 启动画面退场：不用 requestAnimationFrame（窗口后台冻结，踩坑 #12）——setTimeout 兜底
+const splash = document.getElementById('boot-splash')
+if (splash) {
+  setTimeout(() => {
+    splash.style.transition = 'opacity 200ms ease'
+    splash.style.opacity = '0'
+    setTimeout(() => splash.remove(), 220)
+  }, 60)
+}
+```
+
+### 主题注入链（灭 FOUC）
+
+```ts
+// 主进程 src/main/index.ts createWindow：
+let theme = 'light'
+try { theme = getSetting<string>('ui.theme', 'light') } catch {}
+const win = new BrowserWindow({
+  backgroundColor: theme === 'dark' ? '#171512' : '#faf8f3',
+  webPreferences: { /* ... */ additionalArguments: [`--inkspire-theme=${theme}`] }
+})
+// preload src/preload/index.ts 尾部：
+const themeArg = process.argv.find((a) => a.startsWith('--inkspire-theme='))
+if (themeArg) contextBridge.exposeInMainWorld('__inkspire_theme__', themeArg.split('=')[1] ?? 'light')
+// useTheme.applyThemeBeforeMount()：读注入值 → mode → apply()（html[data-theme]）
+```
+
+### theme.css 令牌结构（三层）
+
+primitive（`--raw-*`：纸系 3/墨系 8/点缀 3/热力 5）→ semantic（`--color-paper/surface/ink-primary(-hover/-soft)/on-primary/ink-text(-secondary/-muted)/ink-border(-strong)/ink-danger/warning/success/heat-0..4/scrim`，浅色在 @theme、深色在 `[data-theme='dark']` 覆盖）→ component（`--radius-sm/card/lg/dialog`、`--shadow-card/dialog`、`--focus-ring`、`--duration-fast/base`、`--scrollbar-thumb(-hover)`）。全局规则：`:focus-visible` 焦点环、`::-webkit-scrollbar` 墨系、`@media (prefers-reduced-motion)` 归零。
+
+### coverArt 九题材（`src/shared/coverArt.ts`）
+
+PALETTES: 长篇(墨褐/rule-lines)、中短篇(灰蓝/grid)、科幻(靛墨/star-arc)、历史(赭褐/cloud)、悬疑(青灰/rain)、奇幻(黛紫/mountains)、现实主义(暖灰/plain)、武侠(苍青/blade)、其他(中性/dots)；`coverArtFor` 返回 {palette, shift(±6 明度), phase(0-39 底纹相位), layout(≤4竖排/5-9两行/≥10三行)}；`shade()` 应用明度偏移。
+
+## 附录 C：黑盒验收结果
 
 （待黑盒后填写）
