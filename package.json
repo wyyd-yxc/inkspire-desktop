@@ -1,6 +1,6 @@
 {
   "name": "inkspire-desktop",
-  "version": "0.21.0",
+  "version": "0.22.0",
   "description": "墨笺桌面版 —— AI 驱动的长篇小说创作工作台（本地数据 + 自定义 AI API）",
   "main": "./out/main/index.js",
   "author": "inkspire-dev",
