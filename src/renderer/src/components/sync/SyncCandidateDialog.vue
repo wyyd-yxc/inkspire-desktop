@@ -55,7 +55,7 @@ function confirm(): void {
   <teleport to="body">
     <div
       v-if="visible"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-scrim"
       @click.self="emit('close')"
     >
       <div class="flex max-h-[82%] w-[560px] flex-col rounded-[12px] bg-surface shadow-2xl">
@@ -109,7 +109,7 @@ function confirm(): void {
             @click="emit('close')"
           >取消</button>
           <button
-            class="rounded-lg bg-ink-primary px-4 py-1.5 text-xs text-white hover:bg-ink-primary-hover disabled:opacity-50"
+            class="rounded-lg bg-ink-primary px-4 py-1.5 text-xs text-on-primary hover:bg-ink-primary-hover disabled:opacity-50"
             :disabled="checkedCount === 0"
             @click="confirm"
           >{{ confirmText ?? '采纳所选项' }}（{{ checkedCount }}）</button>

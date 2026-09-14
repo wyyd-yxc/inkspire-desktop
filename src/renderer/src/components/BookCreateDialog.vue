@@ -58,7 +58,7 @@ async function submit(): Promise<void> {
   <teleport to="body">
     <div
       v-if="visible"
-      class="fixed inset-0 z-40 flex items-center justify-center bg-black/30"
+      class="fixed inset-0 z-40 flex items-center justify-center bg-scrim"
       @click.self="visible = false"
     >
       <div class="w-[480px] rounded-[12px] bg-surface p-6 shadow-card">
@@ -72,7 +72,7 @@ async function submit(): Promise<void> {
               type="text"
               maxlength="50"
               placeholder="给作品起一个名字"
-              class="rounded-lg border border-ink-border px-3 py-2 outline-none focus:border-ink-primary"
+              class="rounded-lg border border-ink-border-strong px-3 py-2 outline-none focus:border-ink-primary"
             />
           </label>
 
@@ -103,7 +103,7 @@ async function submit(): Promise<void> {
               rows="3"
               maxlength="500"
               placeholder="一句话或一段话介绍这本书（选填）"
-              class="resize-none rounded-lg border border-ink-border px-3 py-2 outline-none focus:border-ink-primary"
+              class="resize-none rounded-lg border border-ink-border-strong px-3 py-2 outline-none focus:border-ink-primary"
             />
           </label>
         </div>
@@ -116,7 +116,7 @@ async function submit(): Promise<void> {
             取消
           </button>
           <button
-            class="rounded-lg bg-ink-primary px-5 py-2 text-white transition-colors hover:bg-ink-primary-hover disabled:opacity-50"
+            class="rounded-lg bg-ink-primary px-5 py-2 text-on-primary transition-colors hover:bg-ink-primary-hover disabled:opacity-50"
             :disabled="submitting"
             @click="submit"
           >

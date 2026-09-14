@@ -73,7 +73,7 @@ function submit(): void {
   <teleport to="body">
     <div
       v-if="visible"
-      class="fixed inset-0 z-40 flex items-center justify-center bg-black/20 px-4"
+      class="fixed inset-0 z-40 flex items-center justify-center bg-scrim px-4"
       @click.self="emit('close')"
     >
       <div class="flex max-h-[85vh] w-[520px] flex-col rounded-lg border border-ink-border bg-surface shadow-2xl">
@@ -106,7 +106,7 @@ function submit(): void {
                 v-model="form.title"
                 maxlength="40"
                 placeholder="一句话概括这条灵感"
-                class="rounded-lg border border-ink-border px-3 py-2 text-sm outline-none focus:border-ink-primary"
+                class="rounded-lg border border-ink-border-strong px-3 py-2 text-sm outline-none focus:border-ink-primary"
               />
             </label>
             <label class="flex flex-col gap-1">
@@ -115,7 +115,7 @@ function submit(): void {
                 v-model="form.content"
                 rows="6"
                 placeholder="展开记录：画面、对白、念头、待办细节……"
-                class="resize-y rounded-lg border border-ink-border px-3 py-2 text-sm outline-none focus:border-ink-primary"
+                class="resize-y rounded-lg border border-ink-border-strong px-3 py-2 text-sm outline-none focus:border-ink-primary"
               />
             </label>
             <div class="flex flex-col gap-1">
@@ -151,7 +151,7 @@ function submit(): void {
               @click="emit('close')"
             >取消</button>
             <button
-              class="rounded-lg bg-ink-primary px-4 py-1.5 text-xs text-white hover:bg-ink-primary-hover"
+              class="rounded-lg bg-ink-primary px-4 py-1.5 text-xs text-on-primary hover:bg-ink-primary-hover"
               @click="submit"
             >{{ inspiration ? '保存' : '创建' }}</button>
           </div>

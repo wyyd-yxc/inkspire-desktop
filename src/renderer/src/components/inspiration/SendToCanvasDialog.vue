@@ -44,7 +44,7 @@ function confirm(): void {
   <teleport to="body">
     <div
       v-if="visible"
-      class="fixed inset-0 z-40 flex items-center justify-center bg-black/20 px-4"
+      class="fixed inset-0 z-40 flex items-center justify-center bg-scrim px-4"
       @click.self="emit('close')"
     >
       <div class="w-[440px] rounded-lg border border-ink-border bg-surface shadow-2xl">
@@ -90,7 +90,7 @@ function confirm(): void {
             <span class="text-sm text-ink-text-secondary">所属章节</span>
             <select
               v-model="chapterId"
-              class="rounded-lg border border-ink-border px-3 py-2 text-sm outline-none focus:border-ink-primary"
+              class="rounded-lg border border-ink-border-strong px-3 py-2 text-sm outline-none focus:border-ink-primary"
             >
               <option value="" disabled>选择章节…</option>
               <option v-for="c in chapters" :key="c.id" :value="c.id">{{ c.title }}</option>
@@ -107,7 +107,7 @@ function confirm(): void {
             @click="emit('close')"
           >取消</button>
           <button
-            class="rounded-lg bg-ink-primary px-4 py-1.5 text-xs text-white hover:bg-ink-primary-hover disabled:opacity-40"
+            class="rounded-lg bg-ink-primary px-4 py-1.5 text-xs text-on-primary hover:bg-ink-primary-hover disabled:opacity-40"
             :disabled="targetType === 'scene' && (!chapterId || chapters.length === 0)"
             @click="confirm"
           >送入画布</button>

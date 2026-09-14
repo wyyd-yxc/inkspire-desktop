@@ -81,7 +81,7 @@ onMounted(() => {
           @click="digestVisible = true"
         >从参考文本拆解</button>
         <button
-          class="rounded-full bg-ink-primary px-4 py-2 text-sm text-white transition-colors hover:bg-ink-primary-hover"
+          class="rounded-full bg-ink-primary px-4 py-2 text-sm text-on-primary transition-colors hover:bg-ink-primary-hover"
           @click="openCreate"
         >+ 新建风格包</button>
       </div>

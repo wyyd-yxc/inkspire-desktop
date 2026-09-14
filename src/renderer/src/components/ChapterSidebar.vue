@@ -61,7 +61,7 @@ const totalWords = computed(() => props.chapters.reduce((s, c) => s + c.wordCoun
     <div class="flex items-center justify-between px-4 pb-1 pt-2.5">
       <span class="text-xs text-ink-text-muted">章节</span>
       <button
-        class="rounded-full bg-ink-primary px-3 py-1 text-xs text-white transition-colors hover:bg-ink-primary-hover"
+        class="rounded-full bg-ink-primary px-3 py-1 text-xs text-on-primary transition-colors hover:bg-ink-primary-hover"
         @click="emit('create')"
       >+ 新章节</button>
     </div>

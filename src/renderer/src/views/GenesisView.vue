@@ -373,7 +373,7 @@ onMounted(() => void loadAll())
       <template v-for="(label, i) in STEP_LABELS" :key="i">
         <button
           class="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition-colors"
-          :class="activeStep === i + 1 ? 'bg-ink-primary text-white' : steps[i + 1]?.isDone ? 'bg-ink-success/15 text-ink-success' : 'text-ink-text-secondary hover:bg-ink-primary-soft'"
+          :class="activeStep === i + 1 ? 'bg-ink-primary text-on-primary' : steps[i + 1]?.isDone ? 'bg-ink-success/15 text-ink-success' : 'text-ink-text-secondary hover:bg-ink-primary-soft'"
           @click="activeStep = (i + 1) as GenesisStep"
         >
           <span class="flex h-5 w-5 items-center justify-center rounded-full text-xs"
@@ -463,25 +463,25 @@ onMounted(() => void loadAll())
 
         <label class="mb-4 flex flex-col gap-1.5">
           <span class="text-sm font-medium">核心一句话 *</span>
-          <textarea v-model="step2.logline" rows="2" maxlength="200" placeholder="主角是谁、想做什么、面对什么阻碍" class="resize-none rounded-lg border border-ink-border px-3 py-2 outline-none focus:border-ink-primary" />
+          <textarea v-model="step2.logline" rows="2" maxlength="200" placeholder="主角是谁、想做什么、面对什么阻碍" class="resize-none rounded-lg border border-ink-border-strong px-3 py-2 outline-none focus:border-ink-primary" />
         </label>
 
         <div class="mb-6 grid grid-cols-2 gap-4">
           <fieldset class="rounded-card border border-ink-border p-4">
             <legend class="px-2 text-sm font-medium">题材定位</legend>
             <div class="flex flex-col gap-2">
-              <input v-model="step2.genre.mainType" placeholder="主类型" class="rounded-lg border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
-              <input v-model="step2.genre.subType" placeholder="副类型" class="rounded-lg border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
-              <input v-model="step2.genre.targetReader" placeholder="目标读者" class="rounded-lg border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
-              <input v-model="step2.genre.mood" placeholder="情绪基调" class="rounded-lg border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
+              <input v-model="step2.genre.mainType" placeholder="主类型" class="rounded-lg border border-ink-border-strong px-2 py-1 text-sm outline-none focus:border-ink-primary" />
+              <input v-model="step2.genre.subType" placeholder="副类型" class="rounded-lg border border-ink-border-strong px-2 py-1 text-sm outline-none focus:border-ink-primary" />
+              <input v-model="step2.genre.targetReader" placeholder="目标读者" class="rounded-lg border border-ink-border-strong px-2 py-1 text-sm outline-none focus:border-ink-primary" />
+              <input v-model="step2.genre.mood" placeholder="情绪基调" class="rounded-lg border border-ink-border-strong px-2 py-1 text-sm outline-none focus:border-ink-primary" />
             </div>
           </fieldset>
           <fieldset class="rounded-card border border-ink-border p-4">
             <legend class="px-2 text-sm font-medium">核心能力设定</legend>
             <div class="flex flex-col gap-2">
-              <input v-model="step2.cheat.coreAbility" placeholder="核心能力" class="rounded-lg border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
-              <input v-model="step2.cheat.powerSystem" placeholder="力量体系" class="rounded-lg border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
-              <input v-model="step2.cheat.limitation" placeholder="限制代价" class="rounded-lg border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
+              <input v-model="step2.cheat.coreAbility" placeholder="核心能力" class="rounded-lg border border-ink-border-strong px-2 py-1 text-sm outline-none focus:border-ink-primary" />
+              <input v-model="step2.cheat.powerSystem" placeholder="力量体系" class="rounded-lg border border-ink-border-strong px-2 py-1 text-sm outline-none focus:border-ink-primary" />
+              <input v-model="step2.cheat.limitation" placeholder="限制代价" class="rounded-lg border border-ink-border-strong px-2 py-1 text-sm outline-none focus:border-ink-primary" />
             </div>
           </fieldset>
         </div>
@@ -489,14 +489,14 @@ onMounted(() => void loadAll())
         <fieldset class="mb-6 rounded-card border border-ink-border p-4">
           <legend class="px-2 text-sm font-medium">冲突梯队</legend>
           <div class="grid grid-cols-2 gap-3">
-            <input v-model="step2.conflict.opening" placeholder="开局矛盾" class="rounded-lg border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
-            <input v-model="step2.conflict.mainline" placeholder="主线冲突" class="rounded-lg border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
-            <input v-model="step2.conflict.ultimate" placeholder="终极阻碍" class="rounded-lg border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
-            <input v-model="step2.conflict.villain" placeholder="反派层级" class="rounded-lg border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
+            <input v-model="step2.conflict.opening" placeholder="开局矛盾" class="rounded-lg border border-ink-border-strong px-2 py-1 text-sm outline-none focus:border-ink-primary" />
+            <input v-model="step2.conflict.mainline" placeholder="主线冲突" class="rounded-lg border border-ink-border-strong px-2 py-1 text-sm outline-none focus:border-ink-primary" />
+            <input v-model="step2.conflict.ultimate" placeholder="终极阻碍" class="rounded-lg border border-ink-border-strong px-2 py-1 text-sm outline-none focus:border-ink-primary" />
+            <input v-model="step2.conflict.villain" placeholder="反派层级" class="rounded-lg border border-ink-border-strong px-2 py-1 text-sm outline-none focus:border-ink-primary" />
           </div>
         </fieldset>
 
-        <button class="rounded-full bg-ink-primary px-6 py-2 text-sm text-white transition-colors hover:bg-ink-primary-hover" @click="saveSoul">保存内核</button>
+        <button class="rounded-full bg-ink-primary px-6 py-2 text-sm text-on-primary transition-colors hover:bg-ink-primary-hover" @click="saveSoul">保存内核</button>
       </div>
 
       <!-- 第 3 步 世界构建 -->
@@ -506,7 +506,7 @@ onMounted(() => void loadAll())
             <h2 class="text-lg font-semibold">世界构建 · 世界观设定</h2>
             <p class="text-sm text-ink-text-secondary">{{ STEP_HINTS[2] }}——基于内核内容量身生成。</p>
           </div>
-          <button class="rounded-full bg-ink-primary px-4 py-1.5 text-sm text-white transition-colors hover:bg-ink-primary-hover" @click="coldStartWorld">一键起草</button>
+          <button class="rounded-full bg-ink-primary px-4 py-1.5 text-sm text-on-primary transition-colors hover:bg-ink-primary-hover" @click="coldStartWorld">一键起草</button>
         </div>
 
         <div v-if="step3" class="flex flex-col gap-4">
@@ -542,12 +542,12 @@ onMounted(() => void loadAll())
 
         <div v-for="(v, vi) in step4.volumes" :key="vi" class="mb-4 rounded-card border border-ink-border p-4">
           <div class="mb-3 flex items-center gap-2">
-            <input v-model="v.name" class="flex-1 rounded-lg border border-ink-border px-2 py-1 text-sm font-medium outline-none focus:border-ink-primary" />
+            <input v-model="v.name" class="flex-1 rounded-lg border border-ink-border-strong px-2 py-1 text-sm font-medium outline-none focus:border-ink-primary" />
             <button class="text-xs text-ink-text-muted hover:text-ink-danger" @click="removeVolume(vi)">删除卷</button>
           </div>
           <div v-for="(c, ci) in v.chapters" :key="ci" class="mb-2 flex items-start gap-2">
-            <input v-model="c.title" placeholder="章节名" class="w-32 shrink-0 rounded-lg border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
-            <input v-model="c.outline" placeholder="一句话大纲" class="flex-1 rounded-lg border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
+            <input v-model="c.title" placeholder="章节名" class="w-32 shrink-0 rounded-lg border border-ink-border-strong px-2 py-1 text-sm outline-none focus:border-ink-primary" />
+            <input v-model="c.outline" placeholder="一句话大纲" class="flex-1 rounded-lg border border-ink-border-strong px-2 py-1 text-sm outline-none focus:border-ink-primary" />
             <button class="shrink-0 text-xs text-ink-text-muted hover:text-ink-danger" @click="removeChapter(vi, ci)">✕</button>
           </div>
           <button class="text-xs text-ink-primary hover:underline" @click="addChapter(vi)">+ 添加章节</button>
@@ -557,13 +557,13 @@ onMounted(() => void loadAll())
         <fieldset class="mb-6 rounded-card border border-ink-border p-4">
           <legend class="px-2 text-sm font-medium">写作规则（全局约束 AI 生成）</legend>
           <div class="flex flex-col gap-2">
-            <input v-model="step4.rules.targetWords" placeholder="目标总字数（如 100 万字）" class="rounded-lg border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
-            <input v-model="step4.rules.forbidden" placeholder="禁止出现的内容" class="rounded-lg border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
-            <input v-model="step4.rules.styleNotes" placeholder="要遵循的写法" class="rounded-lg border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
+            <input v-model="step4.rules.targetWords" placeholder="目标总字数（如 100 万字）" class="rounded-lg border border-ink-border-strong px-2 py-1 text-sm outline-none focus:border-ink-primary" />
+            <input v-model="step4.rules.forbidden" placeholder="禁止出现的内容" class="rounded-lg border border-ink-border-strong px-2 py-1 text-sm outline-none focus:border-ink-primary" />
+            <input v-model="step4.rules.styleNotes" placeholder="要遵循的写法" class="rounded-lg border border-ink-border-strong px-2 py-1 text-sm outline-none focus:border-ink-primary" />
           </div>
         </fieldset>
 
-        <button class="rounded-full bg-ink-primary px-6 py-2 text-sm text-white transition-colors hover:bg-ink-primary-hover" @click="saveLayout">保存布局</button>
+        <button class="rounded-full bg-ink-primary px-6 py-2 text-sm text-on-primary transition-colors hover:bg-ink-primary-hover" @click="saveLayout">保存布局</button>
       </div>
 
       <!-- 第 5 步 开笔 -->
@@ -576,7 +576,7 @@ onMounted(() => void loadAll())
           <span :class="steps[3]?.isDone ? 'text-ink-success' : 'text-ink-text-muted'">{{ steps[3]?.isDone ? '✓' : '○' }} 世界构建</span>
           <span :class="steps[4]?.isDone ? 'text-ink-success' : 'text-ink-text-muted'">{{ steps[4]?.isDone ? '✓' : '○' }} 布局</span>
         </div>
-        <button class="rounded-full bg-ink-primary px-8 py-3 text-white shadow-card transition-colors hover:bg-ink-primary-hover" @click="startWriting">进入写作台 →</button>
+        <button class="rounded-full bg-ink-primary px-8 py-3 text-on-primary shadow-card transition-colors hover:bg-ink-primary-hover" @click="startWriting">进入写作台 →</button>
         <p class="mt-4 text-xs text-ink-text-muted">（建议至少完成内核与世界构建，AI 写作效果更好）</p>
       </div>
     </div>

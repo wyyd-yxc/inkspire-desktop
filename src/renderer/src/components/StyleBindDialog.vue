@@ -54,7 +54,7 @@ async function save(): Promise<void> {
   <teleport to="body">
     <div
       v-if="visible"
-      class="fixed inset-0 z-40 flex items-center justify-center bg-black/30 px-4"
+      class="fixed inset-0 z-40 flex items-center justify-center bg-scrim px-4"
       @click.self="visible = false"
     >
       <div class="flex max-h-[80vh] w-[420px] flex-col rounded-[12px] bg-surface shadow-card">
@@ -98,7 +98,7 @@ async function save(): Promise<void> {
             @click="visible = false"
           >取消</button>
           <button
-            class="rounded-lg bg-ink-primary px-4 py-2 text-sm text-white transition-colors hover:bg-ink-primary-hover disabled:opacity-40"
+            class="rounded-lg bg-ink-primary px-4 py-2 text-sm text-on-primary transition-colors hover:bg-ink-primary-hover disabled:opacity-40"
             :disabled="saving"
             @click="save"
           >{{ saving ? '保存中…' : '保存' }}</button>

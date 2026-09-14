@@ -72,6 +72,8 @@
   --duration-base: 200ms;
   --scrollbar-thumb: rgb(58 53 46 / 0.22);
   --scrollbar-thumb-hover: rgb(58 53 46 / 0.38);
+  /* 弹窗遮罩（M17：主题感知——浅色轻遮、深色重遮保前景可读） */
+  --color-scrim: rgb(0 0 0 / 0.3);
 
   /* 字体：标题与正文编辑区衬线（严肃写作），UI 控件保持无衬线 */
   --font-serif: 'Noto Serif SC', 'Source Han Serif SC', 'STZhongsong', SimSun, Georgia, serif;
@@ -107,6 +109,7 @@
   --shadow-dialog: 0 8px 32px rgb(0 0 0 / 0.5);
   --scrollbar-thumb: rgb(227 219 201 / 0.22);
   --scrollbar-thumb-hover: rgb(227 219 201 / 0.38);
+  --color-scrim: rgb(0 0 0 / 0.55);
 }
 
 /* 全局基础样式 */

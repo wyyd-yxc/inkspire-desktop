@@ -68,7 +68,7 @@ function submit(): void {
   <teleport to="body">
     <div
       v-if="visible"
-      class="fixed inset-0 z-40 flex justify-end bg-black/20"
+      class="fixed inset-0 z-40 flex justify-end bg-scrim"
       @click.self="emit('close')"
     >
       <div class="flex h-full w-[400px] flex-col bg-surface shadow-2xl">
@@ -87,7 +87,7 @@ function submit(): void {
               <input
                 v-model="form.title"
                 maxlength="40"
-                class="rounded-lg border border-ink-border px-3 py-2 text-sm outline-none focus:border-ink-primary"
+                class="rounded-lg border border-ink-border-strong px-3 py-2 text-sm outline-none focus:border-ink-primary"
               />
             </label>
             <label class="flex flex-col gap-1">
@@ -95,7 +95,7 @@ function submit(): void {
               <textarea
                 v-model="form.description"
                 rows="6"
-                class="resize-y rounded-lg border border-ink-border px-3 py-2 text-sm outline-none focus:border-ink-primary"
+                class="resize-y rounded-lg border border-ink-border-strong px-3 py-2 text-sm outline-none focus:border-ink-primary"
               />
             </label>
             <label class="flex flex-col gap-1">
@@ -103,7 +103,7 @@ function submit(): void {
               <input
                 v-model="form.tagsText"
                 placeholder="高潮、伏笔、打斗"
-                class="rounded-lg border border-ink-border px-3 py-2 text-sm outline-none focus:border-ink-primary"
+                class="rounded-lg border border-ink-border-strong px-3 py-2 text-sm outline-none focus:border-ink-primary"
               />
               <span v-if="form.tagsText.trim()" class="flex flex-wrap gap-1">
                 <span
@@ -147,7 +147,7 @@ function submit(): void {
               @click="emit('close')"
             >取消</button>
             <button
-              class="rounded-lg bg-ink-primary px-4 py-1.5 text-xs text-white hover:bg-ink-primary-hover"
+              class="rounded-lg bg-ink-primary px-4 py-1.5 text-xs text-on-primary hover:bg-ink-primary-hover"
               @click="submit"
             >{{ event ? '保存' : '创建' }}</button>
           </div>

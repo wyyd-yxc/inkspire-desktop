@@ -381,7 +381,7 @@ onMounted(() => void loadAll())
         <input
           v-model="keyword"
           placeholder="搜索词条…"
-          class="w-full rounded-lg border border-ink-border px-2.5 py-1.5 text-sm outline-none focus:border-ink-primary"
+          class="w-full rounded-lg border border-ink-border-strong px-2.5 py-1.5 text-sm outline-none focus:border-ink-primary"
         />
       </div>
       <div class="flex flex-col gap-0.5 px-2">
@@ -404,7 +404,7 @@ onMounted(() => void loadAll())
       </div>
       <div class="mt-auto flex flex-col gap-1.5 p-3">
         <button
-          class="rounded-lg bg-ink-primary px-3 py-1.5 text-xs text-white transition-colors hover:bg-ink-primary-hover"
+          class="rounded-lg bg-ink-primary px-3 py-1.5 text-xs text-on-primary transition-colors hover:bg-ink-primary-hover"
           @click="openCreate"
         >+ 新建词条</button>
         <button
@@ -477,7 +477,7 @@ onMounted(() => void loadAll())
 
     <!-- 右侧编辑面板 -->
     <teleport to="body">
-      <div v-if="panelVisible" class="fixed inset-0 z-40 flex justify-end bg-black/20" @click.self="panelVisible = false">
+      <div v-if="panelVisible" class="fixed inset-0 z-40 flex justify-end bg-scrim" @click.self="panelVisible = false">
         <div class="flex h-full w-[440px] flex-col bg-surface shadow-2xl">
           <div class="flex items-center justify-between border-b border-ink-border/60 px-5 py-3.5">
             <h2 class="font-semibold">{{ editing ? '编辑词条' : '新建词条' }}</h2>
@@ -487,7 +487,7 @@ onMounted(() => void loadAll())
             <div class="flex flex-col gap-4">
               <label class="flex flex-col gap-1">
                 <span class="text-sm text-ink-text-secondary">名称 *</span>
-                <input v-model="form.name" maxlength="30" class="rounded-lg border border-ink-border px-3 py-2 text-sm outline-none focus:border-ink-primary" />
+                <input v-model="form.name" maxlength="30" class="rounded-lg border border-ink-border-strong px-3 py-2 text-sm outline-none focus:border-ink-primary" />
               </label>
               <label class="flex flex-col gap-1">
                 <span class="text-sm text-ink-text-secondary">类型</span>
@@ -503,11 +503,11 @@ onMounted(() => void loadAll())
               </label>
               <label class="flex flex-col gap-1">
                 <span class="text-sm text-ink-text-secondary">一句话简介</span>
-                <input v-model="form.summary" maxlength="60" class="rounded-lg border border-ink-border px-3 py-2 text-sm outline-none focus:border-ink-primary" />
+                <input v-model="form.summary" maxlength="60" class="rounded-lg border border-ink-border-strong px-3 py-2 text-sm outline-none focus:border-ink-primary" />
               </label>
               <label class="flex flex-col gap-1">
                 <span class="text-sm text-ink-text-secondary">详细设定</span>
-                <textarea v-model="form.content" rows="6" class="resize-y rounded-lg border border-ink-border px-3 py-2 text-sm leading-6 outline-none focus:border-ink-primary" />
+                <textarea v-model="form.content" rows="6" class="resize-y rounded-lg border border-ink-border-strong px-3 py-2 text-sm leading-6 outline-none focus:border-ink-primary" />
               </label>
               <div class="flex flex-col gap-1">
                 <div class="flex items-center justify-between">
@@ -515,8 +515,8 @@ onMounted(() => void loadAll())
                   <button class="text-xs text-ink-primary hover:underline" @click="addAttribute">+ 添加</button>
                 </div>
                 <div v-for="(a, i) in form.attributes" :key="i" class="flex items-center gap-1.5">
-                  <input v-model="a.key" placeholder="属性名" class="w-24 rounded-lg border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
-                  <input v-model="a.value" placeholder="属性值" class="min-w-0 flex-1 rounded-lg border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
+                  <input v-model="a.key" placeholder="属性名" class="w-24 rounded-lg border border-ink-border-strong px-2 py-1 text-sm outline-none focus:border-ink-primary" />
+                  <input v-model="a.value" placeholder="属性值" class="min-w-0 flex-1 rounded-lg border border-ink-border-strong px-2 py-1 text-sm outline-none focus:border-ink-primary" />
                   <button class="text-ink-text-muted hover:text-ink-danger" @click="removeAttribute(i)">✕</button>
                 </div>
               </div>
@@ -557,7 +557,7 @@ onMounted(() => void loadAll())
             >删除词条</button>
             <span v-else />
             <button
-              class="rounded-lg bg-ink-primary px-5 py-2 text-sm text-white transition-colors hover:bg-ink-primary-hover disabled:opacity-50"
+              class="rounded-lg bg-ink-primary px-5 py-2 text-sm text-on-primary transition-colors hover:bg-ink-primary-hover disabled:opacity-50"
               :disabled="saving"
               @click="save"
             >{{ saving ? '保存中…' : '保存' }}</button>
@@ -568,7 +568,7 @@ onMounted(() => void loadAll())
 
     <!-- AI 生成设置弹窗 -->
     <teleport to="body">
-      <div v-if="aiDialogVisible" class="fixed inset-0 z-40 flex items-center justify-center bg-black/30" @click.self="aiDialogVisible = false">
+      <div v-if="aiDialogVisible" class="fixed inset-0 z-40 flex items-center justify-center bg-scrim" @click.self="aiDialogVisible = false">
         <div class="w-[420px] rounded-[12px] bg-surface p-6 shadow-card">
           <h2 class="mb-4 text-lg font-semibold">AI 生成词条</h2>
           <div class="flex flex-col gap-4">
@@ -586,12 +586,12 @@ onMounted(() => void loadAll())
             </div>
             <label class="flex flex-col gap-1.5">
               <span class="text-sm text-ink-text-secondary">关键词 / 要求（留空由 AI 发挥）</span>
-              <textarea v-model="aiForm.keywords" rows="2" placeholder="如：女主角的师父，冷面热心，剑修" class="resize-none rounded-lg border border-ink-border px-3 py-2 text-sm outline-none focus:border-ink-primary" />
+              <textarea v-model="aiForm.keywords" rows="2" placeholder="如：女主角的师父，冷面热心，剑修" class="resize-none rounded-lg border border-ink-border-strong px-3 py-2 text-sm outline-none focus:border-ink-primary" />
             </label>
           </div>
           <div class="mt-5 flex justify-end gap-3">
             <button class="rounded-lg px-4 py-2 text-sm text-ink-text-secondary hover:bg-ink-primary-soft" @click="aiDialogVisible = false">取消</button>
-            <button class="rounded-lg bg-ink-primary px-5 py-2 text-sm text-white hover:bg-ink-primary-hover" @click="startAiGenerate">开始生成</button>
+            <button class="rounded-lg bg-ink-primary px-5 py-2 text-sm text-on-primary hover:bg-ink-primary-hover" @click="startAiGenerate">开始生成</button>
           </div>
         </div>
       </div>

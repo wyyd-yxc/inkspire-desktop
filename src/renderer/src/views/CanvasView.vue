@@ -674,7 +674,7 @@ onMounted(() => void loadAll())
           <span class="text-xs text-ink-text-muted">连线:</span>
           <select
             v-model="edgeForm.type"
-            class="rounded-lg border border-ink-border bg-surface px-1.5 py-0.5 text-xs outline-none"
+            class="rounded-lg border border-ink-border-strong bg-surface px-1.5 py-0.5 text-xs outline-none"
             @change="saveEdgeEdit"
           >
             <option value="main">主线</option>
@@ -685,7 +685,7 @@ onMounted(() => void loadAll())
             v-model="edgeForm.label"
             placeholder="标签（如 伏笔）"
             maxlength="12"
-            class="w-24 rounded-lg border border-ink-border px-1.5 py-0.5 text-xs outline-none focus:border-ink-primary"
+            class="w-24 rounded-lg border border-ink-border-strong px-1.5 py-0.5 text-xs outline-none focus:border-ink-primary"
             @keyup.enter="saveEdgeEdit"
           />
           <button class="text-xs text-ink-danger hover:underline" @click="removeSelectedEdge">删除</button>
@@ -723,7 +723,7 @@ onMounted(() => void loadAll())
           @click="openAiDialog('ending')"
         >收尾</button>
         <button
-          class="rounded-lg bg-ink-primary px-4 py-1.5 text-xs text-white shadow-card transition-colors hover:bg-ink-primary-hover disabled:opacity-50"
+          class="rounded-lg bg-ink-primary px-4 py-1.5 text-xs text-on-primary shadow-card transition-colors hover:bg-ink-primary-hover disabled:opacity-50"
           :disabled="proseRunning"
           @click="openProseDialog"
         >{{ proseRunning ? '生成中…' : '按场景生成正文' }}</button>
@@ -802,7 +802,7 @@ onMounted(() => void loadAll())
 
     <!-- 场景详情/新建面板 -->
     <teleport to="body">
-      <div v-if="panelVisible" class="fixed inset-0 z-40 flex justify-end bg-black/20" @click.self="panelVisible = false">
+      <div v-if="panelVisible" class="fixed inset-0 z-40 flex justify-end bg-scrim" @click.self="panelVisible = false">
         <div class="flex h-full w-[400px] flex-col bg-surface shadow-2xl">
           <div class="flex items-center justify-between border-b border-ink-border/60 px-5 py-3">
             <h2 class="font-semibold">{{ panelScene ? '编辑场景' : '新建场景' }}</h2>
@@ -812,16 +812,16 @@ onMounted(() => void loadAll())
             <div class="flex flex-col gap-4">
               <label class="flex flex-col gap-1">
                 <span class="text-sm text-ink-text-secondary">标题 *</span>
-                <input v-model="panelForm.title" maxlength="40" class="rounded-lg border border-ink-border px-3 py-2 text-sm outline-none focus:border-ink-primary" />
+                <input v-model="panelForm.title" maxlength="40" class="rounded-lg border border-ink-border-strong px-3 py-2 text-sm outline-none focus:border-ink-primary" />
               </label>
               <label class="flex flex-col gap-1">
                 <span class="text-sm text-ink-text-secondary">剧情摘要（越具体 AI 生成越准）</span>
-                <textarea v-model="panelForm.summary" rows="5" class="resize-y rounded-lg border border-ink-border px-3 py-2 text-sm leading-6 outline-none focus:border-ink-primary" />
+                <textarea v-model="panelForm.summary" rows="5" class="resize-y rounded-lg border border-ink-border-strong px-3 py-2 text-sm leading-6 outline-none focus:border-ink-primary" />
               </label>
               <div class="grid grid-cols-2 gap-3">
                 <label class="flex flex-col gap-1">
                   <span class="text-sm text-ink-text-secondary">情节节拍</span>
-                  <input v-model="panelForm.beat" placeholder="如：冲突升级" class="rounded-lg border border-ink-border px-3 py-2 text-sm outline-none focus:border-ink-primary" />
+                  <input v-model="panelForm.beat" placeholder="如：冲突升级" class="rounded-lg border border-ink-border-strong px-3 py-2 text-sm outline-none focus:border-ink-primary" />
                 </label>
                 <label class="flex flex-col gap-1">
                   <span class="text-sm text-ink-text-secondary">张力 {{ panelForm.tension }}/5</span>
@@ -830,7 +830,7 @@ onMounted(() => void loadAll())
               </div>
               <label class="flex flex-col gap-1">
                 <span class="text-sm text-ink-text-secondary">标签（顿号/逗号分隔）</span>
-                <input v-model="panelForm.tagsText" placeholder="高潮、伏笔、打斗" class="rounded-lg border border-ink-border px-3 py-2 text-sm outline-none focus:border-ink-primary" />
+                <input v-model="panelForm.tagsText" placeholder="高潮、伏笔、打斗" class="rounded-lg border border-ink-border-strong px-3 py-2 text-sm outline-none focus:border-ink-primary" />
               </label>
               <div class="flex flex-col gap-1">
                 <span class="text-sm text-ink-text-secondary">状态</span>
@@ -867,7 +867,7 @@ onMounted(() => void loadAll())
             >删除场景</button>
             <span v-else />
             <button
-              class="rounded-lg bg-ink-primary px-5 py-2 text-sm text-white transition-colors hover:bg-ink-primary-hover disabled:opacity-50"
+              class="rounded-lg bg-ink-primary px-5 py-2 text-sm text-on-primary transition-colors hover:bg-ink-primary-hover disabled:opacity-50"
               :disabled="savingPanel"
               @click="savePanel"
             >{{ savingPanel ? '保存中…' : '保存' }}</button>
@@ -878,7 +878,7 @@ onMounted(() => void loadAll())
 
     <!-- AI 场景生成设置弹窗 -->
     <teleport to="body">
-      <div v-if="aiDialogVisible" class="fixed inset-0 z-40 flex items-center justify-center bg-black/30" @click.self="aiDialogVisible = false">
+      <div v-if="aiDialogVisible" class="fixed inset-0 z-40 flex items-center justify-center bg-scrim" @click.self="aiDialogVisible = false">
         <div class="w-[440px] rounded-[12px] bg-surface p-6 shadow-card">
           <h2 class="mb-1 text-lg font-semibold">AI 生成场景</h2>
           <p class="mb-4 text-sm text-ink-text-secondary">{{ modeLabels[aiMode] }}</p>
@@ -887,15 +887,15 @@ onMounted(() => void loadAll())
           </p>
           <label v-if="aiMode === 'append'" class="mb-4 flex items-center gap-2 text-sm">
             续写场景数：
-            <input v-model.number="appendCount" type="number" min="1" max="5" class="w-16 rounded-lg border border-ink-border px-2 py-1 outline-none focus:border-ink-primary" />
+            <input v-model.number="appendCount" type="number" min="1" max="5" class="w-16 rounded-lg border border-ink-border-strong px-2 py-1 outline-none focus:border-ink-primary" />
           </label>
           <label class="flex flex-col gap-1.5">
             <span class="text-sm text-ink-text-secondary">补充要求（留空由 AI 发挥）</span>
-            <textarea v-model="aiInstruction" rows="2" placeholder="如：加强感情线、多写环境" class="resize-none rounded-lg border border-ink-border px-3 py-2 text-sm outline-none focus:border-ink-primary" />
+            <textarea v-model="aiInstruction" rows="2" placeholder="如：加强感情线、多写环境" class="resize-none rounded-lg border border-ink-border-strong px-3 py-2 text-sm outline-none focus:border-ink-primary" />
           </label>
           <div class="mt-5 flex justify-end gap-3">
             <button class="rounded-lg px-4 py-2 text-sm text-ink-text-secondary hover:bg-ink-primary-soft" @click="aiDialogVisible = false">取消</button>
-            <button class="rounded-lg bg-ink-primary px-5 py-2 text-sm text-white hover:bg-ink-primary-hover" @click="startSceneGen">开始生成</button>
+            <button class="rounded-lg bg-ink-primary px-5 py-2 text-sm text-on-primary hover:bg-ink-primary-hover" @click="startSceneGen">开始生成</button>
           </div>
         </div>
       </div>
@@ -903,7 +903,7 @@ onMounted(() => void loadAll())
 
     <!-- 生成正文设置弹窗 -->
     <teleport to="body">
-      <div v-if="proseDialogVisible" class="fixed inset-0 z-40 flex items-center justify-center bg-black/30" @click.self="proseDialogVisible = false">
+      <div v-if="proseDialogVisible" class="fixed inset-0 z-40 flex items-center justify-center bg-scrim" @click.self="proseDialogVisible = false">
         <div class="w-[440px] rounded-[12px] bg-surface p-6 shadow-card">
           <h2 class="mb-2 text-lg font-semibold">按场景生成正文</h2>
           <p class="mb-4 text-sm leading-6 text-ink-text-secondary">
@@ -911,12 +911,12 @@ onMounted(() => void loadAll())
           </p>
           <label class="flex items-center gap-2 text-sm">
             每场景约
-            <input v-model.number="proseTargetWords" type="number" min="200" max="2000" step="100" class="w-20 rounded-lg border border-ink-border px-2 py-1 outline-none focus:border-ink-primary" />
+            <input v-model.number="proseTargetWords" type="number" min="200" max="2000" step="100" class="w-20 rounded-lg border border-ink-border-strong px-2 py-1 outline-none focus:border-ink-primary" />
             字
           </label>
           <div class="mt-5 flex justify-end gap-3">
             <button class="rounded-lg px-4 py-2 text-sm text-ink-text-secondary hover:bg-ink-primary-soft" @click="proseDialogVisible = false">取消</button>
-            <button class="rounded-lg bg-ink-primary px-5 py-2 text-sm text-white hover:bg-ink-primary-hover" @click="startProseGen">开始生成</button>
+            <button class="rounded-lg bg-ink-primary px-5 py-2 text-sm text-on-primary hover:bg-ink-primary-hover" @click="startProseGen">开始生成</button>
           </div>
         </div>
       </div>

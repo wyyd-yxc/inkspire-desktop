@@ -45,7 +45,7 @@ function start(): void {
   <teleport to="body">
     <div
       v-if="visible"
-      class="fixed inset-0 z-40 flex items-center justify-center bg-black/30"
+      class="fixed inset-0 z-40 flex items-center justify-center bg-scrim"
       @click.self="emit('close')"
     >
       <div class="w-[440px] rounded-[12px] bg-surface p-6 shadow-card">
@@ -89,7 +89,7 @@ function start(): void {
             @click="emit('close')"
           >取消</button>
           <button
-            class="rounded-lg bg-ink-primary px-5 py-2 text-sm text-white hover:bg-ink-primary-hover disabled:opacity-50"
+            class="rounded-lg bg-ink-primary px-5 py-2 text-sm text-on-primary hover:bg-ink-primary-hover disabled:opacity-50"
             :disabled="busy || (!syncWiki && !syncMemory && !syncPlot)"
             @click="start"
           >{{ busy ? '同步中…' : '开始同步' }}</button>

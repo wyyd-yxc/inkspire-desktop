@@ -165,7 +165,7 @@ onBeforeUnmount(() => {
     <!-- 采纳条 -->
     <div v-if="phase === 'ready' && text.trim()" class="flex items-center justify-end gap-2 border-t border-ink-border/50 px-5 py-2">
       <button
-        class="rounded-full bg-ink-primary px-4 py-1.5 text-xs text-white transition-colors hover:bg-ink-primary-hover"
+        class="rounded-full bg-ink-primary px-4 py-1.5 text-xs text-on-primary transition-colors hover:bg-ink-primary-hover"
         @click="accept"
       >✓ 采纳插入</button>
     </div>

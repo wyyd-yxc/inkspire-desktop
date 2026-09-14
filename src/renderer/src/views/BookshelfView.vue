@@ -81,7 +81,7 @@ onMounted(refresh)
           </svg>
         </router-link>
         <button
-          class="flex items-center gap-1.5 rounded-full bg-ink-primary px-4 py-2 text-sm text-white shadow-card transition-colors hover:bg-ink-primary-hover"
+          class="flex items-center gap-1.5 rounded-full bg-ink-primary px-4 py-2 text-sm text-on-primary shadow-card transition-colors hover:bg-ink-primary-hover"
           @click="showCreate = true"
         >
           <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2">
@@ -107,7 +107,7 @@ onMounted(refresh)
         </div>
         <p class="text-ink-text-secondary">还没有作品，从一个书名开始你的故事</p>
         <button
-          class="rounded-full bg-ink-primary px-6 py-2.5 text-white transition-colors hover:bg-ink-primary-hover"
+          class="rounded-full bg-ink-primary px-6 py-2.5 text-on-primary transition-colors hover:bg-ink-primary-hover"
           @click="showCreate = true"
         >
           新建第一本书

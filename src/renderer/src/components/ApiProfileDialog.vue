@@ -163,7 +163,7 @@ onBeforeUnmount(() => stopTest())
   <teleport to="body">
     <div
       v-if="visible"
-      class="fixed inset-0 z-40 flex items-center justify-center bg-black/30"
+      class="fixed inset-0 z-40 flex items-center justify-center bg-scrim"
       @click.self="visible = false"
     >
       <div class="flex max-h-[85vh] w-[520px] flex-col rounded-[12px] bg-surface p-6 shadow-card">
@@ -178,14 +178,14 @@ onBeforeUnmount(() => stopTest())
                 type="text"
                 maxlength="30"
                 placeholder="如：日常速写 / 精修专用"
-                class="rounded-lg border border-ink-border px-3 py-2 outline-none focus:border-ink-primary"
+                class="rounded-lg border border-ink-border-strong px-3 py-2 outline-none focus:border-ink-primary"
               />
             </label>
             <label class="flex flex-col gap-1.5">
               <span class="text-sm text-ink-text-secondary">协议类型</span>
               <select
                 v-model="form.providerKind"
-                class="rounded-lg border border-ink-border bg-surface px-3 py-2 outline-none focus:border-ink-primary"
+                class="rounded-lg border border-ink-border-strong bg-surface px-3 py-2 outline-none focus:border-ink-primary"
               >
                 <option value="openai-compatible">OpenAI 兼容（适用于绝大多数平台）</option>
               </select>
@@ -198,7 +198,7 @@ onBeforeUnmount(() => stopTest())
               v-model="form.baseUrl"
               type="text"
               placeholder="https://……（到 /v1 为止，不带末尾斜杠）"
-              class="rounded-lg border border-ink-border px-3 py-2 outline-none focus:border-ink-primary"
+              class="rounded-lg border border-ink-border-strong px-3 py-2 outline-none focus:border-ink-primary"
             />
           </label>
 
@@ -209,7 +209,7 @@ onBeforeUnmount(() => stopTest())
               type="password"
               autocomplete="off"
               placeholder="sk-…（仅保存在本机）"
-              class="rounded-lg border border-ink-border px-3 py-2 outline-none focus:border-ink-primary"
+              class="rounded-lg border border-ink-border-strong px-3 py-2 outline-none focus:border-ink-primary"
             />
           </label>
 
@@ -219,7 +219,7 @@ onBeforeUnmount(() => stopTest())
               v-model="form.model"
               type="text"
               placeholder="如 glm-4.7 / deepseek-v4-flash"
-              class="rounded-lg border border-ink-border px-3 py-2 outline-none focus:border-ink-primary"
+              class="rounded-lg border border-ink-border-strong px-3 py-2 outline-none focus:border-ink-primary"
             />
           </label>
 
@@ -239,7 +239,7 @@ onBeforeUnmount(() => stopTest())
                 min="0"
                 max="2"
                 placeholder="默认"
-                class="rounded-lg border border-ink-border px-3 py-2 outline-none focus:border-ink-primary"
+                class="rounded-lg border border-ink-border-strong px-3 py-2 outline-none focus:border-ink-primary"
               />
             </label>
             <label class="flex flex-col gap-1.5">
@@ -249,7 +249,7 @@ onBeforeUnmount(() => stopTest())
                 type="number"
                 min="1"
                 placeholder="默认"
-                class="rounded-lg border border-ink-border px-3 py-2 outline-none focus:border-ink-primary"
+                class="rounded-lg border border-ink-border-strong px-3 py-2 outline-none focus:border-ink-primary"
               />
             </label>
           </div>
@@ -283,7 +283,7 @@ onBeforeUnmount(() => stopTest())
               取消
             </button>
             <button
-              class="rounded-lg bg-ink-primary px-5 py-2 text-white transition-colors hover:bg-ink-primary-hover disabled:opacity-50"
+              class="rounded-lg bg-ink-primary px-5 py-2 text-on-primary transition-colors hover:bg-ink-primary-hover disabled:opacity-50"
               :disabled="saving"
               @click="save"
             >

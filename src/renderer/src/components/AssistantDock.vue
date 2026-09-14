@@ -318,7 +318,7 @@ onUnmounted(() => {
   <!-- 浮球（可拖动，位置记忆在 localStorage） -->
   <button
     v-if="!expanded"
-    class="fixed z-40 flex h-14 w-14 touch-none items-center justify-center rounded-full bg-ink-primary text-white shadow-lg hover:scale-110"
+    class="fixed z-40 flex h-14 w-14 touch-none items-center justify-center rounded-full bg-ink-primary text-on-primary shadow-lg hover:scale-110"
     :class="isDraggingBall ? 'cursor-grabbing transition-none select-none' : 'cursor-grab transition-transform'"
     :style="{ left: ballPos.x + 'px', top: ballPos.y + 'px' }"
     title="写作助手（可拖动到任意位置）"
@@ -341,7 +341,7 @@ onUnmounted(() => {
       <!-- 头部 -->
       <div class="flex items-center justify-between border-b border-ink-border/60 px-4 py-3">
         <div class="flex items-center gap-2">
-          <span class="flex h-8 w-8 items-center justify-center rounded-full bg-ink-primary text-white">
+          <span class="flex h-8 w-8 items-center justify-center rounded-full bg-ink-primary text-on-primary">
             <svg viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor">
               <path d="M12 2C6.48 2 2 5.94 2 10.8c0 2.4 1.06 4.58 2.78 6.18-.16 1.14-.64 2.7-1.66 3.9a.5.5 0 0 0 .44.82c2.14-.16 3.94-.94 5.16-1.66 1.02.28 2.12.44 3.28.44 5.52 0 10-3.94 10-8.8S17.52 2 12 2z" />
             </svg>
@@ -374,7 +374,7 @@ onUnmounted(() => {
             class="max-w-[85%] rounded-[12px] px-3.5 py-2 text-sm leading-6"
             :class="
               m.role === 'user'
-                ? 'rounded-br-sm bg-ink-primary text-white'
+                ? 'rounded-br-sm bg-ink-primary text-on-primary'
                 : 'rounded-bl-sm bg-paper text-ink-text'
             "
           >
@@ -417,18 +417,18 @@ onUnmounted(() => {
             v-model="input"
             rows="2"
             placeholder="问我任何创作问题…（输入 @ 引用词条）"
-            class="min-w-0 flex-1 resize-none rounded-lg border border-ink-border px-3 py-2 text-sm outline-none focus:border-ink-primary"
+            class="min-w-0 flex-1 resize-none rounded-lg border border-ink-border-strong px-3 py-2 text-sm outline-none focus:border-ink-primary"
             @input="onInput"
             @keydown.enter.exact.prevent="canSend && send()"
           />
           <button
             v-if="isBusy"
-            class="rounded-lg bg-ink-danger px-3 py-2 text-xs text-white hover:brightness-110"
+            class="rounded-lg bg-ink-danger px-3 py-2 text-xs text-on-primary hover:brightness-110"
             @click="stopGen"
           >停止</button>
           <button
             v-else
-            class="rounded-lg bg-ink-primary px-3 py-2 text-xs text-white transition-colors hover:bg-ink-primary-hover disabled:opacity-40"
+            class="rounded-lg bg-ink-primary px-3 py-2 text-xs text-on-primary transition-colors hover:bg-ink-primary-hover disabled:opacity-40"
             :disabled="!canSend"
             @click="send"
           >发送</button>

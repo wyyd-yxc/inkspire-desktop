@@ -295,7 +295,7 @@ onMounted(() => {
       </div>
       <div class="mt-auto flex flex-col gap-1.5 p-3">
         <button
-          class="rounded-lg bg-ink-primary px-3 py-1.5 text-xs text-white transition-colors hover:bg-ink-primary-hover"
+          class="rounded-lg bg-ink-primary px-3 py-1.5 text-xs text-on-primary transition-colors hover:bg-ink-primary-hover"
           @click="openCreate"
         >+ 新便签</button>
         <button
@@ -312,7 +312,7 @@ onMounted(() => {
         <input
           v-model="keyword"
           placeholder="搜索标题或内容…"
-          class="w-64 rounded-lg border border-ink-border px-3 py-1.5 text-sm outline-none focus:border-ink-primary"
+          class="w-64 rounded-lg border border-ink-border-strong px-3 py-1.5 text-sm outline-none focus:border-ink-primary"
         />
         <span class="text-xs text-ink-text-muted">
           {{ filter === 'recycled' ? '回收站内的便签可恢复或彻底删除' : '点击便签编辑；选中正文可「存为灵感」' }}
@@ -328,7 +328,7 @@ onMounted(() => {
         </p>
         <button
           v-if="filter !== 'recycled'"
-          class="mt-4 rounded-lg bg-ink-primary px-4 py-1.5 text-xs text-white hover:bg-ink-primary-hover"
+          class="mt-4 rounded-lg bg-ink-primary px-4 py-1.5 text-xs text-on-primary hover:bg-ink-primary-hover"
           @click="openCreate"
         >+ 新便签</button>
       </div>

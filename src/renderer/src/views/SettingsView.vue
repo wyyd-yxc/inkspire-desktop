@@ -192,7 +192,7 @@ onMounted(() => {
           可以建多套档案分别用于速写和精修；密钥只保存在你的电脑上。
         </p>
         <button
-          class="rounded-full bg-ink-primary px-4 py-2 text-sm text-white transition-colors hover:bg-ink-primary-hover"
+          class="rounded-full bg-ink-primary px-4 py-2 text-sm text-on-primary transition-colors hover:bg-ink-primary-hover"
           @click="openCreate"
         >
           + 新建档案
@@ -228,7 +228,7 @@ onMounted(() => {
           <div class="flex items-center gap-2">
             <span class="text-ink-text-secondary">检测间隔</span>
             <select
-              class="rounded-lg border border-ink-border bg-surface px-2 py-1 text-xs outline-none"
+              class="rounded-lg border border-ink-border-strong bg-surface px-2 py-1 text-xs outline-none"
               :value="syncCfg.intervalMin"
               @change="saveSync('intervalMin', Number(($event.target as HTMLSelectElement).value))"
             >

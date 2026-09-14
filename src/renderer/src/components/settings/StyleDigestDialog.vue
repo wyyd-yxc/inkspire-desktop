@@ -170,7 +170,7 @@ function close(): void {
   <Teleport to="body">
     <div
       v-if="visible && phase !== 'review'"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-scrim"
       @click.self="close"
     >
       <div class="w-[520px] rounded-[12px] bg-surface p-5 shadow-2xl">

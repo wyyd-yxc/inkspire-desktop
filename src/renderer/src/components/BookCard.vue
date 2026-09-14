@@ -123,7 +123,7 @@ function openWiki(): void {
         >{{ book.cover ? '换封面' : '上传封面' }}</button>
         <button
           v-if="book.cover"
-          class="rounded-full bg-black/35 px-2 py-0.5 text-[10px] text-white transition-colors hover:bg-ink-danger"
+          class="rounded-full bg-black/35 px-2 py-0.5 text-[10px] text-on-primary transition-colors hover:bg-ink-danger"
           @click.stop="removeCover"
         >移除</button>
       </div>
@@ -150,7 +150,7 @@ function openWiki(): void {
       </p>
       <div class="mt-2 flex gap-1.5">
         <button
-          class="flex-1 rounded-lg bg-ink-primary-soft py-1 text-xs text-ink-primary transition-colors hover:bg-ink-primary hover:text-white"
+          class="flex-1 rounded-lg bg-ink-primary-soft py-1 text-xs text-ink-primary transition-colors hover:bg-ink-primary hover:text-on-primary"
           @click.stop="openBook"
         >写作</button>
         <button
@@ -172,7 +172,7 @@ function openWiki(): void {
 
     <!-- 删除按钮：常驻弱显（M15.5 清偿 hover-only 债：触屏/键盘可达），hover 加深为危险色 -->
     <button
-      class="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/25 text-white/60 opacity-70 transition-colors hover:bg-ink-danger hover:text-white hover:opacity-100 focus:bg-ink-danger focus:text-white focus:opacity-100"
+      class="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/25 text-on-primary/60 opacity-70 transition-colors hover:bg-ink-danger hover:text-on-primary hover:opacity-100 focus:bg-ink-danger focus:text-on-primary focus:opacity-100"
       title="删除此书"
       @click.stop="emit('delete', book)"
     >

@@ -20,7 +20,7 @@ const emit = defineEmits<{
   <teleport to="body">
     <div
       v-if="directions.length"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-scrim"
       @click.self="emit('close')"
     >
       <div class="max-h-[85%] w-[880px] overflow-y-auto rounded-[12px] bg-surface p-5 shadow-2xl">
@@ -52,7 +52,7 @@ const emit = defineEmits<{
               </li>
             </ol>
             <button
-              class="mt-3 rounded-lg bg-ink-primary px-3 py-1.5 text-xs text-white transition-colors hover:bg-ink-primary-hover"
+              class="mt-3 rounded-lg bg-ink-primary px-3 py-1.5 text-xs text-on-primary transition-colors hover:bg-ink-primary-hover"
               @click="emit('adopt', d)"
             >采纳此方向</button>
           </div>

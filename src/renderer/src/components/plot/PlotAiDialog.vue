@@ -52,7 +52,7 @@ function start(): void {
   <teleport to="body">
     <div
       v-if="visible"
-      class="fixed inset-0 z-40 flex items-center justify-center bg-black/30"
+      class="fixed inset-0 z-40 flex items-center justify-center bg-scrim"
       @click.self="emit('close')"
     >
       <div class="w-[480px] rounded-[12px] bg-surface p-5 shadow-2xl">
@@ -63,14 +63,14 @@ function start(): void {
           v-model="instruction"
           rows="3"
           placeholder="补充指令（可留空）：如「突出女主视角」「节奏再快一些」"
-          class="mt-3 w-full resize-y rounded-lg border border-ink-border px-3 py-2 text-sm outline-none focus:border-ink-primary"
+          class="mt-3 w-full resize-y rounded-lg border border-ink-border-strong px-3 py-2 text-sm outline-none focus:border-ink-primary"
         />
         <div v-if="mode === 'diverge'" class="mt-3">
           <div class="flex items-center gap-2 text-sm text-ink-text-secondary">
             分歧方向数
             <select
               v-model.number="divergeCount"
-              class="rounded-lg border border-ink-border bg-surface px-1.5 py-0.5 text-xs outline-none"
+              class="rounded-lg border border-ink-border-strong bg-surface px-1.5 py-0.5 text-xs outline-none"
             >
               <option :value="2">2</option>
               <option :value="3">3</option>
@@ -84,7 +84,7 @@ function start(): void {
             v-model="divergeHints[i - 1]"
             :placeholder="`方向${i}简述（可选）：如「拒绝师门、独自下山」`"
             maxlength="60"
-            class="mt-1.5 w-full rounded-lg border border-ink-border px-3 py-1.5 text-xs outline-none focus:border-ink-primary"
+            class="mt-1.5 w-full rounded-lg border border-ink-border-strong px-3 py-1.5 text-xs outline-none focus:border-ink-primary"
           />
         </div>
         <div class="mt-4 flex justify-end gap-2">
@@ -93,7 +93,7 @@ function start(): void {
             @click="emit('close')"
           >取消</button>
           <button
-            class="rounded-lg bg-ink-primary px-4 py-1.5 text-xs text-white shadow-card transition-colors hover:bg-ink-primary-hover disabled:opacity-50"
+            class="rounded-lg bg-ink-primary px-4 py-1.5 text-xs text-on-primary shadow-card transition-colors hover:bg-ink-primary-hover disabled:opacity-50"
             :disabled="busy"
             @click="start"
           >{{ busy ? '生成中…' : '开始生成' }}</button>

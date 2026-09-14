@@ -200,7 +200,7 @@ onMounted(loadAll)
       </div>
       <div class="mt-auto flex flex-col gap-1.5 p-3">
         <button
-          class="rounded-lg bg-ink-primary px-3 py-1.5 text-xs text-white transition-colors hover:bg-ink-primary-hover"
+          class="rounded-lg bg-ink-primary px-3 py-1.5 text-xs text-on-primary transition-colors hover:bg-ink-primary-hover"
           @click="openCreate"
         >+ 手动记一条</button>
         <button
@@ -287,7 +287,7 @@ onMounted(loadAll)
 
     <!-- 编辑弹窗 -->
     <teleport to="body">
-      <div v-if="panelVisible" class="fixed inset-0 z-40 flex items-center justify-center bg-black/30" @click.self="panelVisible = false">
+      <div v-if="panelVisible" class="fixed inset-0 z-40 flex items-center justify-center bg-scrim" @click.self="panelVisible = false">
         <div class="w-[440px] rounded-[12px] bg-surface p-6 shadow-card">
           <h2 class="mb-4 text-lg font-semibold">{{ editing ? '编辑记忆' : '手动记一条' }}</h2>
           <div class="flex flex-col gap-4">
@@ -305,16 +305,16 @@ onMounted(loadAll)
             </div>
             <label class="flex flex-col gap-1.5">
               <span class="text-sm text-ink-text-secondary">内容（40 字内，明确主语与变化）</span>
-              <textarea v-model="form.content" rows="3" maxlength="120" placeholder="如：主角左臂骨折，未得医治" class="resize-none rounded-lg border border-ink-border px-3 py-2 text-sm outline-none focus:border-ink-primary" />
+              <textarea v-model="form.content" rows="3" maxlength="120" placeholder="如：主角左臂骨折，未得医治" class="resize-none rounded-lg border border-ink-border-strong px-3 py-2 text-sm outline-none focus:border-ink-primary" />
             </label>
             <label class="flex flex-col gap-1.5">
               <span class="text-sm text-ink-text-secondary">自第几章起成立</span>
-              <input v-model.number="form.chapterNo" type="number" min="1" class="w-24 rounded-lg border border-ink-border px-3 py-2 text-sm outline-none focus:border-ink-primary" />
+              <input v-model.number="form.chapterNo" type="number" min="1" class="w-24 rounded-lg border border-ink-border-strong px-3 py-2 text-sm outline-none focus:border-ink-primary" />
             </label>
           </div>
           <div class="mt-5 flex justify-end gap-3">
             <button class="rounded-lg px-4 py-2 text-sm text-ink-text-secondary hover:bg-ink-primary-soft" @click="panelVisible = false">取消</button>
-            <button class="rounded-lg bg-ink-primary px-5 py-2 text-sm text-white hover:bg-ink-primary-hover disabled:opacity-50" :disabled="saving" @click="save">
+            <button class="rounded-lg bg-ink-primary px-5 py-2 text-sm text-on-primary hover:bg-ink-primary-hover disabled:opacity-50" :disabled="saving" @click="save">
               {{ saving ? '保存中…' : '保存' }}
             </button>
           </div>
@@ -324,7 +324,7 @@ onMounted(loadAll)
 
     <!-- AI 抽取设置弹窗（范围：单章 / 未抽取章节批量） -->
     <teleport to="body">
-      <div v-if="extractDialogVisible" class="fixed inset-0 z-40 flex items-center justify-center bg-black/30" @click.self="extractDialogVisible = false">
+      <div v-if="extractDialogVisible" class="fixed inset-0 z-40 flex items-center justify-center bg-scrim" @click.self="extractDialogVisible = false">
         <div class="w-[420px] rounded-[12px] bg-surface p-6 shadow-card">
           <h2 class="mb-2 text-lg font-semibold">AI 从章节抽取记忆</h2>
           <p class="mb-4 text-sm text-ink-text-secondary">AI 扫描章节正文，提取影响后续剧情的事实；已有记忆不会重复提取</p>
@@ -342,7 +342,7 @@ onMounted(loadAll)
           </div>
           <label v-if="extractScope === 'single'" class="flex flex-col gap-1.5">
             <span class="text-sm text-ink-text-secondary">选择章节</span>
-            <select v-model="extractChapterId" class="rounded-lg border border-ink-border bg-surface px-3 py-2 text-sm outline-none focus:border-ink-primary">
+            <select v-model="extractChapterId" class="rounded-lg border border-ink-border-strong bg-surface px-3 py-2 text-sm outline-none focus:border-ink-primary">
               <option v-for="c in chapters" :key="c.id" :value="c.id">
                 第{{ c.sortOrder }}章 {{ c.title }}（{{ c.wordCount }} 字）
               </option>
@@ -354,7 +354,7 @@ onMounted(loadAll)
           <div class="mt-5 flex justify-end gap-3">
             <button class="rounded-lg px-4 py-2 text-sm text-ink-text-secondary hover:bg-ink-primary-soft" @click="extractDialogVisible = false">取消</button>
             <button
-              class="rounded-lg bg-ink-primary px-5 py-2 text-sm text-white hover:bg-ink-primary-hover disabled:opacity-50"
+              class="rounded-lg bg-ink-primary px-5 py-2 text-sm text-on-primary hover:bg-ink-primary-hover disabled:opacity-50"
               :disabled="isBusy || (extractScope === 'unextracted' && unextracted.length === 0)"
               @click="startExtract"
             >{{ isBusy ? '抽取中…' : '开始抽取' }}</button>

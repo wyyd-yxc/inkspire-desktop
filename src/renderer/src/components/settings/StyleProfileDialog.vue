@@ -81,7 +81,7 @@ async function save(): Promise<void> {
   <teleport to="body">
     <div
       v-if="visible"
-      class="fixed inset-0 z-40 flex items-center justify-center bg-black/30 px-4"
+      class="fixed inset-0 z-40 flex items-center justify-center bg-scrim px-4"
       @click.self="visible = false"
     >
       <div class="flex max-h-[85vh] w-[540px] flex-col rounded-[12px] bg-surface shadow-card">
@@ -97,7 +97,7 @@ async function save(): Promise<void> {
                 v-model="form.name"
                 maxlength="30"
                 placeholder="如：冷峻暗调"
-                class="rounded-lg border border-ink-border px-3 py-2 outline-none focus:border-ink-primary"
+                class="rounded-lg border border-ink-border-strong px-3 py-2 outline-none focus:border-ink-primary"
               />
             </label>
             <label class="flex flex-col gap-1">
@@ -106,7 +106,7 @@ async function save(): Promise<void> {
                 v-model="form.tone"
                 maxlength="120"
                 placeholder="如：冷峻克制，多用白描，少用感叹号"
-                class="rounded-lg border border-ink-border px-3 py-2 outline-none focus:border-ink-primary"
+                class="rounded-lg border border-ink-border-strong px-3 py-2 outline-none focus:border-ink-primary"
               />
             </label>
             <div class="flex flex-col gap-1">
@@ -117,7 +117,7 @@ async function save(): Promise<void> {
                     v-model="form.rules[i]"
                     maxlength="100"
                     placeholder="如：全文第三人称过去式"
-                    class="min-w-0 flex-1 rounded-lg border border-ink-border px-3 py-1.5 text-xs outline-none focus:border-ink-primary"
+                    class="min-w-0 flex-1 rounded-lg border border-ink-border-strong px-3 py-1.5 text-xs outline-none focus:border-ink-primary"
                   />
                   <button
                     class="shrink-0 text-xs text-ink-text-muted hover:text-ink-danger"
@@ -135,7 +135,7 @@ async function save(): Promise<void> {
                 type="number"
                 min="0"
                 placeholder="下限"
-                class="w-24 rounded-lg border border-ink-border px-2 py-1.5 text-xs outline-none focus:border-ink-primary"
+                class="w-24 rounded-lg border border-ink-border-strong px-2 py-1.5 text-xs outline-none focus:border-ink-primary"
               />
               <span class="text-ink-text-muted">—</span>
               <input
@@ -143,7 +143,7 @@ async function save(): Promise<void> {
                 type="number"
                 min="0"
                 placeholder="上限"
-                class="w-24 rounded-lg border border-ink-border px-2 py-1.5 text-xs outline-none focus:border-ink-primary"
+                class="w-24 rounded-lg border border-ink-border-strong px-2 py-1.5 text-xs outline-none focus:border-ink-primary"
               />
               <span class="text-xs text-ink-text-muted">留空不约束（软目标）</span>
             </div>
@@ -153,7 +153,7 @@ async function save(): Promise<void> {
                 v-model="form.sample"
                 rows="3"
                 placeholder="贴一段能代表这个文风的句子"
-                class="resize-y rounded-lg border border-ink-border px-3 py-2 outline-none focus:border-ink-primary"
+                class="resize-y rounded-lg border border-ink-border-strong px-3 py-2 outline-none focus:border-ink-primary"
               />
             </label>
           </div>
@@ -164,7 +164,7 @@ async function save(): Promise<void> {
             @click="visible = false"
           >取消</button>
           <button
-            class="rounded-lg bg-ink-primary px-4 py-2 text-sm text-white transition-colors hover:bg-ink-primary-hover disabled:opacity-40"
+            class="rounded-lg bg-ink-primary px-4 py-2 text-sm text-on-primary transition-colors hover:bg-ink-primary-hover disabled:opacity-40"
             :disabled="saving"
             @click="save"
           >{{ saving ? '保存中…' : '保存' }}</button>

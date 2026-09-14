@@ -229,7 +229,7 @@ const panelSourceNote = computed(() => {
           <input
             v-model="searchKeyword"
             placeholder="搜索事件（标题/描述/标签）"
-            class="w-44 rounded-lg border border-ink-border px-2.5 py-1.5 text-xs outline-none focus:border-ink-primary"
+            class="w-44 rounded-lg border border-ink-border-strong px-2.5 py-1.5 text-xs outline-none focus:border-ink-primary"
           />
           <span v-if="searchKeyword.trim()" class="whitespace-nowrap text-xs text-ink-text-muted">{{ hitCount }} 命中</span>
         </div>
@@ -241,7 +241,7 @@ const panelSourceNote = computed(() => {
           <span class="text-xs text-ink-text-muted">连线:</span>
           <select
             v-model="edgeForm.type"
-            class="rounded-lg border border-ink-border bg-surface px-1.5 py-0.5 text-xs outline-none"
+            class="rounded-lg border border-ink-border-strong bg-surface px-1.5 py-0.5 text-xs outline-none"
             @change="saveEdgeEdit"
           >
             <option value="main">主线</option>
@@ -253,7 +253,7 @@ const panelSourceNote = computed(() => {
             v-model="edgeForm.label"
             placeholder="标签（如 伏笔）"
             maxlength="12"
-            class="w-24 rounded-lg border border-ink-border px-1.5 py-0.5 text-xs outline-none focus:border-ink-primary"
+            class="w-24 rounded-lg border border-ink-border-strong px-1.5 py-0.5 text-xs outline-none focus:border-ink-primary"
             @keyup.enter="saveEdgeEdit"
           />
           <button class="text-xs text-ink-danger hover:underline" @click="removeSelectedEdge">删除</button>

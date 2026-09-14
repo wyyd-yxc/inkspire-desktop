@@ -28,7 +28,7 @@ const emit = defineEmits<{
   <teleport to="body">
     <div
       v-if="visible"
-      class="fixed inset-0 z-40 flex items-center justify-center bg-black/30"
+      class="fixed inset-0 z-40 flex items-center justify-center bg-scrim"
       @click.self="emit('close')"
     >
       <div class="w-[420px] rounded-[12px] bg-surface p-6 shadow-card">
@@ -52,7 +52,7 @@ const emit = defineEmits<{
           <span class="text-sm text-ink-text-secondary">选择章节</span>
           <select
             v-model="chapterId"
-            class="rounded-lg border border-ink-border bg-surface px-3 py-2 text-sm outline-none focus:border-ink-primary"
+            class="rounded-lg border border-ink-border-strong bg-surface px-3 py-2 text-sm outline-none focus:border-ink-primary"
           >
             <option v-for="c in chapters" :key="c.id" :value="c.id">
               第{{ c.sortOrder }}章 {{ c.title }}（{{ c.wordCount }} 字）
@@ -69,7 +69,7 @@ const emit = defineEmits<{
             @click="emit('close')"
           >{{ busy ? '后台继续' : '取消' }}</button>
           <button
-            class="rounded-lg bg-ink-primary px-5 py-2 text-sm text-white hover:bg-ink-primary-hover disabled:opacity-50"
+            class="rounded-lg bg-ink-primary px-5 py-2 text-sm text-on-primary hover:bg-ink-primary-hover disabled:opacity-50"
             :disabled="busy || (scope === 'changed' && unextractedCount === 0)"
             @click="emit('start')"
           >{{ busy ? '提取中…' : '开始提取' }}</button>

@@ -18,7 +18,7 @@ const emit = defineEmits<{ confirm: [] }>()
   <teleport to="body">
     <div
       v-if="visible"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-scrim"
       @click.self="visible = false"
     >
       <div class="w-[400px] rounded-[12px] bg-surface p-6 shadow-card">
@@ -32,7 +32,7 @@ const emit = defineEmits<{ confirm: [] }>()
             取消
           </button>
           <button
-            class="rounded-lg bg-ink-danger px-4 py-2 text-white transition-colors hover:brightness-110"
+            class="rounded-lg bg-ink-danger px-4 py-2 text-on-primary transition-colors hover:brightness-110"
             @click="emit('confirm'); visible = false"
           >
             {{ confirmText ?? '确认删除' }}
