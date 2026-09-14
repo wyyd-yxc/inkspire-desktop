@@ -5,7 +5,7 @@
     <title>墨笺</title>
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' 'sha256-o+8CBGRwfeL1jtiXNcqF9UPIAvRF0DVkqYg9oInMvnI='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'"
+      content="default-src 'self'; script-src 'self' 'sha256-mutCjj4Kq8+9NZVYIJDq2FRakxKm0svZePy22C4x4Fc='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'"
     />
     <style>
       /* 启动底色（M17）：与主题纸色一致，消除加载闪白；data-theme 未挂载前也成立 */
@@ -19,15 +19,15 @@
     <script>
       // 首帧主题挂载（M17 灭 FOUC）：优先用户设置（preload 注入），否则系统偏好。
       // 必须内联同步执行（早于样式生效），保证 splash 阶段主题即正确。
+      // 注意：用户显式选浅色时也要挂 data-theme="light"——否则系统深色的 @media 分支会覆盖用户意图（r3 P1）。
       ;(function () {
         try {
           var injected = window.__inkspire_theme__
-          var dark =
-            injected === 'dark' ||
-            (injected !== 'light' &&
-              (injected === 'system' || !injected) &&
-              window.matchMedia('(prefers-color-scheme: dark)').matches)
-          if (dark) document.documentElement.setAttribute('data-theme', 'dark')
+          var dark
+          if (injected === 'dark') dark = true
+          else if (injected === 'light') dark = false
+          else dark = window.matchMedia('(prefers-color-scheme: dark)').matches
+          document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light')
         } catch (e) {}
       })()
     </script>

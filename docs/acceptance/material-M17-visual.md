@@ -140,6 +140,25 @@ primitive（`--raw-*`：纸系 3/墨系 8/点缀 3/热力 5）→ semantic（`--
 
 PALETTES: 长篇(墨褐/rule-lines)、中短篇(灰蓝/grid)、科幻(靛墨/star-arc)、历史(赭褐/cloud)、悬疑(青灰/rain)、奇幻(黛紫/mountains)、现实主义(暖灰/plain)、武侠(苍青/blade)、其他(中性/dots)；`coverArtFor` 返回 {palette, shift(±6 明度), phase(0-39 底纹相位), layout(≤4竖排/5-9两行/≥10三行)}；`shade()` 应用明度偏移。
 
+## 附录 A2：r2 整改与裁定（glm-5.1，2026-09-14）
+
+结论：有条件通过（llm-review-2026-09-14-12-34-.md）。
+
+| 项 | 裁定 | 处理 |
+|---|---|---|
+| 严重：启动画面 logo 深色模式隐形（#3a352e on #171512 = 1.32:1） | **采纳，真缺陷** | splash SVG 加类名（bs-frame/bs-drop/bs-seal），深色媒体查询覆盖为暖白 #e3dbc9 + 提亮朱砂 #da8577；对比度实测 13.23:1 / 6.60:1 |
+| 中等：system 模式可能直接挂 data-theme="system" 致深色失效 | **部分采纳（防御加固）** | 原实现 `effectiveTheme()` 已正确解析（system→matchMedia），但为消除歧义：内联脚本改为显式二值挂载（dark?dark:light），useTheme.apply 保持同语义 |
+| 无法判定（useTheme/theme.css/coverArt 等 diff 缺失） | 材料补全（r1 附录 B 已含核心摘录） | 本轮补 splash 双态声明与 CSP hash 说明 |
+
+## 附录 A3：r3 整改与裁定（glm-5.1，2026-09-14）
+
+结论：有条件通过（llm-review-2026-09-14-12-43-.md）。
+
+| 项 | 裁定 | 处理 |
+|---|---|---|
+| P1 严重：内联脚本未设 data-theme="light"，「用户选浅色+系统深色」时 splash 主题错乱 | **采纳，真缺陷** | 已修：内联脚本改为**恒设** `data-theme`（dark/light 二值）——用户显式浅色时挂 light，覆盖系统 @media 分支；CSP hash 同步重算（mutCjj4Kq8+9NZVYIJDq2FRakxKm0svZePy22C4x4Fc=） |
+| 无法判定（五核心文件 diff 缺失） | 附录 B 已含 theme.css 令牌结构/useTheme 链/coverArt 表/BookCover 要点；运行时由自测 19/19+截图目检覆盖 | 黑盒将再以真实 UI 复验 |
+
 ## 附录 C：黑盒验收结果
 
 （待黑盒后填写）
