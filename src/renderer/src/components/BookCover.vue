@@ -14,17 +14,42 @@ const props = defineProps<{
 
 const art = computed(() => coverStyleFor({ title: props.title, genre: props.genre }))
 
-/** 书名按排版策略切分 */
+/** 断行位置候选：标点后、空格后（优先级从高到低）；避免拆散拉丁词与数字串 */
+const BREAK_AFTER = /[：:，,。.、；;！!？?…—\-\s]/
+function bestCut(chars: string[], ideal: number): number {
+  // 在理想位置附近（±30%）寻找标点/空格断点；找不到则找拉丁词/数字边界；再退化为理想位置
+  const lo = Math.max(1, Math.floor(ideal * 0.7))
+  const hi = Math.min(chars.length - 1, Math.ceil(ideal * 1.3))
+  let punct = -1
+  let wordEdge = -1
+  for (let i = lo; i <= hi; i++) {
+    if (BREAK_AFTER.test(chars[i - 1])) punct = i
+    // 词边界：前一字符是字母/数字而当前不是（或反之）——避免 M17BB 被拆成 M17B|B
+    const prev = chars[i - 1]
+    const cur = chars[i]
+    const prevWord = /[A-Za-z0-9]/.test(prev)
+    const curWord = /[A-Za-z0-9]/.test(cur)
+    if (prevWord !== curWord && wordEdge < 0) wordEdge = i
+  }
+  if (punct > 0) return punct
+  if (wordEdge > 0) return wordEdge
+  return ideal
+}
+
+/** 书名按排版策略切分（标点/词边界优先，避免生硬中间切） */
 const titleLines = computed((): string[] => {
   const chars = [...props.title.trim()]
   if (art.value.layout === 'vertical') return chars
   const n = chars.length
   if (art.value.layout === 'two-line') {
-    const cut = Math.ceil(n / 2)
+    const cut = bestCut(chars, Math.ceil(n / 2))
     return [chars.slice(0, cut).join(''), chars.slice(cut).join('')]
   }
   const per = Math.ceil(n / 3)
-  return [chars.slice(0, per).join(''), chars.slice(per, per * 2).join(''), chars.slice(per * 2).join('')]
+  const c1 = bestCut(chars, per)
+  const rest = chars.slice(c1)
+  const c2rel = rest.length > per ? bestCut(rest, Math.ceil(rest.length / 2)) : rest.length
+  return [chars.slice(0, c1).join(''), rest.slice(0, c2rel).join(''), rest.slice(c2rel).join('')].filter(Boolean)
 })
 
 const uid = computed(() => `cv-${Math.abs([...props.title].reduce((h, c) => h * 31 + c.charCodeAt(0), 7) % 99991)}`)
