@@ -8,10 +8,13 @@
       content="default-src 'self'; script-src 'self' 'sha256-mutCjj4Kq8+9NZVYIJDq2FRakxKm0svZePy22C4x4Fc='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'"
     />
     <style>
-      /* 启动底色（M17）：与主题纸色一致，消除加载闪白；data-theme 未挂载前也成立 */
+      /* 启动底色（M17）：与主题纸色一致，消除加载闪白。
+         优先级：html[data-theme]（用户设置，内联脚本首帧挂载）> 系统偏好（media 查询兜底） */
       html { background: #faf8f3; }
+      html[data-theme='light'] { background: #faf8f3; }
+      html[data-theme='dark'] { background: #171512; }
       @media (prefers-color-scheme: dark) {
-        html { background: #171512; }
+        html:not([data-theme]) { background: #171512; }
       }
     </style>
   </head>
@@ -60,13 +63,14 @@
         letter-spacing: 0.32em;
         color: #6d6558;
       }
-      /* 深色模式：底色/文字/logo 全部反转（logo 用暖白 + 提亮朱砂，对比度 ≥4.5:1） */
+      /* 深色模式：底色/文字/logo 全部反转（logo 用暖白 + 提亮朱砂，对比度 ≥4.5:1）
+         仅当 data-theme 未挂载时按系统偏好（挂载后由下方 [data-theme] 规则接管） */
       @media (prefers-color-scheme: dark) {
-        #boot-splash { background: #171512; }
-        #boot-splash p { color: #b8ae9c; }
-        #boot-splash .bs-frame { stroke: #e3dbc9; }
-        #boot-splash .bs-drop { fill: #e3dbc9; }
-        #boot-splash .bs-seal { fill: #da8577; }
+        html:not([data-theme]) #boot-splash { background: #171512; }
+        html:not([data-theme]) #boot-splash p { color: #b8ae9c; }
+        html:not([data-theme]) #boot-splash .bs-frame { stroke: #e3dbc9; }
+        html:not([data-theme]) #boot-splash .bs-drop { fill: #e3dbc9; }
+        html:not([data-theme]) #boot-splash .bs-seal { fill: #da8577; }
       }
       /* 用户设置优先于系统偏好（M17 r2）：html[data-theme] 由挂载前脚本按注入值挂载，
          此处显式声明两态，覆盖 media 查询（用户设浅色+系统深色 / 反之均正确） */

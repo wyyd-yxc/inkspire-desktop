@@ -36,8 +36,9 @@ function createWindow(): void {
   } catch {
     /* 库未就绪（理论不达）：空串回落系统偏好 */
   }
-  // 窗口底色预判（灭闪白）：用户设置优先；无设置时按系统偏好（nativeTheme）
-  const darkPredicted = theme === 'dark' || (theme === '' && nativeTheme.shouldUseDarkColors)
+  // 窗口底色预判（灭闪白）：用户设置优先；无设置或「跟随系统」时按系统偏好（nativeTheme）
+  const darkPredicted =
+    theme === 'dark' || ((theme === '' || theme === 'system') && nativeTheme.shouldUseDarkColors)
   const win = new BrowserWindow({
     width: 1280,
     height: 800,
