@@ -8,6 +8,23 @@
  */
 @import 'tailwindcss';
 
+/* 思源宋体（M17 字体可控化）：本地子集（常用简体，400/600 两字重，约 2.9MB）——
+   摆脱对系统字体的依赖（无字体 Windows 不再退化为宋体）；CSP 'self' 合规，离线可用。 */
+@font-face {
+  font-family: 'Noto Serif SC';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../assets/fonts/noto-serif-sc-400.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Noto Serif SC';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('../assets/fonts/noto-serif-sc-600.woff2') format('woff2');
+}
+
 @theme {
   /* ============ primitive：原始色板（仅本层出现字面值） ============ */
   /* 纸系（暖米） */
