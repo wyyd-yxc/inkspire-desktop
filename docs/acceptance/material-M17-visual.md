@@ -98,23 +98,79 @@
 
 ## 附录 B：核心源码事实（r1 截断补全）
 
-### 启动画面移除（src/renderer/src/main.ts 全文尾部）
+### 启动画面移除（src/renderer/src/main.ts 全文，r4 整改后最新版）
 
 ```ts
+import { createApp, nextTick } from 'vue'
 import { applyThemeBeforeMount } from './composables/useTheme'
+import './styles/theme.css'
+
 // 挂载前同步应用主题（M17 灭 FOUC）：preload 已注入主进程读库结果
 applyThemeBeforeMount()
 createApp(App).use(createPinia()).use(router).mount('#app')
-// 启动画面退场：不用 requestAnimationFrame（窗口后台冻结，踩坑 #12）——setTimeout 兜底
+
+// 启动画面退场（M17）：等首帧真正渲染完成再淡出（r4 中危项——固定 60ms 在慢机器上会提前暴露白屏）。
+// 双保险：① nextTick（Vue 完成 DOM 更新）② 一次 rAF + setTimeout 兜底（rAF 后台冻结，踩坑 #12）；
+// 上限 600ms 防止极端情况下 splash 永久滞留。
 const splash = document.getElementById('boot-splash')
 if (splash) {
-  setTimeout(() => {
+  let removed = false
+  const dismiss = (): void => {
+    if (removed) return
+    removed = true
     splash.style.transition = 'opacity 200ms ease'
     splash.style.opacity = '0'
     setTimeout(() => splash.remove(), 220)
-  }, 60)
+  }
+  nextTick(() => {
+    requestAnimationFrame(() => setTimeout(dismiss, 0))
+    setTimeout(dismiss, 600)
+  })
 }
 ```
+
+> 附录 B 各段为**整改后最新版**（r1-r5 历轮修改均已并入）；历史版本见对应 commit。
+
+### 窗口底色预判（src/main/index.ts，r5 整改后最新版）
+
+```ts
+let theme = ''
+try { theme = getSetting<string>('ui.theme', '') } catch {}
+// 用户设置优先；无设置或「跟随系统」时按系统偏好（nativeTheme）——r5 补 system 分支
+const darkPredicted =
+  theme === 'dark' || ((theme === '' || theme === 'system') && nativeTheme.shouldUseDarkColors)
+const win = new BrowserWindow({
+  backgroundColor: darkPredicted ? '#171512' : '#faf8f3',
+  webPreferences: { additionalArguments: [`--inkspire-theme=${theme}`] /* ... */ }
+})
+```
+
+### 首帧主题挂载（src/renderer/index.html 内联脚本，r3/r5 整改后最新版）
+
+```html
+<style>
+  /* 优先级：html[data-theme]（用户设置）> 系统偏好（media 兜底，仅未挂载时） */
+  html { background: #faf8f3; }
+  html[data-theme='light'] { background: #faf8f3; }
+  html[data-theme='dark'] { background: #171512; }
+  @media (prefers-color-scheme: dark) { html:not([data-theme]) { background: #171512; } }
+  /* splash 的深色覆盖同样加 :not([data-theme]) 限定，挂载后由 [data-theme] 规则接管 */
+</style>
+<script>
+  ;(function () {
+    try {
+      var injected = window.__inkspire_theme__
+      var dark
+      if (injected === 'dark') dark = true
+      else if (injected === 'light') dark = false
+      else dark = window.matchMedia('(prefers-color-scheme: dark)').matches
+      document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light')
+    } catch (e) {}
+  })()
+</script>
+```
+
+> CSP：内联脚本经 `script-src 'self' 'sha256-mutCjj4Kq8+9NZVYIJDq2FRakxKm0svZePy22C4x4Fc='` 白名单授权（非 unsafe-inline）；脚本内容变更时 hash 需同步重算。
 
 ### 主题注入链（灭 FOUC）
 
@@ -168,6 +224,25 @@ PALETTES: 长篇(墨褐/rule-lines)、中短篇(灰蓝/grid)、科幻(靛墨/sta
 | 中：splash 60ms 硬编码退场，慢机器提前暴露白屏 | **采纳** | 改首帧信号驱动：`nextTick` → `requestAnimationFrame` → `dismiss()`；600ms 超时兜底（rAF 后台冻结踩坑 #12 的防护）——快机器首帧即退、慢机器不早退、极端情况必退 |
 | 中：主进程默认 `'light'` 绕过系统偏好（首次安装深色系统会闪白） | **采纳** | 默认改空串（无用户设置）→ 注入空串 → 内联脚本走 `matchMedia` 系统分支；窗口底色用 `nativeTheme.shouldUseDarkColors` 预判（不传 undefined 避免 Electron 默认白底） |
 | 无法判定（diff 截断项） | 附录 B 核心摘录 + 自测 19/19 + 双主题截图目检 | 黑盒终审 |
+
+## 附录 A5：r5 整改与裁定（glm-5.1，2026-09-14）
+
+结论：不通过（llm-review-2026-09-14-12-56-.md）。两个真缺陷均采纳（均为本轮引入的遗漏）。
+
+| 项 | 裁定 | 处理 |
+|---|---|---|
+| 严重：`darkPredicted` 遗漏 `theme === 'system'`（跟随系统+系统深色时窗口底色仍浅色 → 重载闪白） | **采纳，真缺陷** | 补 system 分支：`theme === 'dark' || ((theme === '' \|\| theme === 'system') && nativeTheme.shouldUseDarkColors)` |
+| 严重：`html` 底色未响应 `data-theme`（仅 media 查询，用户浅色+系统深色时底色错位） | **采纳，真缺陷** | `html[data-theme='light'/'dark']` 显式两态 + media 分支限定 `:not([data-theme])`；splash 深色覆盖同样加限定（挂载后由 [data-theme] 规则接管） |
+| 边界回归 | **新增 T2 专项** | tmp/m17-t2.mjs 4/4：深色设置底色 / 浅色设置不被系统深色覆盖 / system 模式与系统一致 / console 零报错 |
+
+## 附录 A6：r6 整改与裁定（glm-5.1，2026-09-14）
+
+结论：不通过（llm-review-2026-09-14-13-05-.md）。**唯一原因是材料自相矛盾**（附录 B 源码摘录未随 r4/r5 整改更新，仍是旧 60ms 版本），非代码缺陷。
+
+| 项 | 裁定 | 处理 |
+|---|---|---|
+| 严重：附录 A4 声明与附录 B 代码不一致（疑修复未落地） | **采纳（材料同步疏漏）** | 附录 B 全部更新为**整改后最新版**（main.ts 首帧信号退场、主进程 system 分支、index.html 双态覆盖+内联脚本+CSP hash 说明），并注明「历轮修改均已并入」 |
+| 无法判定（diff 截断各项） | 附录 B 已为最新全量摘录 | 代码实体均在提交中（65bd720 等），黑盒终审 |
 
 ## 附录 C：黑盒验收结果
 
