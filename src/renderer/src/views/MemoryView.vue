@@ -232,7 +232,7 @@ onMounted(loadAll)
                 class="flex items-start gap-2 rounded-lg border-l-4 bg-surface px-3 py-2 shadow-card"
                 :style="{ borderColor: kindColors[m.kind] }"
               >
-                <span class="shrink-0 rounded bg-paper px-1.5 py-0.5 text-[10px] text-ink-text-muted">第{{ m.chapterNo }}章起</span>
+                <span class="shrink-0 rounded-sm bg-paper px-1.5 py-0.5 text-[10px] text-ink-text-muted">第{{ m.chapterNo }}章起</span>
                 <p class="min-w-0 flex-1 text-sm">{{ m.content }}</p>
                 <div class="flex shrink-0 gap-1">
                   <button class="text-xs text-ink-text-muted hover:text-ink-primary" @click="openEdit(m)">编辑</button>
@@ -254,13 +254,13 @@ onMounted(loadAll)
               class="group flex items-start gap-2 rounded-lg bg-surface px-3 py-2.5 shadow-card transition-shadow hover:shadow-lg"
             >
               <span
-                class="mt-0.5 shrink-0 rounded px-1.5 py-0.5 text-[10px] text-white"
+                class="mt-0.5 shrink-0 rounded-sm px-1.5 py-0.5 text-[10px] text-white"
                 :style="{ background: kindColors[m.kind] }"
               >{{ MEMORY_KIND_LABELS[m.kind] }}</span>
               <div class="min-w-0 flex-1">
                 <p class="text-sm leading-6">
                   {{ m.content }}
-                  <span v-if="m.kind === 'clue'" class="ml-1 rounded px-1 py-0.5 text-[10px]" :class="m.isResolved ? 'bg-ink-success/15 text-ink-success' : 'bg-ink-warning/15 text-ink-warning'">
+                  <span v-if="m.kind === 'clue'" class="ml-1 rounded-sm px-1 py-0.5 text-[10px]" :class="m.isResolved ? 'bg-ink-success/15 text-ink-success' : 'bg-ink-warning/15 text-ink-warning'">
                     {{ m.isResolved ? '已回收' : '未回收' }}
                   </span>
                 </p>
@@ -288,7 +288,7 @@ onMounted(loadAll)
     <!-- 编辑弹窗 -->
     <teleport to="body">
       <div v-if="panelVisible" class="fixed inset-0 z-40 flex items-center justify-center bg-black/30" @click.self="panelVisible = false">
-        <div class="w-[440px] rounded-2xl bg-surface p-6 shadow-card">
+        <div class="w-[440px] rounded-[12px] bg-surface p-6 shadow-card">
           <h2 class="mb-4 text-lg font-semibold">{{ editing ? '编辑记忆' : '手动记一条' }}</h2>
           <div class="flex flex-col gap-4">
             <div class="flex flex-col gap-1.5">
@@ -325,7 +325,7 @@ onMounted(loadAll)
     <!-- AI 抽取设置弹窗（范围：单章 / 未抽取章节批量） -->
     <teleport to="body">
       <div v-if="extractDialogVisible" class="fixed inset-0 z-40 flex items-center justify-center bg-black/30" @click.self="extractDialogVisible = false">
-        <div class="w-[420px] rounded-2xl bg-surface p-6 shadow-card">
+        <div class="w-[420px] rounded-[12px] bg-surface p-6 shadow-card">
           <h2 class="mb-2 text-lg font-semibold">AI 从章节抽取记忆</h2>
           <p class="mb-4 text-sm text-ink-text-secondary">AI 扫描章节正文，提取影响后续剧情的事实；已有记忆不会重复提取</p>
           <div class="mb-3 flex gap-1.5">

@@ -173,7 +173,7 @@ function close(): void {
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
       @click.self="close"
     >
-      <div class="w-[520px] rounded-2xl bg-surface p-5 shadow-2xl">
+      <div class="w-[520px] rounded-[12px] bg-surface p-5 shadow-2xl">
         <div class="mb-1 flex items-center justify-between">
           <h2 class="font-semibold">从参考文本拆解风格包</h2>
           <button class="text-ink-text-muted hover:text-ink-text" @click="close">✕</button>

@@ -228,7 +228,7 @@ onMounted(() => {
           <div class="flex items-center gap-2">
             <span class="text-ink-text-secondary">检测间隔</span>
             <select
-              class="rounded border border-ink-border bg-surface px-2 py-1 text-xs outline-none"
+              class="rounded-lg border border-ink-border bg-surface px-2 py-1 text-xs outline-none"
               :value="syncCfg.intervalMin"
               @change="saveSync('intervalMin', Number(($event.target as HTMLSelectElement).value))"
             >

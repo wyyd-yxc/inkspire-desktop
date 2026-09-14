@@ -84,7 +84,7 @@ const totalWords = computed(() => props.chapters.reduce((s, c) => s + c.wordCoun
           v-if="editingId === c.id"
           :ref="(el) => setEditInputRef(c.id, el)"
           v-model="editingTitle"
-          class="min-w-0 flex-1 rounded border border-ink-primary bg-surface px-1.5 py-0.5 text-sm outline-none"
+          class="min-w-0 flex-1 rounded-lg border border-ink-primary bg-surface px-1.5 py-0.5 text-sm outline-none"
           @click.stop
           @keyup.enter="commitRename"
           @keyup.escape="editingId = ''"
@@ -102,14 +102,14 @@ const totalWords = computed(() => props.chapters.reduce((s, c) => s + c.wordCoun
         <!-- hover 操作 -->
         <div v-if="editingId !== c.id" class="hidden shrink-0 items-center gap-0.5 group-hover:flex">
           <button
-            class="rounded p-0.5 text-ink-text-muted hover:bg-paper hover:text-ink-primary"
+            class="rounded-sm p-0.5 text-ink-text-muted hover:bg-paper hover:text-ink-primary"
             title="场景规划"
             @click.stop="router.push(`/book/${props.bookId}/canvas/${c.id}`)"
           >
             <svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
           </button>
           <button
-            class="rounded p-0.5 text-ink-text-muted hover:bg-paper hover:text-ink-primary disabled:opacity-30"
+            class="rounded-sm p-0.5 text-ink-text-muted hover:bg-paper hover:text-ink-primary disabled:opacity-30"
             :disabled="i === 0"
             title="上移"
             @click.stop="emit('move', c.id, -1)"
@@ -117,7 +117,7 @@ const totalWords = computed(() => props.chapters.reduce((s, c) => s + c.wordCoun
             <svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 15-6-6-6 6"/></svg>
           </button>
           <button
-            class="rounded p-0.5 text-ink-text-muted hover:bg-paper hover:text-ink-primary disabled:opacity-30"
+            class="rounded-sm p-0.5 text-ink-text-muted hover:bg-paper hover:text-ink-primary disabled:opacity-30"
             :disabled="i === chapters.length - 1"
             title="下移"
             @click.stop="emit('move', c.id, 1)"
@@ -125,14 +125,14 @@ const totalWords = computed(() => props.chapters.reduce((s, c) => s + c.wordCoun
             <svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
           </button>
           <button
-            class="rounded p-0.5 text-ink-text-muted hover:bg-paper hover:text-ink-primary"
+            class="rounded-sm p-0.5 text-ink-text-muted hover:bg-paper hover:text-ink-primary"
             title="重命名"
             @click.stop="startRename(c)"
           >
             <svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
           </button>
           <button
-            class="rounded p-0.5 text-ink-text-muted hover:bg-paper hover:text-ink-danger"
+            class="rounded-sm p-0.5 text-ink-text-muted hover:bg-paper hover:text-ink-danger"
             title="删除章节"
             @click.stop="emit('remove', c)"
           >

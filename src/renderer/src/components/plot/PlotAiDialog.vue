@@ -55,7 +55,7 @@ function start(): void {
       class="fixed inset-0 z-40 flex items-center justify-center bg-black/30"
       @click.self="emit('close')"
     >
-      <div class="w-[480px] rounded-2xl bg-surface p-5 shadow-2xl">
+      <div class="w-[480px] rounded-[12px] bg-surface p-5 shadow-2xl">
         <h2 class="font-semibold text-ink-primary">{{ modeLabel }}</h2>
         <p class="mt-1 text-xs text-ink-text-muted">{{ hint }}</p>
         <p v-if="contextInfo" class="mt-1 text-[11px] text-ink-success">✓ {{ contextInfo }}</p>
@@ -70,7 +70,7 @@ function start(): void {
             分歧方向数
             <select
               v-model.number="divergeCount"
-              class="rounded border border-ink-border bg-surface px-1.5 py-0.5 text-xs outline-none"
+              class="rounded-lg border border-ink-border bg-surface px-1.5 py-0.5 text-xs outline-none"
             >
               <option :value="2">2</option>
               <option :value="3">3</option>

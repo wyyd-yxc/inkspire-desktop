@@ -371,7 +371,7 @@ onUnmounted(() => {
           :class="m.role === 'user' ? 'justify-end' : 'justify-start'"
         >
           <div
-            class="max-w-[85%] rounded-2xl px-3.5 py-2 text-sm leading-6"
+            class="max-w-[85%] rounded-[12px] px-3.5 py-2 text-sm leading-6"
             :class="
               m.role === 'user'
                 ? 'rounded-br-sm bg-ink-primary text-white'

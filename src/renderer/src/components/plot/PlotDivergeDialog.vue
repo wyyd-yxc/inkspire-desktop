@@ -23,7 +23,7 @@ const emit = defineEmits<{
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
       @click.self="emit('close')"
     >
-      <div class="max-h-[85%] w-[880px] overflow-y-auto rounded-2xl bg-surface p-5 shadow-2xl">
+      <div class="max-h-[85%] w-[880px] overflow-y-auto rounded-[12px] bg-surface p-5 shadow-2xl">
         <div class="flex items-center justify-between">
           <h2 class="font-semibold">分歧推演 · 从「{{ anchorTitle }}」出发的 {{ directions.length }} 条走向</h2>
           <button class="text-ink-text-muted hover:text-ink-text" @click="emit('close')">✕</button>

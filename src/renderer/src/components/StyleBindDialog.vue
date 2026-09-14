@@ -57,7 +57,7 @@ async function save(): Promise<void> {
       class="fixed inset-0 z-40 flex items-center justify-center bg-black/30 px-4"
       @click.self="visible = false"
     >
-      <div class="flex max-h-[80vh] w-[420px] flex-col rounded-2xl bg-surface shadow-card">
+      <div class="flex max-h-[80vh] w-[420px] flex-col rounded-[12px] bg-surface shadow-card">
         <div class="flex items-center justify-between border-b border-ink-border/60 px-5 py-3">
           <h2 class="text-base font-semibold">绑定文风 · {{ book.title }}</h2>
           <button class="text-ink-text-muted hover:text-ink-text" @click="visible = false">✕</button>

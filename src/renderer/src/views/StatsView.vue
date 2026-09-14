@@ -203,10 +203,10 @@ onMounted(() => {
                 type="number"
                 min="1"
                 placeholder="如 200000"
-                class="w-24 rounded border border-ink-border px-2 py-0.5 text-xs outline-none focus:border-ink-primary"
+                class="w-24 rounded-lg border border-ink-border px-2 py-0.5 text-xs outline-none focus:border-ink-primary"
               />
               <button
-                class="rounded border border-ink-primary px-2 py-0.5 text-xs text-ink-primary transition-colors hover:bg-ink-primary-soft disabled:opacity-40"
+                class="rounded-lg border border-ink-primary px-2 py-0.5 text-xs text-ink-primary transition-colors hover:bg-ink-primary-soft disabled:opacity-40"
                 :disabled="savingTarget"
                 @click="saveTarget"
               >保存</button>

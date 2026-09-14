@@ -31,7 +31,7 @@ const emit = defineEmits<{
       class="fixed inset-0 z-40 flex items-center justify-center bg-black/30"
       @click.self="emit('close')"
     >
-      <div class="w-[420px] rounded-2xl bg-surface p-6 shadow-card">
+      <div class="w-[420px] rounded-[12px] bg-surface p-6 shadow-card">
         <h2 class="mb-2 text-lg font-semibold">从正文提取词条</h2>
         <p class="mb-4 text-sm text-ink-text-secondary">
           AI 扫描章节正文，提取人物/地点/物品/势力/技艺/规则等设定元素；已有词条不会重复提取

@@ -61,7 +61,7 @@ async function submit(): Promise<void> {
       class="fixed inset-0 z-40 flex items-center justify-center bg-black/30"
       @click.self="visible = false"
     >
-      <div class="w-[480px] rounded-2xl bg-surface p-6 shadow-card">
+      <div class="w-[480px] rounded-[12px] bg-surface p-6 shadow-card">
         <h2 class="mb-5 text-lg font-semibold">新建书籍</h2>
 
         <div class="flex flex-col gap-4">

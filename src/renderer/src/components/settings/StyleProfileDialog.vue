@@ -84,7 +84,7 @@ async function save(): Promise<void> {
       class="fixed inset-0 z-40 flex items-center justify-center bg-black/30 px-4"
       @click.self="visible = false"
     >
-      <div class="flex max-h-[85vh] w-[540px] flex-col rounded-2xl bg-surface shadow-card">
+      <div class="flex max-h-[85vh] w-[540px] flex-col rounded-[12px] bg-surface shadow-card">
         <div class="flex items-center justify-between border-b border-ink-border/60 px-6 py-4">
           <h2 class="text-base font-semibold">{{ editing ? '编辑风格包' : '新建风格包' }}</h2>
           <button class="text-ink-text-muted hover:text-ink-text" @click="visible = false">✕</button>

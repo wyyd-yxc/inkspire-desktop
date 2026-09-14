@@ -241,7 +241,7 @@ const panelSourceNote = computed(() => {
           <span class="text-xs text-ink-text-muted">连线:</span>
           <select
             v-model="edgeForm.type"
-            class="rounded border border-ink-border bg-surface px-1.5 py-0.5 text-xs outline-none"
+            class="rounded-lg border border-ink-border bg-surface px-1.5 py-0.5 text-xs outline-none"
             @change="saveEdgeEdit"
           >
             <option value="main">主线</option>
@@ -253,7 +253,7 @@ const panelSourceNote = computed(() => {
             v-model="edgeForm.label"
             placeholder="标签（如 伏笔）"
             maxlength="12"
-            class="w-24 rounded border border-ink-border px-1.5 py-0.5 text-xs outline-none focus:border-ink-primary"
+            class="w-24 rounded-lg border border-ink-border px-1.5 py-0.5 text-xs outline-none focus:border-ink-primary"
             @keyup.enter="saveEdgeEdit"
           />
           <button class="text-xs text-ink-danger hover:underline" @click="removeSelectedEdge">删除</button>

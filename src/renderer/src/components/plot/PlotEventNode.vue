@@ -61,7 +61,7 @@ const barBackground = computed(() =>
           <span
             v-for="n in wikiNames.slice(0, 4)"
             :key="n"
-            class="rounded border border-ink-border bg-paper px-1 text-[10px] text-ink-text-muted"
+            class="rounded-lg border border-ink-border bg-paper px-1 text-[10px] text-ink-text-muted"
           >📖 {{ n }}</span>
         </div>
       </div>

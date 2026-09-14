@@ -466,7 +466,7 @@ onMounted(() => void loadAll())
               <span
                 v-for="a in w.attributes.slice(0, 3)"
                 :key="a.key"
-                class="rounded bg-paper px-1.5 py-0.5 text-xs text-ink-text-secondary"
+                class="rounded-sm bg-paper px-1.5 py-0.5 text-xs text-ink-text-secondary"
               >{{ a.key }}:{{ a.value }}</span>
               <span v-if="w.attributes.length > 3" class="px-1 text-xs text-ink-text-muted">+{{ w.attributes.length - 3 }}</span>
             </div>
@@ -515,8 +515,8 @@ onMounted(() => void loadAll())
                   <button class="text-xs text-ink-primary hover:underline" @click="addAttribute">+ 添加</button>
                 </div>
                 <div v-for="(a, i) in form.attributes" :key="i" class="flex items-center gap-1.5">
-                  <input v-model="a.key" placeholder="属性名" class="w-24 rounded border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
-                  <input v-model="a.value" placeholder="属性值" class="min-w-0 flex-1 rounded border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
+                  <input v-model="a.key" placeholder="属性名" class="w-24 rounded-lg border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
+                  <input v-model="a.value" placeholder="属性值" class="min-w-0 flex-1 rounded-lg border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
                   <button class="text-ink-text-muted hover:text-ink-danger" @click="removeAttribute(i)">✕</button>
                 </div>
               </div>
@@ -569,7 +569,7 @@ onMounted(() => void loadAll())
     <!-- AI 生成设置弹窗 -->
     <teleport to="body">
       <div v-if="aiDialogVisible" class="fixed inset-0 z-40 flex items-center justify-center bg-black/30" @click.self="aiDialogVisible = false">
-        <div class="w-[420px] rounded-2xl bg-surface p-6 shadow-card">
+        <div class="w-[420px] rounded-[12px] bg-surface p-6 shadow-card">
           <h2 class="mb-4 text-lg font-semibold">AI 生成词条</h2>
           <div class="flex flex-col gap-4">
             <div class="flex flex-col gap-1.5">

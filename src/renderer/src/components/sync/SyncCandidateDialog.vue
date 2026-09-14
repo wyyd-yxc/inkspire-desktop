@@ -58,7 +58,7 @@ function confirm(): void {
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
       @click.self="emit('close')"
     >
-      <div class="flex max-h-[82%] w-[560px] flex-col rounded-2xl bg-surface shadow-2xl">
+      <div class="flex max-h-[82%] w-[560px] flex-col rounded-[12px] bg-surface shadow-2xl">
         <div class="flex items-center justify-between border-b border-ink-border/60 px-5 py-3">
           <h2 class="font-semibold">{{ title }}</h2>
           <button class="text-ink-text-muted hover:text-ink-text" @click="emit('close')">✕</button>
@@ -88,13 +88,13 @@ function confirm(): void {
               <span class="flex items-center gap-1.5">
                 <span
                   v-if="it.tag"
-                  class="shrink-0 rounded px-1.5 py-0.5 text-[10px] text-white"
+                  class="shrink-0 rounded-sm px-1.5 py-0.5 text-[10px] text-white"
                   :style="it.tagColor ? { background: it.tagColor } : { background: '#6b5f4a' }"
                 >{{ it.tag }}</span>
                 <span class="min-w-0 flex-1 truncate text-sm" :title="it.title">{{ it.title }}</span>
                 <span v-if="it.disabled" class="shrink-0 text-[10px] text-ink-text-muted">已存在，跳过</span>
               </span>
-              <span v-if="it.oldText" class="mt-1 block rounded bg-paper px-2 py-1">
+              <span v-if="it.oldText" class="mt-1 block rounded-sm bg-paper px-2 py-1">
                 <span class="block text-[11px] leading-4 text-ink-text-secondary">原文：{{ it.oldText }}</span>
                 <span class="mt-0.5 block text-[11px] leading-4 text-ink-primary">改为：{{ it.newText }}</span>
               </span>

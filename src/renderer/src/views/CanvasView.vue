@@ -674,7 +674,7 @@ onMounted(() => void loadAll())
           <span class="text-xs text-ink-text-muted">连线:</span>
           <select
             v-model="edgeForm.type"
-            class="rounded border border-ink-border bg-surface px-1.5 py-0.5 text-xs outline-none"
+            class="rounded-lg border border-ink-border bg-surface px-1.5 py-0.5 text-xs outline-none"
             @change="saveEdgeEdit"
           >
             <option value="main">主线</option>
@@ -685,7 +685,7 @@ onMounted(() => void loadAll())
             v-model="edgeForm.label"
             placeholder="标签（如 伏笔）"
             maxlength="12"
-            class="w-24 rounded border border-ink-border px-1.5 py-0.5 text-xs outline-none focus:border-ink-primary"
+            class="w-24 rounded-lg border border-ink-border px-1.5 py-0.5 text-xs outline-none focus:border-ink-primary"
             @keyup.enter="saveEdgeEdit"
           />
           <button class="text-xs text-ink-danger hover:underline" @click="removeSelectedEdge">删除</button>
@@ -762,10 +762,10 @@ onMounted(() => void loadAll())
               {{ (props.data as { scene: Scene }).scene.summary || '（无摘要，双击编辑）' }}
             </p>
             <div class="mt-2 flex flex-wrap items-center gap-1">
-              <span class="rounded bg-paper px-1.5 py-0.5 text-[10px] text-ink-text-secondary">
+              <span class="rounded-sm bg-paper px-1.5 py-0.5 text-[10px] text-ink-text-secondary">
                 节拍:{{ (props.data as { scene: Scene }).scene.beat || '—' }}
               </span>
-              <span class="rounded bg-paper px-1.5 py-0.5 text-[10px] text-ink-text-secondary">
+              <span class="rounded-sm bg-paper px-1.5 py-0.5 text-[10px] text-ink-text-secondary">
                 张力:{{ (props.data as { scene: Scene }).scene.tension }}
               </span>
               <span
@@ -778,7 +778,7 @@ onMounted(() => void loadAll())
               <span
                 v-for="rid in (props.data as { scene: Scene }).scene.wikiRefs.slice(0, 4)"
                 :key="rid"
-                class="rounded border border-ink-border px-1 text-[10px] text-ink-text-muted"
+                class="rounded-lg border border-ink-border px-1 text-[10px] text-ink-text-muted"
               >{{ wikiEntries.find((w) => w.id === rid)?.name ?? '?' }}</span>
             </div>
           </div>
@@ -879,7 +879,7 @@ onMounted(() => void loadAll())
     <!-- AI 场景生成设置弹窗 -->
     <teleport to="body">
       <div v-if="aiDialogVisible" class="fixed inset-0 z-40 flex items-center justify-center bg-black/30" @click.self="aiDialogVisible = false">
-        <div class="w-[440px] rounded-2xl bg-surface p-6 shadow-card">
+        <div class="w-[440px] rounded-[12px] bg-surface p-6 shadow-card">
           <h2 class="mb-1 text-lg font-semibold">AI 生成场景</h2>
           <p class="mb-4 text-sm text-ink-text-secondary">{{ modeLabels[aiMode] }}</p>
           <p v-if="needsAnchorFor(aiMode)" class="mb-3 rounded-lg bg-ink-primary-soft px-3 py-2 text-xs text-ink-primary">
@@ -887,7 +887,7 @@ onMounted(() => void loadAll())
           </p>
           <label v-if="aiMode === 'append'" class="mb-4 flex items-center gap-2 text-sm">
             续写场景数：
-            <input v-model.number="appendCount" type="number" min="1" max="5" class="w-16 rounded border border-ink-border px-2 py-1 outline-none focus:border-ink-primary" />
+            <input v-model.number="appendCount" type="number" min="1" max="5" class="w-16 rounded-lg border border-ink-border px-2 py-1 outline-none focus:border-ink-primary" />
           </label>
           <label class="flex flex-col gap-1.5">
             <span class="text-sm text-ink-text-secondary">补充要求（留空由 AI 发挥）</span>
@@ -904,14 +904,14 @@ onMounted(() => void loadAll())
     <!-- 生成正文设置弹窗 -->
     <teleport to="body">
       <div v-if="proseDialogVisible" class="fixed inset-0 z-40 flex items-center justify-center bg-black/30" @click.self="proseDialogVisible = false">
-        <div class="w-[440px] rounded-2xl bg-surface p-6 shadow-card">
+        <div class="w-[440px] rounded-[12px] bg-surface p-6 shadow-card">
           <h2 class="mb-2 text-lg font-semibold">按场景生成正文</h2>
           <p class="mb-4 text-sm leading-6 text-ink-text-secondary">
             按叙事顺序逐场景生成并拼合，完成后<b>替换本章现有正文</b>（当前 {{ chapter?.wordCount ?? 0 }} 字将被覆盖）。已锁定场景 {{ lockedCount }} 个将跳过生成、以占位段插入。
           </p>
           <label class="flex items-center gap-2 text-sm">
             每场景约
-            <input v-model.number="proseTargetWords" type="number" min="200" max="2000" step="100" class="w-20 rounded border border-ink-border px-2 py-1 outline-none focus:border-ink-primary" />
+            <input v-model.number="proseTargetWords" type="number" min="200" max="2000" step="100" class="w-20 rounded-lg border border-ink-border px-2 py-1 outline-none focus:border-ink-primary" />
             字
           </label>
           <div class="mt-5 flex justify-end gap-3">

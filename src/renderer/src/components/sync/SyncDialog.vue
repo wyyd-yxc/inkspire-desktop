@@ -48,7 +48,7 @@ function start(): void {
       class="fixed inset-0 z-40 flex items-center justify-center bg-black/30"
       @click.self="emit('close')"
     >
-      <div class="w-[440px] rounded-2xl bg-surface p-6 shadow-card">
+      <div class="w-[440px] rounded-[12px] bg-surface p-6 shadow-card">
         <h2 class="mb-1 text-lg font-semibold">同步到其他模块</h2>
         <p class="mb-4 text-xs text-ink-text-muted">
           从正文提取设定与事实，单向推送（只新增、不改写已有内容）；提取结果会先弹窗勾选确认

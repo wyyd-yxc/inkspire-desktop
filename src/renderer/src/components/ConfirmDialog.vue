@@ -21,7 +21,7 @@ const emit = defineEmits<{ confirm: [] }>()
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
       @click.self="visible = false"
     >
-      <div class="w-[400px] rounded-2xl bg-surface p-6 shadow-card">
+      <div class="w-[400px] rounded-[12px] bg-surface p-6 shadow-card">
         <h2 class="mb-2 text-base font-semibold">{{ title }}</h2>
         <p class="mb-6 text-sm leading-relaxed text-ink-text-secondary">{{ description }}</p>
         <div class="flex justify-end gap-3">

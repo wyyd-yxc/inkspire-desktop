@@ -470,18 +470,18 @@ onMounted(() => void loadAll())
           <fieldset class="rounded-card border border-ink-border p-4">
             <legend class="px-2 text-sm font-medium">题材定位</legend>
             <div class="flex flex-col gap-2">
-              <input v-model="step2.genre.mainType" placeholder="主类型" class="rounded border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
-              <input v-model="step2.genre.subType" placeholder="副类型" class="rounded border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
-              <input v-model="step2.genre.targetReader" placeholder="目标读者" class="rounded border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
-              <input v-model="step2.genre.mood" placeholder="情绪基调" class="rounded border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
+              <input v-model="step2.genre.mainType" placeholder="主类型" class="rounded-lg border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
+              <input v-model="step2.genre.subType" placeholder="副类型" class="rounded-lg border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
+              <input v-model="step2.genre.targetReader" placeholder="目标读者" class="rounded-lg border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
+              <input v-model="step2.genre.mood" placeholder="情绪基调" class="rounded-lg border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
             </div>
           </fieldset>
           <fieldset class="rounded-card border border-ink-border p-4">
             <legend class="px-2 text-sm font-medium">核心能力设定</legend>
             <div class="flex flex-col gap-2">
-              <input v-model="step2.cheat.coreAbility" placeholder="核心能力" class="rounded border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
-              <input v-model="step2.cheat.powerSystem" placeholder="力量体系" class="rounded border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
-              <input v-model="step2.cheat.limitation" placeholder="限制代价" class="rounded border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
+              <input v-model="step2.cheat.coreAbility" placeholder="核心能力" class="rounded-lg border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
+              <input v-model="step2.cheat.powerSystem" placeholder="力量体系" class="rounded-lg border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
+              <input v-model="step2.cheat.limitation" placeholder="限制代价" class="rounded-lg border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
             </div>
           </fieldset>
         </div>
@@ -489,10 +489,10 @@ onMounted(() => void loadAll())
         <fieldset class="mb-6 rounded-card border border-ink-border p-4">
           <legend class="px-2 text-sm font-medium">冲突梯队</legend>
           <div class="grid grid-cols-2 gap-3">
-            <input v-model="step2.conflict.opening" placeholder="开局矛盾" class="rounded border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
-            <input v-model="step2.conflict.mainline" placeholder="主线冲突" class="rounded border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
-            <input v-model="step2.conflict.ultimate" placeholder="终极阻碍" class="rounded border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
-            <input v-model="step2.conflict.villain" placeholder="反派层级" class="rounded border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
+            <input v-model="step2.conflict.opening" placeholder="开局矛盾" class="rounded-lg border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
+            <input v-model="step2.conflict.mainline" placeholder="主线冲突" class="rounded-lg border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
+            <input v-model="step2.conflict.ultimate" placeholder="终极阻碍" class="rounded-lg border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
+            <input v-model="step2.conflict.villain" placeholder="反派层级" class="rounded-lg border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
           </div>
         </fieldset>
 
@@ -542,12 +542,12 @@ onMounted(() => void loadAll())
 
         <div v-for="(v, vi) in step4.volumes" :key="vi" class="mb-4 rounded-card border border-ink-border p-4">
           <div class="mb-3 flex items-center gap-2">
-            <input v-model="v.name" class="flex-1 rounded border border-ink-border px-2 py-1 text-sm font-medium outline-none focus:border-ink-primary" />
+            <input v-model="v.name" class="flex-1 rounded-lg border border-ink-border px-2 py-1 text-sm font-medium outline-none focus:border-ink-primary" />
             <button class="text-xs text-ink-text-muted hover:text-ink-danger" @click="removeVolume(vi)">删除卷</button>
           </div>
           <div v-for="(c, ci) in v.chapters" :key="ci" class="mb-2 flex items-start gap-2">
-            <input v-model="c.title" placeholder="章节名" class="w-32 shrink-0 rounded border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
-            <input v-model="c.outline" placeholder="一句话大纲" class="flex-1 rounded border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
+            <input v-model="c.title" placeholder="章节名" class="w-32 shrink-0 rounded-lg border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
+            <input v-model="c.outline" placeholder="一句话大纲" class="flex-1 rounded-lg border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
             <button class="shrink-0 text-xs text-ink-text-muted hover:text-ink-danger" @click="removeChapter(vi, ci)">✕</button>
           </div>
           <button class="text-xs text-ink-primary hover:underline" @click="addChapter(vi)">+ 添加章节</button>
@@ -557,9 +557,9 @@ onMounted(() => void loadAll())
         <fieldset class="mb-6 rounded-card border border-ink-border p-4">
           <legend class="px-2 text-sm font-medium">写作规则（全局约束 AI 生成）</legend>
           <div class="flex flex-col gap-2">
-            <input v-model="step4.rules.targetWords" placeholder="目标总字数（如 100 万字）" class="rounded border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
-            <input v-model="step4.rules.forbidden" placeholder="禁止出现的内容" class="rounded border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
-            <input v-model="step4.rules.styleNotes" placeholder="要遵循的写法" class="rounded border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
+            <input v-model="step4.rules.targetWords" placeholder="目标总字数（如 100 万字）" class="rounded-lg border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
+            <input v-model="step4.rules.forbidden" placeholder="禁止出现的内容" class="rounded-lg border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
+            <input v-model="step4.rules.styleNotes" placeholder="要遵循的写法" class="rounded-lg border border-ink-border px-2 py-1 text-sm outline-none focus:border-ink-primary" />
           </div>
         </fieldset>
 
