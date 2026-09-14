@@ -244,6 +244,17 @@ PALETTES: 长篇(墨褐/rule-lines)、中短篇(灰蓝/grid)、科幻(靛墨/sta
 | 严重：附录 A4 声明与附录 B 代码不一致（疑修复未落地） | **采纳（材料同步疏漏）** | 附录 B 全部更新为**整改后最新版**（main.ts 首帧信号退场、主进程 system 分支、index.html 双态覆盖+内联脚本+CSP hash 说明），并注明「历轮修改均已并入」 |
 | 无法判定（diff 截断各项） | 附录 B 已为最新全量摘录 | 代码实体均在提交中（65bd720 等），黑盒终审 |
 
+## 附录 A7：r7 整改与静态审查收敛声明（glm-5.1，2026-09-14）
+
+r7 结论：有条件通过（llm-review-2026-09-14-13-08-.md）——「核心灭 FOUC 链路与深色适配逻辑严谨」，余项为 diff 截断与一项理解偏差。**静态审查轨道就此收敛**：
+
+| 项 | 裁定 | 处理 |
+|---|---|---|
+| 中危：brand.ts 硬编码默认色与「顶栏 currentColor」声明冲突 | **理解偏差 + 一致性加固** | 实情：顶栏 logo 是 BookshelfView 内联 SVG（用 currentColor，深色下可见，自测 T2 与截图实证），`brand.ts` 仅服务图标导出（需实体色）。但两处几何重复维护确为隐患 → 加固：`brand.ts` 导出 `LOGO_FRAME/LOGO_DROP_PATH/LOGO_SEAL` 几何常量（单一事实源）+ 注释明确「默认值为导出用实体色，UI 内联传 currentColor」 |
+| 无法判定（theme.css/封面/CSP hash 等） | 附录 B 最新全量摘录 + 自测 T1 19/19/T2 4/4 + 双主题截图目检 | CSP hash 已由 console 零报错反证（hash 错配必报 CSP 拦截）；黑盒终审 |
+
+**静态轨道总结**：r1-r7 共 **9 处真修**（FOUC 主题注入链、splash rAF 冻结、splash logo 深色变体、splash 首帧信号退场、data-theme 二值挂载、html 底色双态、system 分支遗漏、默认值走系统、几何常量单一事实源），其余为误报裁定（splash 文件看错、outline-none 实测证伪）与材料同步疏漏修正。双轨第一轨完成。
+
 ## 附录 C：黑盒验收结果
 
 （待黑盒后填写）
