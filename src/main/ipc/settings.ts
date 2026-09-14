@@ -20,7 +20,8 @@ const ALLOWED_SETTING_KEYS = new Set([
   'sync.auto_enabled',
   'sync.auto_interval_min',
   'sync.auto_mode',
-  'sync.auto_targets'
+  'sync.auto_targets',
+  'ui.theme' // M17 外观主题：light | dark | system（渲染层 useTheme 消费）
 ])
 
 /** 读白名单 = 写白名单 + 水位键（只读开放：UI 需要读水位计算「待提取 N 章」，写仍走专用通道） */

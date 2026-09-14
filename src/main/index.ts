@@ -35,6 +35,8 @@ function createWindow(): void {
     show: false,
     autoHideMenuBar: true,
     title: '墨笺',
+    // 与渲染层纸底色一致：消除启动瞬间的白屏闪烁（M17）
+    backgroundColor: '#faf8f3',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: true,

@@ -12,6 +12,7 @@ import ApiProfileDialog from '@/components/ApiProfileDialog.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import StylePackagesSection from '@/components/settings/StylePackagesSection.vue'
 import SlotBindingsSection from '@/components/settings/SlotBindingsSection.vue'
+import AppearanceSection from '@/components/settings/AppearanceSection.vue'
 
 const toast = useToast()
 const profiles = ref<ApiProfile[]>([])
@@ -203,6 +204,9 @@ onMounted(() => {
 
       <!-- 功能槽位（M15） -->
       <SlotBindingsSection />
+
+      <!-- 外观（M17） -->
+      <AppearanceSection />
 
       <!-- 自动同步（M10.5） -->
       <section v-if="syncCfg" class="mb-6 rounded-card bg-surface p-5 shadow-card">

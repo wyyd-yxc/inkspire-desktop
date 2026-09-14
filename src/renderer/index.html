@@ -7,6 +7,13 @@
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'"
     />
+    <style>
+      /* 启动底色（M17）：与主题纸色一致，消除加载闪白；data-theme 未挂载前也成立 */
+      html { background: #faf8f3; }
+      @media (prefers-color-scheme: dark) {
+        html { background: #171512; }
+      }
+    </style>
   </head>
   <body>
     <div id="app"></div>

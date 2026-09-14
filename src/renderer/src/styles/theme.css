@@ -1,45 +1,112 @@
 /*
- * 全局主题（墨笺·案头纸墨，严肃写作风）。
- * 以 Tailwind 4 的 @theme 定义设计令牌：模板中可用 bg-paper / text-ink 等工具类。
- * 设计语言：暖米纸底 + 炭墨主色 + 衬线标题/正文编辑区，去彩度、轻装饰（M10.8 严肃化改造）。
- * 暗色模式预留：后续通过 [data-theme="dark"] 覆盖同名变量即可，无需改组件。
+ * 全局主题（墨笺·案头纸墨 2.0，M17 视觉精修）。
+ * 三层令牌架构（见 docs/design/visual-2.0.md）：
+ *   primitive（原始值，本文件 @theme 内）→ semantic（--color-ink-* 等，组件类名引用层）
+ *   → component（--focus-ring / --radius-dialog / --duration-* 等）。
+ * 双主题：浅色=案头纸墨（默认）；深色=深夜书房，经 <html data-theme="dark"> 覆盖语义层。
+ * 对比度：全部关键配对经 WCAG 2.x 脚本验算达标（正文 ≥4.5:1、非文本 ≥3:1）。
  */
 @import 'tailwindcss';
 
 @theme {
-  /* 背景与表面（暖米纸色，无彩渐变） */
-  --color-paper: #faf8f3; /* 米纸底：全局背景 */
-  --color-surface: #fffefb; /* 卡片表面（微暖白） */
+  /* ============ primitive：原始色板（仅本层出现字面值） ============ */
+  /* 纸系（暖米） */
+  --raw-paper: #faf8f3;
+  --raw-surface: #fffefb;
+  --raw-paper-warm: #f6f2e9;
+  /* 墨系（炭） */
+  --raw-ink-900: #26221b;
+  --raw-ink-800: #2b2721;
+  --raw-ink-700: #3a352e;
+  --raw-ink-500: #6d6558;
+  --raw-ink-400: #6f6759;
+  --raw-ink-200: #e6dfd1;
+  --raw-ink-150: #9a8f7c;
+  --raw-ink-100: #f1ede2;
+  /* 点缀（朱砂/赭金/苍绿） */
+  --raw-cinnabar: #a8443a;
+  --raw-ochre: #7d5f22;
+  --raw-moss: #3f6d4e;
+  /* 热力 5 档（纸灰→炭墨） */
+  --raw-heat-0: #ece6d9;
+  --raw-heat-1: #d8cdb4;
+  --raw-heat-2: #b3a485;
+  --raw-heat-3: #87795c;
+  --raw-heat-4: #3a352e;
 
-  /* 主色：炭墨（沉稳、去彩） */
-  --color-ink-primary: #3a352e;
-  --color-ink-primary-hover: #26221b;
-  --color-ink-primary-soft: #f1ede2; /* 主色浅底（选中态/标签底） */
+  /* ============ semantic：浅色主题（案头纸墨，默认） ============ */
+  --color-paper: var(--raw-paper);
+  --color-surface: var(--raw-surface);
 
-  /* 文字 */
-  --color-ink-text: #2b2721; /* 深炭：主文字 */
-  --color-ink-text-secondary: #6d6558; /* 次要文字 */
-  --color-ink-text-muted: #a89e8e; /* 占位/辅助 */
+  --color-ink-primary: var(--raw-ink-700);
+  --color-ink-primary-hover: var(--raw-ink-900);
+  --color-ink-primary-soft: var(--raw-ink-100);
+  --color-on-primary: #ffffff;
 
-  /* 边框与状态（低饱和） */
-  --color-ink-border: #e6dfd1;
-  --color-ink-danger: #b04a3e; /* 朱砂偏暗：删除/错误 */
-  --color-ink-warning: #a8813c;
-  --color-ink-success: #4a7d5b;
+  --color-ink-text: var(--raw-ink-800);
+  --color-ink-text-secondary: var(--raw-ink-500);
+  --color-ink-text-muted: var(--raw-ink-400);
 
-  /* 创作统计热力图 5 档（M13）：纸灰 → 炭墨 */
-  --color-heat-0: #ece6d9;
-  --color-heat-1: #d8cdb4;
-  --color-heat-2: #b3a485;
-  --color-heat-3: #87795c;
-  --color-heat-4: #3a352e;
+  --color-ink-border: var(--raw-ink-200);
+  --color-ink-border-strong: var(--raw-ink-150);
+  --color-ink-danger: var(--raw-cinnabar);
+  --color-ink-warning: var(--raw-ochre);
+  --color-ink-success: var(--raw-moss);
 
-  /* 圆角与阴影（收敛圆角，阴影更轻） */
+  --color-heat-0: var(--raw-heat-0);
+  --color-heat-1: var(--raw-heat-1);
+  --color-heat-2: var(--raw-heat-2);
+  --color-heat-3: var(--raw-heat-3);
+  --color-heat-4: var(--raw-heat-4);
+
+  /* ============ component：组件级令牌 ============ */
+  --radius-sm: 4px;
   --radius-card: 8px;
+  --radius-lg: 8px;
+  --radius-dialog: 12px;
   --shadow-card: 0 1px 2px rgb(43 39 33 / 0.05), 0 3px 12px rgb(43 39 33 / 0.05);
+  --shadow-dialog: 0 8px 32px rgb(43 39 33 / 0.18);
+
+  --focus-ring: 0 0 0 2px var(--color-paper), 0 0 0 4px var(--color-ink-primary);
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --scrollbar-thumb: rgb(58 53 46 / 0.22);
+  --scrollbar-thumb-hover: rgb(58 53 46 / 0.38);
 
   /* 字体：标题与正文编辑区衬线（严肃写作），UI 控件保持无衬线 */
   --font-serif: 'Noto Serif SC', 'Source Han Serif SC', 'STZhongsong', SimSun, Georgia, serif;
+}
+
+/* ============ semantic：深色主题（深夜书房） ============ */
+[data-theme='dark'] {
+  --color-paper: #171512;
+  --color-surface: #292420;
+
+  --color-ink-primary: #e3dbc9;
+  --color-ink-primary-hover: #d3c9b4;
+  --color-ink-primary-soft: #332d26;
+  --color-on-primary: #241f18;
+
+  --color-ink-text: #ece6d9;
+  --color-ink-text-secondary: #b8ae9c;
+  --color-ink-text-muted: #a49a88;
+
+  --color-ink-border: #3a342c;
+  --color-ink-border-strong: #7d7365;
+  --color-ink-danger: #da8577;
+  --color-ink-warning: #c9a35c;
+  --color-ink-success: #86b394;
+
+  --color-heat-0: #26221c;
+  --color-heat-1: #453d31;
+  --color-heat-2: #6b5f4a;
+  --color-heat-3: #a2916f;
+  --color-heat-4: #e3dbc9;
+
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3), 0 3px 12px rgb(0 0 0 / 0.25);
+  --shadow-dialog: 0 8px 32px rgb(0 0 0 / 0.5);
+  --scrollbar-thumb: rgb(227 219 201 / 0.22);
+  --scrollbar-thumb-hover: rgb(227 219 201 / 0.38);
 }
 
 /* 全局基础样式 */
@@ -52,7 +119,7 @@ body,
 body {
   margin: 0;
   background:
-    linear-gradient(180deg, #f6f2e9 0%, var(--color-paper) 240px),
+    linear-gradient(180deg, var(--raw-paper-warm) 0%, var(--color-paper) 240px),
     var(--color-paper);
   color: var(--color-ink-text);
   font-family:
@@ -62,6 +129,13 @@ body {
     'Segoe UI',
     sans-serif;
   -webkit-font-smoothing: antialiased;
+}
+
+/* 深色主题纸底渐变反转（暗底微光，无彩） */
+[data-theme='dark'] body {
+  background:
+    linear-gradient(180deg, #1d1a16 0%, var(--color-paper) 240px),
+    var(--color-paper);
 }
 
 /* 标题衬线：页面主标题/区块标题（严肃写作气质） */
@@ -79,8 +153,56 @@ h2 {
   line-height: 1.9;
 }
 
-/* 暗色模式预留位：不实现，变量清单与浅色一一对应
-[data-theme='dark'] {
-  --color-paper: ...;
+/* 焦点可见（M17）：键盘导航统一焦点环；鼠标点击不显示（:focus-visible 语义） */
+:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-sm);
 }
-*/
+/* 原生控件（按钮/输入）自绘焦点环时同样接管 */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+a:focus-visible,
+[tabindex]:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* 墨系滚动条（M17）：细窄、低对比、悬停加深；深浅主题各一套 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+  background-clip: content-box;
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* 减少动效偏好（M17）：尊重系统设置，过渡归零 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

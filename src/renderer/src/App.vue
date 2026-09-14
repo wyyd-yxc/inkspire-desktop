@@ -6,8 +6,12 @@
 import { onMounted } from 'vue'
 import ToastHost from '@/components/ToastHost.vue'
 import { startAutoSync } from '@/composables/useAutoSync'
+import { initTheme } from '@/composables/useTheme'
 
-onMounted(() => startAutoSync())
+onMounted(() => {
+  void initTheme()
+  startAutoSync()
+})
 </script>
 
 <template>
