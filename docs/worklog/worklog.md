@@ -699,3 +699,23 @@
 - **安装版冒烟 6/6**（tmp/m16-smoke.mjs，CDP 9223）：启动+数据保留（4 书完整）/migration v15 健康/新导航壳 7 项渲染/无旧返回栏/章节可读/console 零报错——记录入库 2026-09-13-M16-release.md
 - 脚本教训：安装版页面 URL 为 file:// 协议（CDP 过滤不能用 localhost）
 - **状态**：打包+验证完成；**经用户确认 tag v0.21.0-m16-release（已打，指向 12b6899）**。**M0-M16 全部完成，项目发布收官**（共 23 个版本 tag）。
+
+---
+
+## [2026-09-14 21:40] 会话 44：M17 纸墨 2.0 视觉精修全量交付（双轨通过，tag v0.22.0-m17-visual 待用户确认）
+
+- **任务来源**：用户指令「调用设计 skill 重新设计 UI/UX 与封面，打包前完成」；四项拍板：应用品牌+书籍封面双范围 / 纸墨 2.0 精修进化（保留 M10.8 基因）/ 全落地+重打包 0.22.0 / 纯代码化 SVG（logo 4 稿中用户选定稿 A・朱砂印）。
+- **方法**：ui-ux-pro-max（检索确认 E-Ink/Paper 同向参考+可访问性清单）+ design-system（三层令牌方法论）+ design（图标/品牌参考）；对比度用 WCAG 2.x 脚本验算（tmp/m17-contrast*.mjs）。
+- **实现**（8 feat + 6 fix，自 v0.21.0-m16-release 起 14 提交）：
+  - **令牌 2.0**：三层架构（primitive→semantic→component，ink-* 语义名全保留保 1030 处兼容）；浅色色板对比度修正（muted 2.49→5.26:1 等 4 色）；新增 border-strong/on-primary/scrim/focus-ring/radius-dialog/duration/scrollbar 令牌
+  - **深色主题「深夜书房」**（M0 起首次落地）：全语义令牌覆盖 + useTheme 三模式（light/dark/system，settings 键 ui.theme）+ 设置「外观」分区
+  - **品牌资产**：墨笺 logo（稿A 朱砂印，brand.ts 单一事实源含几何常量）；全尺寸图标链（16~512 PNG + 7 尺寸 ICO 18KB 替换 3KB 单尺寸）；启动画面（灭闪白+灭 FOUC 注入链：主进程读库→additionalArguments→preload→内联首帧脚本+CSP hash）；书房顶栏挂标
+  - **封面系统**：shared/coverArt.ts 纯函数（九题材墨系配色/底纹/排版/确定性 hash）+ BookCover.vue（SVG pattern 九题材底纹+笺纸角饰+书名自适应断行）+ BookCard 接入
+  - **字体**：思源宋体简体子集（400/600 两字重 woff2 2.9MB）本地入库，摆脱系统字体依赖（原无字体 Windows 退化为宋体）
+  - **组件精修**：遮罩 bg-scrim（主题感知）/主危险按钮 text-on-primary/69 处输入框 border-strong/圆角收敛（裸 rounded 16+2xl 17）/全局 :focus-visible 焦点环/墨系滚动条/reduced-motion
+- **开发自测**：T1 **19/19**（双主题/封面九题材/字体/焦点环/滚动条/品牌/灭闪白）+ T2 边界 **4/4**（深色设置底色/浅色不被系统覆盖/system 一致/零报错）；对比度验算 **38 项全 PASS**；双主题截图目检（tmp/m17-shot-*.png）
+- **双轨验收**：
+  - **静态审查 glm-5.1 七轮收敛**：真修 9 处——r1 FOUC 主题注入链（主进程读库→参数注入→挂载前挂载）；r2 splash logo 深色变体（1.32:1→13.23:1）+data-theme 二值；r3 内联脚本恒设 data-theme（用户浅色覆盖系统深色）+CSP hash；r4 splash 首帧信号退场（nextTick+rAF+600ms 兜底）+默认值走系统偏好（nativeTheme 预判）；r5 darkPredicted 补 system 分支+html 底色双态覆盖；r7 brand.ts 几何常量单一事实源。误报裁定 2 处（splash 文件看错、outline-none 实测证伪）
+  - **黑盒 19/19 + 编辑器回归 2/2**（独立断言集：含页面内 WCAG 对比度实算、ICO 尺寸主进程校验；报告入库 2026-09-14-M17-visual.md）：**发现并修复 1 处真实视觉缺陷**——封面书名断行生硬（M17BB长篇→M17B|B长篇），改标点/词边界优先断行（f489534）。原黑盒代理超时中断 1 次，主代理以独立断言集接管并披露
+- **自测发现并修复 1 个真 bug**（b9df80d）：启动画面移除用 rAF（窗口后台冻结，踩坑 #12 同型）→ splash 永久残留遮挡 UI；改 setTimeout/首帧信号
+- **状态**：双轨通过；**tag v0.22.0-m17-visual 待用户确认**（0.22.0 打包中）。设计规范 docs/design/visual-2.0.md 为本轮设计依据。
