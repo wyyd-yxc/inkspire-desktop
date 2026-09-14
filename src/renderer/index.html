@@ -17,6 +17,39 @@
   </head>
   <body>
     <div id="app"></div>
+    <!-- 启动画面（M17）：首屏加载期间显示品牌标识，Vue 挂载后由 main.ts 移除 -->
+    <div id="boot-splash" aria-hidden="true">
+      <svg width="72" height="72" viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg">
+        <rect x="10" y="10" width="76" height="76" rx="18" fill="none" stroke="#3a352e" stroke-width="6" />
+        <path d="M48 26 C40 40 34 48 34 57 a14 14 0 0 0 28 0 C62 48 56 40 48 26 Z" fill="#3a352e" />
+        <circle cx="70" cy="70" r="9" fill="#a8443a" />
+      </svg>
+      <p>墨笺</p>
+    </div>
+    <style>
+      #boot-splash {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        background: #faf8f3;
+        z-index: 9999;
+      }
+      #boot-splash p {
+        margin: 0;
+        font-family: 'Noto Serif SC', 'STZhongsong', SimSun, serif;
+        font-size: 15px;
+        letter-spacing: 0.32em;
+        color: #6d6558;
+      }
+      @media (prefers-color-scheme: dark) {
+        #boot-splash { background: #171512; }
+        #boot-splash p { color: #b8ae9c; }
+      }
+    </style>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

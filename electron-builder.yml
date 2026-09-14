@@ -21,6 +21,8 @@ win:
   target:
     - nsis
   executableName: InkSpire
+  # 应用图标（M17）：build/icon.ico 为 7 尺寸 PNG 嵌入容器（16~256）
+  icon: build/icon.ico
 nsis:
   artifactName: InkSpire-Setup-${version}.exe
   oneClick: false

@@ -5,7 +5,11 @@ node_modules/
 dist/
 dist-electron/
 out/
-build/
+build/**
+# 例外：应用图标为源资产（electron-builder buildResources），需入库
+!build/
+!build/icon.ico
+!build/icon.png
 release/
 
 # 日志与缓存

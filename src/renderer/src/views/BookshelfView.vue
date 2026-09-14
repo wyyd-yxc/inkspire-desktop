@@ -59,7 +59,13 @@ onMounted(refresh)
   <div class="h-full overflow-y-auto">
     <!-- 顶栏 -->
     <header class="sticky top-0 z-10 flex items-center justify-between border-b border-ink-border/60 bg-paper/80 px-8 py-4 backdrop-blur">
-      <div class="flex items-baseline gap-3">
+      <div class="flex items-center gap-2.5">
+        <!-- 品牌标识（M17）：印章墨滴稿 -->
+        <svg width="28" height="28" viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="shrink-0">
+          <rect x="10" y="10" width="76" height="76" rx="18" fill="none" stroke="currentColor" stroke-width="6" />
+          <path d="M48 26 C40 40 34 48 34 57 a14 14 0 0 0 28 0 C62 48 56 40 48 26 Z" fill="currentColor" />
+          <circle cx="70" cy="70" r="9" fill="#a8443a" />
+        </svg>
         <h1 class="text-xl font-bold tracking-widest text-ink-primary">墨笺</h1>
         <span class="text-sm text-ink-text-muted">书房</span>
       </div>
